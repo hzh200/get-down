@@ -1,0 +1,32 @@
+.url-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.url-bar > * {
+    margin-right: 2px;
+}
+
+.url-bar > *:last-child {
+    margin-right: 0;
+}
+
+.url-bar > .parser-row-name-selecter {
+    width: auto;
+}
+
+.url-bar > .parser-row-text-input {
+    display: block;
+    width: 200px;
+    font-size: 14px;
+    flex: 1;
+}
+
+.url-bar > .parser-row-access-button {
+    width: 40px;
+    font-size: 14px;
+}
+
+
+

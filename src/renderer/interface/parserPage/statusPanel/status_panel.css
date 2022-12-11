@@ -1,0 +1,10 @@
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.info-panel > .download-button-row {
+    display: flex;
+    justify-content: flex-end;
+}

@@ -1,0 +1,39 @@
+.tasklist-table-body-row > td {
+    text-align: center;
+}
+
+.task-list {
+    min-height: 25px;
+    min-width: 5px;
+}
+
+.task-list > .task-list-head {
+    border-width: 2px;
+    border-style: solid;
+    /* margin-bottom: 5px; */
+    background-color: lightgray
+}
+
+.task-list > .task-list-body > tbody > tr {
+    background-color: lightgray
+}
+
+.type-thead-th {
+    width: 10%
+}
+
+.name-thead-th {
+    width: 50%
+}
+
+.progress-thead-th {
+    width: 10%
+}
+
+.size-thead-th {
+    width: 10%
+}
+
+.time-thead-th {
+    width: 10%
+}

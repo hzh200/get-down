@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ESNext",
+    "baseUrl": ".",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "moduleResolution": "node",
+    "jsx": "react",
+    "allowJs": true,
+    "noEmitOnError": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "src/main/main.ts"]
+  // "include": ["./images.d.ts", "src/main/*.ts", "src//*.ts"]
+}

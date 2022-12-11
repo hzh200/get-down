@@ -1,0 +1,1 @@
+Clash.for.Windows 使用了 ffmpeg，但是 Electron 打包之后没有添加 License，作者也没有手动添加。

@@ -1,0 +1,14 @@
+* {
+    --background-color: white;
+    --fuzzy-color: rgba(203, 202, 202, 0.7);
+}
+
+*, *::after, *::before {
+    box-sizing: border-box;
+    border-radius: 2px;
+    user-select: none;
+}
+
+img {
+    display: block;
+}
