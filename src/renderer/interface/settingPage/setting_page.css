@@ -15,6 +15,10 @@
     margin-bottom: 0;
 }
 
+.setting-item-row {
+    display: block;
+}
+
 .setting-item-row > * {
     display: inline;
 }

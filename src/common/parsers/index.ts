@@ -1,6 +1,9 @@
-import { AxiosResponse } from 'axios'
 import * as React from 'react'
-import { readSetting, writeSetting } from '../setting'
+import * as http from 'http'
+import { DefaultParsedInfo } from './default_parser'
+import { Setting, readSetting } from '../setting'
+import { ParsedInfo, preflight } from '../../common/http/preflight'
+import { handlePromise } from '../../common/utils'
 
 import DefaultParser from './default_parser'
 import BiliBiliParser from './bilibili_parser'
@@ -9,18 +12,16 @@ import YoutubeParser from './youtube_parser'
 interface Parser {
     parserNo: number
     parseTarget: string
-    getParserTarget(): string
-    parse(url: string): Promise<[AxiosResponse, string]>
-    parseUrlInfo(url: string, downloadUrl: string, statusCode: number, headers: {[key: string]: string}, setting: {[key: string]: any}): {[key: string]: any}
-    getDownloadOptions({ parsedInfo, handleInfoChange} : 
+    // requestHeaders: http.OutgoingHttpHeaders
+    // downloadHeaders: http.OutgoingHttpHeaders
+    parse(url: string, preflightParsedInfo: ParsedInfo, setting: Setting): Promise<DefaultParsedInfo>
+    downloadOptions({ parsedInfo, handleInfoChange} : 
         { parsedInfo: {[key: string]: any}, handleInfoChange: React.ChangeEventHandler<HTMLInputElement>}): React.ReactElement
-    addTask(parsedInfo: {[key: string]: any}): void,
-    downloadHeaders?: {[key: string]: any}, // for tasks non-default parsers have parsed out to use when download
-    callback?: Function // a Parser may require a callback function only when it parse out a TaskSet
+    addTask(parsedInfo: {[key: string]: any}): void
+    callback?(): void // a Parser may require a callback function only when it parse out a TaskSet
 }
 
 const parsers: Array<Parser> = []
-
 const defaultParser: Parser = new DefaultParser()
 const bilibiliParser: Parser = new BiliBiliParser()
 const youtubeParser: Parser = new YoutubeParser()
@@ -41,20 +42,23 @@ const parserModule = {
     },
     choose(selection: Parser): void {
         parsers.forEach((parser, index) => {
-            if (parser.getParserTarget() === selection.getParserTarget()) {
+            if (parser.parseTarget === selection.parseTarget) {
                 this.index = index
             }
         })
     },
-    async parse(url: string): Promise<{[key: string]: any}> {
-        const [res, downloadUrl] = await this.choosenParser.parse(url)
-        const parsedInfo: {[key: string]: any} = this.choosenParser.parseUrlInfo(url, downloadUrl, res.status, res.headers, readSetting())
+    async parse(url: string): Promise<DefaultParsedInfo> {
+        const [err, preflightParsedInfo]: [Error | undefined, ParsedInfo] = await handlePromise(preflight(url))
+        if (err) {
+            throw err
+        }
+        const parsedInfo: DefaultParsedInfo = await this.choosenParser.parse(url, preflightParsedInfo, readSetting())
         return parsedInfo
     },
-    getDownloadOptions(parsedInfo: {[key: string]: any}, handleInfoChange: React.ChangeEventHandler<HTMLInputElement>): React.ReactElement {
-        return this.choosenParser.getDownloadOptions({parsedInfo, handleInfoChange})
+    getDownloadOptions(parsedInfo: DefaultParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLInputElement>): React.ReactElement {
+        return this.choosenParser.downloadOptions({parsedInfo, handleInfoChange})
     },
-    addTask(parsedInfo: {[key: string]: any}): void {
+    addTask(parsedInfo: DefaultParsedInfo): void {
         this.choosenParser.addTask(parsedInfo)
     }
 }

@@ -2,6 +2,7 @@ import * as React from 'react'
 import './status_panel.css'
 import { ParserStatus } from '../parser_page'
 import { parserModule } from '../../../../common/parsers'
+import { DefaultParsedInfo } from '../../../../common/parsers/default_parser'
 
 function InfoRow({ children }: { children: React.ReactElement | Array<React.ReactElement> }): React.ReactElement {
     return (
@@ -24,7 +25,7 @@ function InfoPanel({ children, downloadUrl }: { children: React.ReactElement | A
 }
 
 function StatusPanel({ status, parsedInfo, handleInfoPanelChange, errorMessage, downloadUrl }: { status: ParserStatus, 
-        parsedInfo: {[key: string]: any}, handleInfoPanelChange: React.ChangeEventHandler, errorMessage: string, 
+        parsedInfo: DefaultParsedInfo, handleInfoPanelChange: React.ChangeEventHandler, errorMessage: string, 
         downloadUrl: React.MouseEventHandler<HTMLButtonElement>}): React.ReactElement {
     if (status === ParserStatus.failed) {
         return (

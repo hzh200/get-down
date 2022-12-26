@@ -4,6 +4,8 @@ import StatusPanel from './statusPanel'
 
 import { parserModule } from '../../../common/parsers'
 import { handlePromise } from '../../../common/utils'
+import { DefaultParsedInfo } from '../../../common/parsers/default_parser'
+import { validateUrl } from '../../../common/http/validation'
 
 enum ParserStatus {
     static,
@@ -14,41 +16,43 @@ enum ParserStatus {
 
 function ParserPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([])
-    const [url, setUrl] = React.useState<string>('')
-    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.defaultParser.getParserTarget())
+    const [url, set] = React.useState<string>('')
+    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.defaultParser.parseTarget)
     const [status, setStatus] = React.useState<ParserStatus>(ParserStatus.static)
-    const [optionsInfo, setOptionsInfo] = React.useState<{[key: string]: any} | null>(null)
+    const [optionsInfo, setOptionsInfo] = React.useState<DefaultParsedInfo>(new DefaultParsedInfo())
     const [errorMessage, setErrorMessage] = React.useState<string>('')
     React.useEffect(() => {
         for (const parser of parserModule.parsers) {
-            setParserNames((parsers) => [...parsers, parser.getParserTarget()])
+            setParserNames((parsers) => [...parsers, parser.parseTarget])
         }
     }, [])
     const handleParserChange: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         for (const parser of parserModule.parsers) {
-            if (parser.getParserTarget() === (event.target as HTMLSelectElement).value) {
+            if (parser.parseTarget === (event.target as HTMLSelectElement).value) {
                 parserModule.choose(parser)
-                setChoosenParserName(parser.getParserTarget())
+                setChoosenParserName(parser.parseTarget)
             }
         }
     }
     const handleUrlChange: React.ChangeEventHandler<HTMLInputElement> = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        setUrl((event.target as HTMLInputElement).value)
+        set((event.target as HTMLInputElement).value)
     }
     const parseUrl: React.MouseEventHandler<HTMLButtonElement> = async (): Promise<void> => {
         setStatus(ParserStatus.parsing)
-        const [error, parsedInfo] = await handlePromise<{
-            [key: string]: any;
-        }>(parserModule.parse(url))
+        if (!validateUrl(url)) {
+            setStatus(ParserStatus.failed)
+            // setOptionsInfo(new DefaultParsedInfo())
+            setErrorMessage('Unsupported Protocol')
+            return
+        }
+        const [error, parsedInfo]: [Error | undefined, DefaultParsedInfo] = await handlePromise<DefaultParsedInfo>(parserModule.parse(url))
         if (error) {
             setStatus(ParserStatus.failed)
-            setOptionsInfo(null)
+            // setOptionsInfo(new DefaultParsedInfo())
             setErrorMessage(error.toString())
             return
         }
-        setOptionsInfo(parsedInfo as {
-            [key: string]: any;
-        })
+        setOptionsInfo(parsedInfo)
         setStatus(ParserStatus.succeed)
         setErrorMessage('')
     }
@@ -56,7 +60,7 @@ function ParserPage() {
         const target: HTMLInputElement = event.target as HTMLInputElement
         const value: string | boolean = target.type === 'checkbox' ? target.checked : target.value
         const name: string = target.name
-        setOptionsInfo(parsedInfo => ({ // not a ExtractTaskInfo anymore
+        setOptionsInfo(parsedInfo => ({
             ...parsedInfo,
             ...{
                 [name]: value
@@ -65,7 +69,7 @@ function ParserPage() {
         // const newInfo: any = {}
         // Object.assign(newInfo, parsedInfo)
     }
-    const downloadUrl: React.MouseEventHandler<HTMLButtonElement> = async () => {
+    const download: React.MouseEventHandler<HTMLButtonElement> = async () => {
         if (optionsInfo) {
             parserModule.addTask(optionsInfo)
         }
@@ -74,7 +78,7 @@ function ParserPage() {
         <div className='parser-page'>
             <UrlBar parserNames={parserNames} choosenParserName={choosenParserName} handleParserChange={handleParserChange}
                 url={url} handleUrlChange={handleUrlChange} parseUrl={parseUrl} />
-            <StatusPanel status={status} parsedInfo={optionsInfo as {[key: string]: any}} handleInfoPanelChange={handleInfoPanelChange} errorMessage={errorMessage} downloadUrl={downloadUrl} />
+            <StatusPanel status={status} parsedInfo={optionsInfo} handleInfoPanelChange={handleInfoPanelChange} errorMessage={errorMessage} downloadUrl={download} />
         </div>
     )
 }

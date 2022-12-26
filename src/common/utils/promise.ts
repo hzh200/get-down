@@ -1,13 +1,11 @@
-const handlePromise = async <T>(promise: Promise<T>): Promise<[Error | undefined, T | undefined]> => {
-    let r: [Error | undefined, T | undefined] // typescript tuple
+const handlePromise = async <T>(promise: Promise<T>): Promise<[Error | undefined, T]> => {
+    let res: [Error | undefined, T | undefined] // typescript tuple
     try {
-        r = [undefined, await promise]
+        res = [undefined, await promise]
     } catch (error: any) {
-        r = [error, undefined]
+        res = [error, undefined]
     }
-    return r
+    return res as [Error | undefined, T]
 }
 
-export {
-    handlePromise
-}
+export { handlePromise }

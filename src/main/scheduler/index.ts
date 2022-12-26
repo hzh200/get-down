@@ -6,6 +6,7 @@ import { mainWindow } from '../main'
 import { taskQueue } from '../queue'
 import { Downloader, getDownloader } from './downloader'
 import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, updateTaskProgress, updateTaskRanges, deleteTask, getAllTasks } from '../persistence'
+import { Log } from '../../common/log'
 
 class Scheduler {
     maxDownloadLimit: number = 3
@@ -71,11 +72,11 @@ class Scheduler {
         }, 50)
 
         ipcMain.on('add-task', async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
-            const [error, task] = await handlePromise<TaskModel>(createTask(taskInfo))
+            const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTask(taskInfo))
             if (error) {
-                throw error
+                Log.errorLog(error)
             }
-            taskQueue.addTaskItem((task as TaskModel).taskNo, task as TaskModel)
+            taskQueue.addTaskItem((task as TaskModel).taskNo, task)
             mainWindow.webContents.send('new-task-item', (task as TaskModel).get())
         })
         ipcMain.on('start-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
@@ -99,7 +100,7 @@ class Scheduler {
             for (const taskNo of taskNos) {
                 const task: TaskModel = taskQueue.getTaskItem(taskNo)
                 this.getDownloader(taskNo).pause()
-                const [error, _] = await handlePromise<void>(deleteTask(task))
+                const [error, _]: [Error | undefined, void] = await handlePromise<void>(deleteTask(task))
                 if (error) {
                     throw error
                 }

@@ -2,22 +2,43 @@ import { settingPath } from '../../../config/path'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { AxiosProxyConfig } from 'axios'
 
-const getDefaultSetting = (): {[key: string]: any} => {
-    const proxy: AxiosProxyConfig = {
+enum ProxyChooses {
+    NoProxy = 0,
+    UseSystemProxy = 1,
+    SetManually = 2
+}
+
+type ProxyConfig = {
+    proxyChoosen: ProxyChooses 
+    protocol: string
+    host: string | null
+    port: number | null
+}
+
+type Setting = {
+    proxy: ProxyConfig
+    location: string
+    trafficLimit: number | null
+}
+
+const getDefaultSetting = (): Setting => {
+    const proxy: ProxyConfig = {
+        proxyChoosen: ProxyChooses.NoProxy,
         protocol: 'http',
-        host: '',
-        port: -1,
-    }
-    let downloadPath: string
-    if (process.env.NODE_ENV === 'development') {
-        downloadPath = './downloads'
-    } else { // process.env.NODE_ENV === 'production'
-        downloadPath = path.join(process.env.HOME || process.env.USERPROFILE || os.homedir() as string, 'Downloads')
+        host: null,
+        port: null,
     }
     
-    let setting: {[key: string]: any} = {
+    let downloadPath: string = path.join(process.env.HOME || process.env.USERPROFILE || os.homedir() as string, 'Downloads')
+
+    // if (process.env.NODE_ENV === 'development') {
+    //     downloadPath = './downloads'
+    // } else { // process.env.NODE_ENV === 'production'
+    //     downloadPath = path.join(process.env.HOME || process.env.USERPROFILE || os.homedir() as string, 'Downloads')
+    // }
+
+    let setting: Setting = {
         proxy: proxy,
         location: downloadPath,
         trafficLimit: null
@@ -26,15 +47,13 @@ const getDefaultSetting = (): {[key: string]: any} => {
 }
 
 // Write new setting to the setting file.
-// Throw error.
-const writeSetting = (setting: {[key: string]: any}): void => {
-    fs.writeFileSync(settingPath, JSON.stringify(setting))
+const writeSetting = (setting: Setting): void => {
+    fs.writeFileSync(settingPath, JSON.stringify(setting, null, '\t'))
 }
 
 // Read setting from the setting file, beacuse it's used by both main and renderer processes.
-// Throw error
-const readSetting = (): {[key: string]: any} => {
-    let setting: {[key: string]: any}
+const readSetting = (): Setting => {
+    let setting: Setting
     if (!fs.existsSync(settingPath)) {
         setting = getDefaultSetting()
         writeSetting(setting)
@@ -44,4 +63,5 @@ const readSetting = (): {[key: string]: any} => {
     return setting
 }
 
-export { readSetting, writeSetting }
+
+export { ProxyChooses, Setting, ProxyConfig, readSetting, writeSetting }

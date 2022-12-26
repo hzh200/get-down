@@ -33,7 +33,7 @@ const createTask = async (taskInfo: Task): Promise<TaskModel> => {
     taskInfo.status = TaskStatus.waiting
     taskInfo.progress = 0
     taskInfo.downloadRanges = []
-    const [error, task] = await handlePromise<TaskModel>(TaskModel.create({
+    const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(TaskModel.create({
         ...taskInfo
     }))
     if (error) {
@@ -41,7 +41,7 @@ const createTask = async (taskInfo: Task): Promise<TaskModel> => {
     }
     // instances.set(taskNo, task as TaskModel)
     // const clone: Task = Object.assign(Object.create(Object.getPrototypeOf(new Task())), taskInfo)
-    return task as TaskModel
+    return task
 }
 
 const createTaskSet = (): void => {
@@ -49,53 +49,53 @@ const createTaskSet = (): void => {
 }
 
 const updateTask = async (task: TaskModel): Promise<void> => {
-    const [error, _] = await handlePromise<TaskModel>(task.save())
+    const [error, _]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(task.save())
     if (error) {
         throw error
     }
 }
 
 const updateTaskPart = async (task: TaskModel, taskPart: any, partName: string): Promise<void> => {
-    const [error, _] = await handlePromise<TaskModel>(task.update({ [partName]: taskPart }))
+    const [error, _]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(task.update({ [partName]: taskPart }))
     if (error) {
         throw error
     }
 }
 
 const updateTaskStatus = async (task: TaskModel, taskStatus: TaskStatus): Promise<void> => {
-    const [error, _] = await handlePromise<void>(updateTaskPart(task, taskStatus, 'status'))
+    const [error, _]: [Error | undefined, void] = await handlePromise<void>(updateTaskPart(task, taskStatus, 'status'))
     if (error) {
         throw error
     }
 }
 
 const updateTaskProgress = async (task: TaskModel, taskProgress: number): Promise<void> => {
-    const [error, _] = await handlePromise<void>(updateTaskPart(task, taskProgress, 'progress'))
+    const [error, _]: [Error | undefined, void] = await handlePromise<void>(updateTaskPart(task, taskProgress, 'progress'))
     if (error) {
         throw error
     }
 }
 
 const updateTaskRanges = async (task: TaskModel, taskRanges: Array<Array<number>>): Promise<void> => {
-    const [error, _] = await handlePromise<void>(updateTaskPart(task, taskRanges, 'downloadRanges'))
+    const [error, _]: [Error | undefined, void] = await handlePromise<void>(updateTaskPart(task, taskRanges, 'downloadRanges'))
     if (error) {
         throw error
     }
 }
 
 const deleteTask = async (task: TaskModel): Promise<void> => {
-    const [error, _] = await handlePromise<void>(task.destroy())
+    const [error, _]: [Error | undefined, void] = await handlePromise<void>(task.destroy())
     if (error) {
         throw error
     }
 }
 
 const getAllTasks = async (): Promise<Array<TaskModel>> => {
-    const [error, tasks] = await handlePromise<Array<TaskModel>>(TaskModel.findAll())
+    const [error, tasks]: [Error | undefined, Array<TaskModel>] = await handlePromise<Array<TaskModel>>(TaskModel.findAll())
     if (error) {
         throw error
     }
-    return tasks as Array<TaskModel>
+    return tasks
 }
 
 export {

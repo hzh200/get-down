@@ -3,7 +3,7 @@ import { TaskItem } from './task_item'
 class Task extends TaskItem {
     declare taskNo: number
     declare name: string
-    declare size: number
+    declare size: number | null
     declare type: string
     declare url: string
     declare status: TaskStatus
@@ -14,12 +14,11 @@ class Task extends TaskItem {
 
     downloadUrl: string
     subType: string
-    charset: string
+    charset: string | null
     location: string
     isRange: boolean
     downloadRanges: Array<Array<number>>
-    useProxy: boolean
-    parent: number // parent TaskSet
+    parent: number | null // parent TaskSet
 }
 
 enum TaskStatus {

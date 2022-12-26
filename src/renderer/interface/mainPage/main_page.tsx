@@ -8,7 +8,6 @@ import SettingPage from '../settingPage/setting_page'
 import Popup from '../../Popup/popup'
 
 import { Task, TaskSet, TaskItem, TaskStatus } from '../../../common/models'
-
 import './global.css'
 
 function MainPage() {

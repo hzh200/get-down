@@ -9,7 +9,7 @@
     "strictPropertyInitialization": false,
     "moduleResolution": "node",
     "jsx": "react",
-    "allowJs": true,
+    "allowJs": false,
     "noEmitOnError": true
   },
   "include": ["**/*.ts", "**/*.tsx", "src/main/main.ts"]

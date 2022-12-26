@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, IpcMainEvent } from 'electron'
 import * as path from 'node:path'
 import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
-import { readSetting, writeSetting } from '../common/setting'
 import { Log } from '../common/log'
 import { srcPath } from '../../config/path'
 

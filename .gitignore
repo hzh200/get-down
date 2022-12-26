@@ -2,4 +2,3 @@ node_modules
 bundle
 src/**/*.js
 .vscode
-downloads

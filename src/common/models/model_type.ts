@@ -5,7 +5,7 @@ const taskType: ModelAttributes = {
     taskNo: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
     },
     name: {
         type: DataTypes.STRING,
@@ -77,10 +77,6 @@ const taskType: ModelAttributes = {
     parent: {
         type: DataTypes.INTEGER,
         allowNull: true
-    },
-    useProxy: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false
     }
 }
 
@@ -138,7 +134,6 @@ class TaskModel extends Model {
     declare location: string
     declare isRange: boolean
     declare downloadRanges: Array<Array<number>>
-    declare useProxy: boolean
     declare parent: number
 }
 
