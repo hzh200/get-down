@@ -3,17 +3,17 @@ import * as http from 'node:http'
 import * as https from 'node:https'
 import * as path from 'node:path'
 import * as EventEmitter from 'events'
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../../common/models'
-import { handlePromise } from '../../../common/utils'
-import { taskQueue } from '../../queue'
-import { Log } from '../../../common/log'
-import { TaskModel } from '../../persistence'
-import { parserModule } from '../../../common/parsers'
-import { ProxyChooses, readSetting, writeSetting, Setting } from '../../../common/setting'
-import { globalSetting } from '../../../common/global'
-import { getDownloadHeaders } from '../../../common/http/header'
+import { Task, TaskSet, TaskItem, TaskStatus } from '../../common/models'
+import { handlePromise } from '../../common/utils'
+import { taskQueue } from '../queue'
+import { Log } from '../../common/log'
+import { TaskModel } from '../persistence'
+import { parserModule } from '../../common/parsers'
+import { ProxyChooses, readSetting, writeSetting, Setting } from '../../common/setting'
+import { globalSetting } from '../../common/global'
+import { getDownloadHeaders } from '../../common/http/header'
 import { getProxySettings, ProxySettings, ProxySetting } from "get-proxy-settings"
-import { Protocol, generateRequestOption } from '../../../common/http/option'
+import { Protocol, generateRequestOption } from '../../common/http/option'
 
 class Downloader extends EventEmitter {
     taskNo: number
@@ -50,8 +50,12 @@ class Downloader extends EventEmitter {
             this.fd = fs.openSync(this.filePath, 'r+')
         }
     }
+
+    clear() {
+        fs.closeSync(this.fd)
+    }
     
-    // for partial download only
+    // 
     pause() {
         this.clear()
     }
@@ -68,10 +72,6 @@ class Downloader extends EventEmitter {
     fail() {
         this.clear()
         this.emit('fail')
-    }
-
-    clear() {
-        fs.closeSync(this.fd)
     }
 }
 

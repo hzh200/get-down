@@ -36,7 +36,7 @@ const httpRequest = (options: http.RequestOptions): Promise<http.IncomingMessage
     })
 }
 
-const getHttpRequestContent = (res: http.IncomingMessage): Promise<string> => {
+const getHttpRequestTextContent = (res: http.IncomingMessage): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         try {
             let resData: string = ''
@@ -50,4 +50,4 @@ const getHttpRequestContent = (res: http.IncomingMessage): Promise<string> => {
     })
 }
 
-export { httpRequest, getHttpRequestContent }
+export { httpRequest, getHttpRequestTextContent }

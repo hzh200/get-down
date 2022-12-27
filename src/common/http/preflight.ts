@@ -1,6 +1,6 @@
 import * as http from 'node:http'
 import { handlePromise } from '../utils'
-import { httpRequest, getHttpRequestContent } from './request'
+import { httpRequest, getHttpRequestTextContent } from './request'
 import { urlRe } from './validation'
 import { getHeaders, getPreflightHeaders } from './header'
 import { generateRequestOption } from './option'
@@ -38,7 +38,7 @@ const checkRedirectStatus = (statusCode: number | undefined): boolean => {
 const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promise<[http.IncomingMessage, string]> => {
     const fetchRedirect = async (response: http.IncomingMessage): Promise<string> => {
         let redirect: string
-        const data = await getHttpRequestContent(response)
+        const data = await getHttpRequestTextContent(response)
         if (response.headers['location']) {
             redirect = response.headers['location']
         } else if (urlRe.exec(data)) {

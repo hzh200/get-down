@@ -4,7 +4,7 @@ import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { mainWindow } from '../main'
 
 import { taskQueue } from '../queue'
-import { Downloader, getDownloader } from './downloader'
+import { Downloader, getDownloader } from '../downloader'
 import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, updateTaskProgress, updateTaskRanges, deleteTask, getAllTasks } from '../persistence'
 import { Log } from '../../common/log'
 

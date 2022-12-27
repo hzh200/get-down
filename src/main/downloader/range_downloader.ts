@@ -1,14 +1,16 @@
 import * as fs from 'node:fs'
 import * as http from 'node:http'
+import * as stream from 'node:stream'
+import * as https from 'node:https'
 import * as path from 'node:path'
-import * as EventEmitter from 'events'
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../../common/models'
-import { handlePromise } from '../../../common/utils'
-import { taskQueue } from '../../queue'
-import { Log } from '../../../common/log'
-import { TaskModel } from '../../persistence'
-import { parserModule } from '../../../common/parsers'
+import { Task, TaskSet, TaskItem, TaskStatus } from '../../common/models'
+import { handlePromise } from '../../common/utils'
+import { taskQueue } from '../queue'
+import { Log } from '../../common/log'
+import { TaskModel } from '../persistence'
+import { parserModule } from '../../common/parsers'
 import { Downloader } from "./downloader"
+import * as zlib from 'node:zlib'
 
 const { v4: uuidv4 } = require('uuid');
 

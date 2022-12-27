@@ -1,5 +1,5 @@
-import { taskQueue } from '../../queue'
-import { TaskModel } from '../../persistence'
+import { taskQueue } from '../queue'
+import { TaskModel } from '../persistence'
 
 import { Downloader } from './downloader'
 import { RangeDownloader } from './range_downloader'
