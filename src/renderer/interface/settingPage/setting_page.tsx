@@ -82,22 +82,24 @@ function SettingPage() {
             </SettingItem>
             <SettingItem title='proxy'>
                 <SettingItemRow>
-                    <label>
+                    {/* <label>
                         <input type="radio" name="proxy-proxyChoosen" value={ProxyChooses.NoProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.NoProxy} />
                         No proxy.
-                    </label>
+                    </label> */}
+                    {/*
+                        Just like 'class', 'for' is a keyword in javascript so in JSX you can't use it directly. 
+                        You must use htmlFor which is translated into for attribute once it is rendered to the DOM.
+                    */}
+                    <input type="radio" id='NoProxy' name="proxy-proxyChoosen" value={ProxyChooses.NoProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.NoProxy} />
+                    <label htmlFor='NoProxy'>No proxy.</label>
                 </SettingItemRow>
                 <SettingItemRow>
-                    <label>
-                        <input type="radio" name="proxy-proxyChoosen" value={ProxyChooses.UseSystemProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.UseSystemProxy} />
-                        Use system proxy.
-                    </label>
+                    <input type="radio" id='UseSystemProxy' name="proxy-proxyChoosen" value={ProxyChooses.UseSystemProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.UseSystemProxy} />
+                    <label htmlFor='UseSystemProxy'>Use system proxy.</label>
                 </SettingItemRow>
                 <SettingItemRow>
-                    <label>
-                        <input type="radio" name="proxy-proxyChoosen" value={ProxyChooses.SetManually} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.SetManually} />
-                        Set Manually.
-                    </label>
+                    <input type="radio" id='SetManually' name="proxy-proxyChoosen" value={ProxyChooses.SetManually} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.SetManually} />
+                    <label htmlFor='SetManually'>Set Manually.</label>
                 </SettingItemRow>
                 <SettingItemRow>
                     <p> Host: </p>
