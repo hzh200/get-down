@@ -17,7 +17,7 @@ class Task extends TaskItem {
     charset: string | null
     location: string
     isRange: boolean
-    downloadRanges: Array<Array<number>>
+    downloadRanges: Array<Array<number>> | null
     parent: number | null // parent TaskSet
 }
 

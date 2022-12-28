@@ -50,27 +50,27 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promi
     }
 
     let requestOptions: http.RequestOptions = await generateRequestOption(url, getHeaders)
-    let [err, res]: [Error | undefined, http.IncomingMessage] = await handlePromise<http.IncomingMessage>(httpRequest(requestOptions))
-    if (err) {
+    let [request, response]: [http.ClientRequest, http.IncomingMessage] = await httpRequest(requestOptions)
+    request.on('error', (err: Error) => {
         throw err
-    }
+    })
     let retryCount = 0
-    while (checkRedirectStatus(res.statusCode)
+    while (checkRedirectStatus(response.statusCode)
                 && retryCount++ < redirectLimit) {
-        [err, url] = await handlePromise<string>(fetchRedirect(res))
+        let [err, url] = await handlePromise<string>(fetchRedirect(response))
         if (err) {
             throw err
         }
         requestOptions = await generateRequestOption(url, getHeaders)
-        ;[err, res] = await handlePromise<http.IncomingMessage>(httpRequest(requestOptions))
-        if (err) {
+        ;[request, response] = await httpRequest(requestOptions)
+        request.on('error', (err: Error) => {
             throw err
-        }
+        })
     }
-    if (checkRedirectStatus(res.statusCode)) {
+    if (checkRedirectStatus(response.statusCode)) {
         throw new Error('too much redirections')
     }
-    return [res, url]
+    return [response, url]
 }
 
 const preflight = async (url: string): Promise<ParsedInfo> => {

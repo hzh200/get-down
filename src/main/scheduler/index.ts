@@ -40,7 +40,7 @@ class Scheduler {
                 this.downloaderTaskTimerMap.set(taskNo, downloadTimer)
                 this.downloaderMap.set(taskNo, downloader)
 
-                downloader.on('finish', () => {
+                downloader.on('done', () => {
                     this.downloadingTaskNoList = this.downloadingTaskNoList.filter(downloadingTaskNo => downloadingTaskNo !== taskNo)
                     clearInterval(this.downloaderTaskTimerMap.get(taskNo))
                     this.downloaderTaskTimerMap.delete(taskNo)
@@ -72,6 +72,11 @@ class Scheduler {
         }, 50)
 
         ipcMain.on('add-task', async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
+            taskInfo.status = TaskStatus.waiting
+            taskInfo.progress = 0
+            if (taskInfo.isRange) {
+                taskInfo.downloadRanges = [[0, taskInfo.size as number - 1]]
+            }
             const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTask(taskInfo))
             if (error) {
                 Log.errorLog(error)
@@ -79,7 +84,7 @@ class Scheduler {
             taskQueue.addTaskItem((task as TaskModel).taskNo, task)
             mainWindow.webContents.send('new-task-item', (task as TaskModel).get())
         })
-        ipcMain.on('start-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
+        ipcMain.on('resume-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
                 const task: TaskModel = taskQueue.getTaskItem(taskNo)
                 if (task.get('status') === TaskStatus.failed || task.get('status') === TaskStatus.paused) {

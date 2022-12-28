@@ -30,9 +30,6 @@ const initPersistence = async (): Promise<void> => {
 }
 
 const createTask = async (taskInfo: Task): Promise<TaskModel> => {
-    taskInfo.status = TaskStatus.waiting
-    taskInfo.progress = 0
-    taskInfo.downloadRanges = []
     const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(TaskModel.create({
         ...taskInfo
     }))

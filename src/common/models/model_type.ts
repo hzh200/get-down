@@ -49,7 +49,7 @@ const taskType: ModelAttributes = {
     },
     downloadRanges: {
         type: DataTypes.JSON,
-        allowNull: false,
+        allowNull: true,
         // get(): Array<Array<number>> {
         //     const downloadRangeString: string = this.getDataValue('downloadRanges')
         //     if (!downloadRangeString) {
@@ -127,14 +127,13 @@ class TaskModel extends Model {
     declare parserNo: number
     declare createAt: string
     declare updateAt: string
-
     declare downloadUrl: string
     declare subType: string
-    declare charset: string
+    declare charset: string | null
     declare location: string
     declare isRange: boolean
-    declare downloadRanges: Array<Array<number>>
-    declare parent: number
+    declare downloadRanges: Array<Array<number>> | null
+    declare parent: number | null
 }
 
 class TaskSetModel extends Model {

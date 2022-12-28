@@ -19,12 +19,12 @@ class Downloader extends EventEmitter {
     taskNo: number
     task: TaskModel
     // parentTask: TaskSet
-    protocol: string
+
+    // protocol: string
     fd: number
     filePath: string
-    requestModule: any
-
-    options: http.RequestOptions
+    // requestModule: any
+    // requestOptions: http.RequestOptions
     
     constructor(taskNo: number) {
         super()
@@ -38,12 +38,6 @@ class Downloader extends EventEmitter {
     }
 
     async download(): Promise<void> {
-        this.options = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
-        if (this.options.protocol === Protocol.HTTPProtocol) {
-            this.requestModule = http
-        } else {
-            this.requestModule = https
-        }
         if (!fs.existsSync(this.filePath)) {
             this.fd = fs.openSync(this.filePath, 'w')
         } else {
@@ -51,27 +45,32 @@ class Downloader extends EventEmitter {
         }
     }
 
-    clear() {
+    clear = (): void => {
         fs.closeSync(this.fd)
     }
     
-    // 
-    pause() {
+    pause = (): void => {
+        
+    }
+
+    resume = (): void => {
+
+    }
+
+    delete = (): void => {
+
+    }
+
+    done = (): void => {
         this.clear()
+        this.emit('done')
+        Log.infoLog(`Task ${this.task.name} downloads succeed.`)
     }
 
-    cancel() {
-
-    }
-
-    finish() {
-        this.clear()
-        this.emit('finish')
-    }
-
-    fail() {
+    fail = (): void => {
         this.clear()
         this.emit('fail')
+        Log.infoLog(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
     }
 }
 
