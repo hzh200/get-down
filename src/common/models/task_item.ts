@@ -1,7 +1,7 @@
 export class TaskItem {
     taskNo: number
     name: string
-    size: number | null
+    size: number | undefined
     type: string
     url: string
     status: string

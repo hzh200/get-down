@@ -11,20 +11,20 @@ import { ipcRenderer } from 'electron'
 
 class DefaultParsedInfo extends ParsedInfo {
     declare name: string
-    declare size: number | null
+    declare size: number | undefined
     declare type: string
     declare url: string
     declare createAt: string
     declare downloadUrl: string
     declare subType: string
-    declare charset: string | null
+    declare charset: string | undefined
     declare isRange: boolean
     // status: string
     // progress: number
     // updateAt: string
     // downloadRanges: Array<Array<number>>
     location: string
-    parent: number | null
+    parent: number | undefined
 }
 
 class DefaultParser implements Parser {
@@ -45,7 +45,7 @@ class DefaultParser implements Parser {
         parsedInfo.charset = preflightParsedInfo.charset
         parsedInfo.isRange = preflightParsedInfo.isRange
         parsedInfo.location = setting.location
-        parsedInfo.parent = null
+        // parsedInfo.parent
         return parsedInfo
     }
 

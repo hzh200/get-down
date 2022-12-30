@@ -15,13 +15,13 @@ const redirectLimit = 3
 
 class ParsedInfo {
     name: string
-    size: number | null
+    size: number | undefined
     type: string
     url: string
     createAt: string
     downloadUrl: string
     subType: string
-    charset: string | null
+    charset: string | undefined
     isRange: boolean
 }
 
@@ -86,7 +86,7 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     parsedInfo.downloadUrl = redirectUrl
     // file's type, subtype and maybe charset
     if (reponseHeaders['content-type']) {
-        let contentType, charset = null
+        let contentType, charset
         if (reponseHeaders['content-type'].includes(parameterSpliter)) {
             const parts = reponseHeaders['content-type'].split(parameterSpliter)
             contentType = parts[0]
@@ -100,8 +100,8 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         const parts = contentType.split(contentSpliter)
         parsedInfo.type = parts[0]
         parsedInfo.subType = parts[1]
-        // if (parsedInfo.type === 'text' && charset)
-        parsedInfo.charset = charset
+        if (charset && parsedInfo.type === 'text')
+            parsedInfo.charset = charset
         
     }
     // file's name
@@ -133,7 +133,7 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         if (reponseHeaders['content-length']) {
             parsedInfo.size = parseInt(reponseHeaders['content-length'])
         } else { // chunk
-            parsedInfo.size = null
+            parsedInfo.size = undefined
         } 
     } else { // statusCode === 206
         if (reponseHeaders['content-range']) {
@@ -141,10 +141,10 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
             try {
                 parsedInfo.size = parseInt(parts[1])
             } catch (error: any) {
-                parsedInfo.size = null
+                parsedInfo.size = undefined
             }
         } else {
-            parsedInfo.size = null
+            parsedInfo.size = undefined
         }
     }
     // file's createAt time

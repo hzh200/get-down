@@ -6,7 +6,7 @@ import { RangeDownloader } from './range_downloader'
 import { DirectDownloader } from './direct_downloader'
 
 const getDownloader = (taskNo: number): Downloader => {
-    const task = taskQueue.getTaskItem(taskNo) as TaskModel
+    const task = taskQueue.getTaskItem(taskNo)
     if (task.isRange) {
         return new RangeDownloader(taskNo)
     } else {

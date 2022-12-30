@@ -129,11 +129,11 @@ class TaskModel extends Model {
     declare updateAt: string
     declare downloadUrl: string
     declare subType: string
-    declare charset: string | null
+    declare charset: string | undefined
     declare location: string
     declare isRange: boolean
-    declare downloadRanges: Array<Array<number>> | null
-    declare parent: number | null
+    declare downloadRanges: Array<Array<number>> | undefined
+    declare parent: number | undefined
 }
 
 class TaskSetModel extends Model {
