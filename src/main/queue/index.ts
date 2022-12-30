@@ -1,4 +1,5 @@
 import { Task, TaskItem, TaskStatus } from '../../common/models'
+import { TaskField } from '../../common/models/model_type'
 import { TaskModel } from '../persistence'
 
 const instances: Array<TaskModel> = []
@@ -9,48 +10,33 @@ const taskQueue = {
         instances.push(task)
         instanceMap.set(taskNo, task)
     },
-    getTaskItem: (taskNo: number): TaskModel => {
+    getTaskItem: (taskNo: number): TaskModel | null => {
         if (!instanceMap.has(taskNo)) {
-            throw new Error('Taskitem doesn\'t exist')
+            return null
         }
         const taskItem = instanceMap.get(taskNo) as TaskModel
         return taskItem
     },
     // getTaskItems: (): Array<TaskModel> => instances,
-    updateTaskItemProgress: (taskNo: number, progress: number): void => {
-        const task = (this as any).getTaskItem(taskNo)
-        task.set({
-            'progress': progress
-        })
-    },
-    updateTaskItemDownloadRanges: (taskNo: number, ranges: Array<Array<number>>): void => {
-        const task = (this as any).getTaskItem(taskNo)
-        task.set({
-            'downloadRanges': ranges
-        })
-    },
-    updateTaskItemStatus: (taskNo: number, status: TaskStatus): void => {
-        const task = (this as any).getTaskItem(taskNo)
-        task.set({
-            'status': status
-        })
-    },
-    getWaitingTaskNo: (): number => {
+    getWaitingTaskNo: (): number | null => {
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get('status') as string === TaskStatus.waiting) {
-                return instances[i].get('taskNo') as number
+            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.waiting) {
+                return instances[i].get(`${TaskField.taskNo}`) as number
             }
         }
-        return -1;
+        return null;
     },
-    getWaitingTaskNos: (num: number): Array<number> => {
+    getWaitingTaskNos: (num: number): Array<number> | null => {
         const waitingItemArray: Array<number> = []
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get('status') as string === TaskStatus.waiting) {
-                waitingItemArray.push(instances[i].get('taskNo') as number);
+            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.waiting) {
+                waitingItemArray.push(instances[i].get(`${TaskField.taskNo}`) as number);
                 num = num - 1
                 if (num === 0) break
             }
+        }
+        if (waitingItemArray.length === 0) {
+            return null
         }
         return waitingItemArray
     }

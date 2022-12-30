@@ -30,7 +30,7 @@ class Downloader extends EventEmitter {
         super()
         this.taskNo = taskNo
         try {
-            this.task = taskQueue.getTaskItem(taskNo)
+            this.task = taskQueue.getTaskItem(taskNo) as TaskModel
         } catch (error: any) {
             Log.errorLog(error)
         }

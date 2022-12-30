@@ -74,8 +74,8 @@ function TaskListTableBodyRow({ task }: { task: TaskItem }) {
         <tr className='tasklist-table-body-row'>
             <td>{task.type}</td>
             <td>{task.name}</td>
-            <td>{ task.status === TaskStatus.downloading ? task.progress : task.status }</td>
-            <td>{ task.size === -1 ? '' : task.size }</td>
+            <td>{task.status === TaskStatus.downloading ? task.progress : task.status}</td>
+            <td>{task.size === -1 ? '' : task.size}</td>
             <td>{task.createAt}</td>
         </tr>
     )

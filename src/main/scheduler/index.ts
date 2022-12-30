@@ -1,18 +1,17 @@
 import { Task, TaskSet, TaskItem, TaskStatus } from '../../common/models'
+import { TaskField } from '../../common/models/model_type'
 import { handlePromise } from '../../common/utils'
 import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { mainWindow } from '../main'
 
 import { taskQueue } from '../queue'
 import { Downloader, getDownloader } from '../downloader'
-import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, updateTaskProgress, updateTaskRanges, deleteTask, getAllTasks } from '../persistence'
+import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, deleteTask, getAllTasks } from '../persistence'
 import { Log } from '../../common/log'
 
-class Scheduler {
-    maxDownloadLimit: number = 3
+const maxDownloadLimit: number = 3
 
-    downloadingTaskNoList: Array<number> = []
-    // downloadingTaskSetNoList : Array<number> = []
+class Scheduler {
     downloaderMap: Map<number, Downloader> = new Map()
     downloaderTaskTimerMap: Map<number, NodeJS.Timer> = new Map()
     constructor () {
@@ -24,42 +23,41 @@ class Scheduler {
         })
 
         setInterval(() => {
-            if (this.downloadingTaskNoList.length < this.maxDownloadLimit) {
-                const taskNo = taskQueue.getWaitingTaskNo()
-                if (taskNo === -1) {
+            if (this.downloaderMap.size < maxDownloadLimit) {
+                const taskNo: number | null = taskQueue.getWaitingTaskNo()
+                if (!taskNo) {
                     return
                 }
-                const task: TaskModel = taskQueue.getTaskItem(taskNo)
-                const downloader = getDownloader(taskNo)
-
+                const task: TaskModel = taskQueue.getTaskItem(taskNo) as TaskModel
+                const downloader: Downloader = getDownloader(taskNo)
                 const downloadTimer: NodeJS.Timer = setInterval(() => {
                     updateTask(task)
                     mainWindow.webContents.send('update-task-item', task.get())
                 }, 200)
-                this.downloadingTaskNoList.push(taskNo)
-                this.downloaderTaskTimerMap.set(taskNo, downloadTimer)
                 this.downloaderMap.set(taskNo, downloader)
+                this.downloaderTaskTimerMap.set(taskNo, downloadTimer)
 
                 downloader.on('done', () => {
-                    this.downloadingTaskNoList = this.downloadingTaskNoList.filter(downloadingTaskNo => downloadingTaskNo !== taskNo)
+                    this.downloaderMap.delete(taskNo)
                     clearInterval(this.downloaderTaskTimerMap.get(taskNo))
                     this.downloaderTaskTimerMap.delete(taskNo)
-                    this.downloaderMap.delete(taskNo)
                     task.status = TaskStatus.done
+                    updateTask(task)
                     mainWindow.webContents.send('update-task-item', task.get())
-                    updateTask(taskQueue.getTaskItem(taskNo))
+                    
                 })
                 downloader.on('fail', () => {
-                    this.downloadingTaskNoList = this.downloadingTaskNoList.filter(downloadingTaskNo => downloadingTaskNo !== taskNo)
+                    this.downloaderMap.delete(taskNo)
                     clearInterval(this.downloaderTaskTimerMap.get(taskNo))
                     this.downloaderTaskTimerMap.delete(taskNo)
-                    this.downloaderMap.delete(taskNo)
                     task.status = TaskStatus.failed
+                    updateTask(task)
                     mainWindow.webContents.send('update-task-item', task.get())
-                    updateTask(taskQueue.getTaskItem(taskNo))
                 })
 
-                updateTaskStatus(task, TaskStatus.downloading)
+                task.status = TaskStatus.downloading
+                updateTaskStatus(task)
+                mainWindow.webContents.send('update-task-item', task.get())
                 downloader.download()
 
                 // const parentNo = (taskQueue.getTaskItem(taskNo) as Task).parent
@@ -86,38 +84,49 @@ class Scheduler {
         })
         ipcMain.on('resume-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
-                const task: TaskModel = taskQueue.getTaskItem(taskNo)
-                if (task.get('status') === TaskStatus.failed || task.get('status') === TaskStatus.paused) {
-                    updateTaskStatus(task, TaskStatus.waiting)
+                const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
+                if (task && (task.get(`${TaskField.status}`) === TaskStatus.failed || task.get(`${TaskField.status}`) === TaskStatus.paused)) {
+                    const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
+                    if (!downloader) {
+                        continue
+                    }
+                    downloader.resume()
+                    task.status = TaskStatus.waiting
+                    updateTaskStatus(task)
                 }
             }
         })
         ipcMain.on('pause-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
-                const task: TaskModel = taskQueue.getTaskItem(taskNo)
-                this.getDownloader(taskNo).pause()
-                if (task.get('status') === TaskStatus.downloading) {
-                    updateTaskStatus(task, TaskStatus.paused)
+                const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
+                if (task && task.get(`${TaskField.status}`) === TaskStatus.downloading) {
+                    const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
+                    if (!downloader) {
+                        continue
+                    }
+                    downloader.pause()
+                    task.status = TaskStatus.paused
+                    updateTaskStatus(task)
                 }
             }
         })
         ipcMain.on('delete-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
-                const task: TaskModel = taskQueue.getTaskItem(taskNo)
-                this.getDownloader(taskNo).pause()
+                const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
+                if (!task) {
+                    continue
+                }
+                const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
+                if (!downloader) {
+                    continue
+                }
+                downloader.pause()
                 const [error, _]: [Error | undefined, void] = await handlePromise<void>(deleteTask(task))
                 if (error) {
                     throw error
                 }
             }
         })
-    }
-
-    getDownloader = (taskNo: number): Downloader => {
-        if (!this.downloaderMap.has(taskNo)) {
-            throw new Error('No downloader is found')
-        }
-        return this.downloaderMap.get(taskNo) as Downloader
     }
 }
 

@@ -1,4 +1,4 @@
-import { TaskItem } from './task_item'
+import { TaskItem, TaskStatus } from './task_item'
 
 class Task extends TaskItem {
     declare taskNo: number
@@ -21,15 +21,4 @@ class Task extends TaskItem {
     parent: number | undefined // parent TaskSet
 }
 
-enum TaskStatus {
-    waiting = 'waiting',
-    downloading = 'downloading',
-    paused = 'paused',
-    done = 'done',
-    failed = 'failed'
-}
-
-export {
-    Task, 
-    TaskStatus
-}
+export { Task }

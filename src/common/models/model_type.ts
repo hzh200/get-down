@@ -1,116 +1,125 @@
 import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskStatus } from './task'
+import { TaskStatus } from './task_item'
+
+enum TaskField {
+    // TaskItem
+    taskNo = 'taskNo',
+    name = 'name',
+    size = 'size',
+    type = 'type',
+    url = 'url',
+    status = 'status',
+    progress = 'progress',
+    parserNo = 'parserNo',
+    createAt = 'createAt',
+    updateAt = 'updateAt',
+    // Task
+    downloadUrl = 'downloadUrl',
+    subType = 'subType',
+    charset = 'charset',
+    location = 'location',
+    isRange = 'isRange',
+    downloadRanges = 'downloadRanges',
+    parent = 'parent',
+    // TaskSet
+    children = 'children'
+}
 
 const taskType: ModelAttributes = {
-    taskNo: {
+    [TaskField.taskNo]: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    name: {
+    [TaskField.name]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    type: {
+    [TaskField.type]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    subType: {
+    [TaskField.subType]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    charset: {
+    [TaskField.charset]: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    size: {
+    [TaskField.size]: {
         type: DataTypes.INTEGER,
         allowNull: true
     },
-    location: {
+    [TaskField.location]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    url: {
+    [TaskField.url]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    downloadUrl: {
+    [TaskField.downloadUrl]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    status: {
+    [TaskField.status]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    isRange: {
+    [TaskField.isRange]: {
         type: DataTypes.BOOLEAN,
         allowNull: false
     },
-    downloadRanges: {
+    [TaskField.downloadRanges]: {
         type: DataTypes.JSON,
         allowNull: true,
-        // get(): Array<Array<number>> {
-        //     const downloadRangeString: string = this.getDataValue('downloadRanges')
-        //     if (!downloadRangeString) {
-        //         return []
-        //     }
-        //     try {
-        //         return JSON.parse(downloadRangeString)
-        //     } catch (error: any) {
-        //         return []
-        //     } 
-        // },
-        // set(ranges: Array<Array<number>>): Array<Array<number>> {
-        //     this.setDataValue('downloadRanges', JSON.stringify(ranges))
-        //     return ranges
-        // }
     },
-    progress: {
+    [TaskField.progress]: {
         type: DataTypes.NUMBER,
         allowNull: false
     },
-    parserNo: {
+    [TaskField.parserNo]: {
         type: DataTypes.NUMBER,
         allowNull: false
     },
-    parent: {
+    [TaskField.parent]: {
         type: DataTypes.INTEGER,
         allowNull: true
     }
 }
 
 const taskSetType = {
-    taskNo: {
+    [TaskField.taskNo]: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    name: {
+    [TaskField.name]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    size: {
+    [TaskField.size]: {
         type: DataTypes.INTEGER,
         allowNull: true
     },
-    url: {
+    [TaskField.url]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    status: {
+    [TaskField.status]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    progress: {
+    [TaskField.progress]: {
         type: DataTypes.NUMBER,
         allowNull: false
     },
-    parserNo: {
+    [TaskField.parserNo]: {
         type: DataTypes.NUMBER,
         allowNull: false
     },
-    children: {
+    [TaskField.children]: {
         type: DataTypes.STRING,
         allowNull: false
     }
@@ -132,12 +141,22 @@ class TaskModel extends Model {
     declare charset: string | undefined
     declare location: string
     declare isRange: boolean
-    declare downloadRanges: Array<Array<number>> | undefined
+    declare downloadRanges: Array<Array<number>> | Array<null> | undefined
     declare parent: number | undefined
 }
 
 class TaskSetModel extends Model {
-
+    declare taskNo: number
+    declare name: string
+    declare size: number
+    declare type: string
+    declare url: string
+    declare status: TaskStatus
+    declare progress: number
+    declare parserNo: number
+    declare createAt: string
+    declare updateAt: string
+    declare children: Array<number>
 }
 
-export { taskType, taskSetType, TaskModel, TaskSetModel }
+export { taskType, taskSetType, TaskModel, TaskSetModel, TaskField }
