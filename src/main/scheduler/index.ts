@@ -32,7 +32,7 @@ class Scheduler {
                 const downloader: Downloader = getDownloader(taskNo)
                 const downloadTimer: NodeJS.Timer = setInterval(() => {
                     updateTask(task)
-                    mainWindow.webContents.send('update-task-item', task.get())
+                    this.updateTaskItemToRenderer(task)
                 }, 200)
                 this.downloaderMap.set(taskNo, downloader)
                 this.downloaderTaskTimerMap.set(taskNo, downloadTimer)
@@ -43,8 +43,7 @@ class Scheduler {
                     this.downloaderTaskTimerMap.delete(taskNo)
                     task.status = TaskStatus.done
                     updateTask(task)
-                    mainWindow.webContents.send('update-task-item', task.get())
-                    
+                    this.updateTaskItemToRenderer(task)
                 })
                 downloader.on('fail', () => {
                     this.downloaderMap.delete(taskNo)
@@ -52,12 +51,12 @@ class Scheduler {
                     this.downloaderTaskTimerMap.delete(taskNo)
                     task.status = TaskStatus.failed
                     updateTask(task)
-                    mainWindow.webContents.send('update-task-item', task.get())
+                    this.updateTaskItemToRenderer(task)
                 })
 
                 task.status = TaskStatus.downloading
                 updateTaskStatus(task)
-                mainWindow.webContents.send('update-task-item', task.get())
+                this.updateTaskItemToRenderer(task)
                 downloader.download()
 
                 // const parentNo = (taskQueue.getTaskItem(taskNo) as Task).parent
@@ -79,8 +78,8 @@ class Scheduler {
             if (error) {
                 Log.errorLog(error)
             }
-            taskQueue.addTaskItem((task as TaskModel).taskNo, task)
-            mainWindow.webContents.send('new-task-item', (task as TaskModel).get())
+            taskQueue.addTaskItem(task.taskNo, task)
+            this.addTaskItemToRenderer(task)
         })
         ipcMain.on('resume-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
@@ -127,6 +126,14 @@ class Scheduler {
                 }
             }
         })
+    }
+
+    addTaskItemToRenderer = (task: TaskModel): void => {
+        mainWindow.webContents.send('new-task-item', task.get())
+    }
+
+    updateTaskItemToRenderer = (task: TaskModel): void => {
+        mainWindow.webContents.send('update-task-item', task.get())
     }
 }
 
