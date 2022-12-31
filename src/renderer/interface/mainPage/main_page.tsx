@@ -12,15 +12,16 @@ import './global.css'
 
 function MainPage() {
     const [taskItems, setTaskItems] = React.useState<Array<TaskItem>>([])
+    const [selectedRows, setSelectedRows] = React.useState<Array<number>>([])
     const [showParserWindow, setShowParserWindow] = React.useState<boolean>(false)
     const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false)
     React.useEffect(() => {
         // Update taskItems for showing up.
-        ipcRenderer.on('new-task-item', (_event, updateTaskItem: TaskItem) => {
-            setTaskItems(taskItems => taskItems.concat(updateTaskItem))
+        ipcRenderer.on('new-task-item', (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
+            setTaskItems((taskItems: Array<TaskItem>) => taskItems.concat(updateTaskItem))
         })
-        ipcRenderer.on('update-task-item', (_event, updateTaskItem: TaskItem) => {
-            setTaskItems(taskItems => {
+        ipcRenderer.on('update-task-item', (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
+            setTaskItems((taskItems: Array<TaskItem>) => {
                 let newTaskItems: Array<TaskItem> = [ ...taskItems ]
                 for (let i = 0; i < newTaskItems.length; i++) {
                     if (newTaskItems[i].taskNo === updateTaskItem.taskNo) {
@@ -44,20 +45,57 @@ function MainPage() {
         setShowSettingWindow(true)
     }
     // Workflow control.
-    const play: React.MouseEventHandler<HTMLDivElement> = () => {
+    const play: React.MouseEventHandler<HTMLDivElement> = (): void => {
 
     }
-    const pause: React.MouseEventHandler<HTMLDivElement> = () => {
+    const pause: React.MouseEventHandler<HTMLDivElement> = (): void => {
 
     }
-    const trash: React.MouseEventHandler<HTMLDivElement> = () => {
+    const trash: React.MouseEventHandler<HTMLDivElement> = (): void => {
 
+    }
+    const onContextMenu: React.MouseEventHandler<HTMLTableSectionElement> = (): void => {
+        
+    }
+    // React.MouseEventHandler<HTMLTableRowElement>
+    const selectRow: Function = ((event: React.MouseEvent<HTMLTableRowElement, MouseEvent>, taskNo: number): void => {
+        event.preventDefault()
+        const target: HTMLTableRowElement = event.target as HTMLTableRowElement
+        // const taskNo: number = parseInt(target.parentElement?.children[0]?.innerHTML as string)
+        let newSelectedRows: Array<number> = [...selectedRows]
+        if ((window as any).event.ctrlKey) {
+            if (newSelectedRows.includes(taskNo)) {
+                newSelectedRows = newSelectedRows.filter((selectedTaskNo: number, _index: number, _array: Array<number>) => {
+                    return selectedTaskNo !== taskNo
+                })
+            } else {
+                newSelectedRows.push(taskNo)
+            }
+        } else {
+            newSelectedRows = [taskNo]
+        }
+        setSelectedRows((_selectedRows: Array<number>) => {
+            return newSelectedRows
+        })
+    })
+    const selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
+        event.preventDefault()
+        if ((event.key === 'A' || event.key === 'a') && (window as any).event.ctrlKey) {
+            setSelectedRows((_selectedRows: Array<number>) => {
+                const newSelectedRows: Array<number> = taskItems.map(
+                    (taskItem: TaskItem, _index: number, _array) => {
+                        return taskItem.taskNo
+                    }
+                )
+                return newSelectedRows
+            })
+        }
     }
 
     return (
         <div className="main-container">
             <OperationBar play={play} pause={pause} trash={trash} openParser={openParser} openSetting={openSetting} />
-            <TaskList tasks={taskItems} />
+            <TaskList tasks={taskItems} selectedRows={selectedRows} onContextMenu={onContextMenu} selectAllRows={selectAllRows} selectRow={selectRow} />
             <Popup showPopup={showParserWindow} setShowPopup={setShowParserWindow}>
                 <ParserPage />
             </Popup>

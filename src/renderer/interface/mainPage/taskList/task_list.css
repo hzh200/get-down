@@ -11,29 +11,40 @@
     border-width: 2px;
     border-style: solid;
     /* margin-bottom: 5px; */
-    background-color: lightgray
 }
 
-.task-list > .task-list-body > tbody > tr {
-    background-color: lightgray
+.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:nth-child(odd){
+    background-color: rgb(236, 236, 236);
+}
+
+.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row.selected-row {
+    background-color: burlywood;
+}
+
+.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:hover {
+    background-color: rgb(252, 236, 215);
 }
 
 .type-thead-th {
-    width: 10%
+    width: 10%;
 }
 
 .name-thead-th {
-    width: 50%
+    width: 50%;
 }
 
 .progress-thead-th {
-    width: 10%
+    width: 10%;
 }
 
 .size-thead-th {
-    width: 10%
+    width: 10%;
 }
 
 .time-thead-th {
-    width: 10%
+    width: 10%;
+}
+
+.taskno-tbody-td {
+    display: none;
 }

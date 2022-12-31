@@ -3,11 +3,15 @@ import './task_list.css'
 
 import { TaskItem, TaskStatus } from '../../../../common/models'
 
-function TaskList({ tasks }: { tasks: Array<TaskItem> }) {
+function TaskList({ tasks, selectedRows, onContextMenu, selectAllRows, selectRow }: 
+    { tasks: Array<TaskItem>, selectedRows: Array<Number>, 
+        onContextMenu: React.MouseEventHandler<HTMLTableSectionElement>, 
+        selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement>,
+        selectRow: Function }) {
     return (
         <div className="task-list">
             <TaskListHead />
-            <TaskListBody tasks={tasks} />
+            <TaskListBody tasks={tasks} selectedRows={selectedRows} onContextMenu={onContextMenu} selectAllRows={selectAllRows} selectRow={selectRow} />
         </div>
     )
 }
@@ -22,12 +26,16 @@ function TaskListHead() {
     )
 }
 
-function TaskListBody({ tasks }: { tasks: Array<TaskItem> }) {
+function TaskListBody({ tasks, selectedRows, onContextMenu, selectAllRows, selectRow }:
+    { tasks: Array<TaskItem>, selectedRows: Array<Number>, 
+        onContextMenu: React.MouseEventHandler<HTMLTableSectionElement>, 
+        selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement>,
+        selectRow: Function }) {
     return (
         <div className="task-list-body">
             <table width="100%">
                 <TaskListTableThead namedHead={false} />
-                <TaskListTableBody tasks={tasks} />
+                <TaskListTableBody tasks={tasks} selectedRows={selectedRows} onContextMenu={onContextMenu} selectAllRows={selectAllRows} selectRow={selectRow} />
             </table>
         </div>
     )
@@ -61,17 +69,26 @@ function TaskListTableThead({ namedHead }: { namedHead: boolean }) {
     }
 }
 
-function TaskListTableBody({ tasks }: { tasks: Array<TaskItem> }) {
-    return (
-        <tbody>
-            {tasks.map((task, index) => <TaskListTableBodyRow task={task} key={index} />)}
+function TaskListTableBody({ tasks, selectedRows, onContextMenu, selectAllRows, selectRow }: 
+    { tasks: Array<TaskItem>, selectedRows: Array<Number>, 
+        onContextMenu: React.MouseEventHandler<HTMLTableSectionElement>, 
+        selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement>,
+        selectRow: Function }) {
+            return (
+        <tbody onContextMenu={onContextMenu} tabIndex={0} onKeyDown={selectAllRows}>
+            {tasks.map((task: TaskItem, index: number) => {
+                return <TaskListTableBodyRow task={task} selected={selectedRows.includes(task.taskNo)} selectRow={selectRow} key={index} />
+            })}
         </tbody>
     )
 }
 
-function TaskListTableBodyRow({ task }: { task: TaskItem }) {
+function TaskListTableBodyRow({ task, selected, selectRow }: 
+    { task: TaskItem, selected: boolean, selectRow: any }) {
+    const taskNo: number = task.taskNo
     return (
-        <tr className='tasklist-table-body-row'>
+        <tr className={selected ? 'tasklist-table-body-row selected-row' : 'tasklist-table-body-row'} onClick={(event: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => selectRow(event, taskNo)}>
+            {/* <td className='taskno-tbody-td'>{task.taskNo}</td> */}
             <td>{task.type}</td>
             <td>{task.name}</td>
             <td>{task.status === TaskStatus.downloading ? task.progress : task.status}</td>
