@@ -1,10 +1,12 @@
 import { app, BrowserWindow, ipcMain, IpcMainEvent } from 'electron'
+import { initialize, enable } from '@electron/remote/main'
 import * as path from 'node:path'
 import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
 import { Log } from '../common/log'
 import { srcPath } from '../../config/path'
 
+initialize()
 let mainWindow: BrowserWindow
 let scheduler: Scheduler
 
@@ -20,6 +22,7 @@ const createMainWindow = (): Promise<void> => {
                 contextIsolation: false
             }
         })
+        enable(mainWindow.webContents)
         mainWindow.loadFile(path.resolve(srcPath, 'app.html'))
         mainWindow.on('ready-to-show', () => {
             mainWindow.show()

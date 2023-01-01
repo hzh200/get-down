@@ -1,4 +1,5 @@
-import { ipcRenderer, IpcRendererEvent } from 'electron'
+import { ipcRenderer, IpcRendererEvent, clipboard, shell } from 'electron'
+import { Menu, MenuItem } from '@electron/remote'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
 import OperationBar from './operationBar'
@@ -6,8 +7,8 @@ import TaskList from './taskList'
 import ParserPage from '../parserPage/parser_page'
 import SettingPage from '../settingPage/setting_page'
 import Popup from '../../Popup/popup'
-
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../../common/models'
+import * as path from 'node:path'
+import { Task, TaskSet, TaskItem, TaskStatus, TaskField } from '../../../common/models'
 import './global.css'
 
 function MainPage() {
@@ -45,22 +46,76 @@ function MainPage() {
         setShowSettingWindow(true)
     }
     // Workflow control.
-    const play: React.MouseEventHandler<HTMLDivElement> = (): void => {
-
+    const play: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+        ipcRenderer.send('resume-tasks', selectedRows)
     }
-    const pause: React.MouseEventHandler<HTMLDivElement> = (): void => {
-
+    const pause: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+        ipcRenderer.send('pause-tasks', selectedRows)
     }
-    const trash: React.MouseEventHandler<HTMLDivElement> = (): void => {
-
+    const trash: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+        ipcRenderer.send('delete-tasks', selectedRows)
     }
-    const onContextMenu: React.MouseEventHandler<HTMLTableSectionElement> = (): void => {
-        
+    // React.MouseEventHandler<HTMLTableSectionElement>
+    const onContextMenu: Function = (_event: React.MouseEvent<HTMLTableSectionElement>, taskNo: number): void => {
+        const task: TaskItem = taskItems.filter((taskItem: TaskItem, _index: number, _array: Array<TaskItem>) => {
+            return taskItem.taskNo === taskNo
+        })[0]
+        // Cannot use 'task instanceof Task', class type information is already lost during inter-process communication
+        const isTaskType: boolean = (TaskField.location in task) && (TaskField.downloadUrl in task) // task instanceof Task
+        selectRow(_event, taskNo)
+        let menu = new Menu()
+        menu.append(new MenuItem({ 
+            label: 'pause', 
+            click: () => pause(_event)
+        }))
+        menu.append(new MenuItem({ 
+            label: 'resume', 
+            click: () => play(_event)
+        }))
+        menu.append(new MenuItem({ 
+            label: 'delete', 
+            click: () => trash(_event)
+        }))
+        menu.append(new MenuItem({ type: 'separator' }))
+        menu.append(new MenuItem({ 
+            label: 'copy url', 
+            click: () => clipboard.writeText(task.url, 'clipboard')
+        }))
+        if (isTaskType) {
+            menu.append(new MenuItem({ 
+                label: 'copy download url', 
+                click: () => clipboard.writeText((task as Task).downloadUrl, 'clipboard')
+            }))
+        }
+        menu.append(new MenuItem({ 
+            label: 'copy filename', 
+            click: () => clipboard.writeText(task.name, 'clipboard')
+        }))
+        menu.append(new MenuItem({ type: 'separator' }))
+        if (isTaskType) {
+            menu.append(new MenuItem({ 
+                label: 'open file', 
+                click: () => shell.openPath(path.join((task as Task).location, task.name))
+            }))
+            menu.append(new MenuItem({ 
+                label: 'open file folder', 
+                // click: () => shell.openPath(task.getDownloadDir())
+                click: () => shell.showItemInFolder(path.join((task as Task).location, task.name))
+            }))
+            menu.append(new MenuItem({ type: 'separator' }))
+        } 
+        menu.append(new MenuItem({ 
+            label: 'nothing', 
+            type: 'checkbox',
+            checked: true,
+            click: () => clipboard.writeText(task.name, 'clipboard')
+        }))
+        menu.popup()
     }
     // React.MouseEventHandler<HTMLTableRowElement>
-    const selectRow: Function = ((event: React.MouseEvent<HTMLTableRowElement, MouseEvent>, taskNo: number): void => {
+    const selectRow: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number): void => {
         event.preventDefault()
-        const target: HTMLTableRowElement = event.target as HTMLTableRowElement
+        // const target: HTMLTableRowElement = event.target as HTMLTableRowElement
         // const taskNo: number = parseInt(target.parentElement?.children[0]?.innerHTML as string)
         let newSelectedRows: Array<number> = [...selectedRows]
         if ((window as any).event.ctrlKey) {
@@ -77,7 +132,7 @@ function MainPage() {
         setSelectedRows((_selectedRows: Array<number>) => {
             return newSelectedRows
         })
-    })
+    }
     const selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
         event.preventDefault()
         if ((event.key === 'A' || event.key === 'a') && (window as any).event.ctrlKey) {
