@@ -27,9 +27,7 @@ class RangeDownloader extends Downloader {
     async download(): Promise<void> {
         await super.download()
         this.downloadTimer = setInterval(() => {
-            if (this.finished) {
-                return
-            }
+            if (this.finished) return
             if ((this.task.downloadRanges as Array<Array<number>>).length === 0 && this.rangeMap.size === 0 && this.task.progress >= this.task.size) {
                 this.done()
             }
@@ -76,12 +74,15 @@ class RangeDownloader extends Downloader {
             this.responseStreamMap.delete(uuid)
         }
         const handleError = (error: Error): void => {
+            // If download is to be finished, let finsih process handle the rest of work. 
+            if (this.finished) return
             Log.errorLog(error)
             this.postPartialRange(range)
             this.rangeMap.delete(uuid)
             this.responseStreamMap.delete(uuid)
         } 
         const handleTimeout = (response: http.IncomingMessage): void => {
+            if (this.finished) return 
             response.destroy()
             this.postPartialRange(range)
             this.rangeMap.delete(uuid)
@@ -90,9 +91,7 @@ class RangeDownloader extends Downloader {
         const handleResponseStream = (stream: stream.Readable, range: Array<number>): void => {
             this.responseStreamMap.set(uuid, stream)
             stream.on(StreamEvent.Data, (chunk: any) => {
-                if (this.finished) {
-                    return
-                }
+                if (this.finished) return
                 const written: number = fs.writeSync(this.fd, chunk, 0, chunk.length, range[0])
                 if (written !== chunk.length) {
                     // Let error handler handle it altogether
@@ -116,7 +115,7 @@ class RangeDownloader extends Downloader {
         ;(requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`
         const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
             await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (error) {
+        if (error) { // 'connect ETIMEDOUT' error while being finishing or after being finished.
             handleError(error)
         }
         const encoding: string = response.headers[Header.ContentEncoding] as string
@@ -135,9 +134,6 @@ class RangeDownloader extends Downloader {
             handleError(error)
         })
         response.setTimeout(1000, () => {
-            if (this.finished) {
-                return
-            }
             handleTimeout(response)
         })
     }
