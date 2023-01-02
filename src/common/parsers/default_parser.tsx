@@ -8,6 +8,7 @@ import { handlePromise } from '../../common/utils'
 import { Setting } from '../setting'
 import { ParsedInfo, preflight } from '../../common/http/preflight'
 import { ipcRenderer } from 'electron'
+import { CommunicateAPIName } from '../communicate'
 
 class DefaultParsedInfo extends ParsedInfo {
     declare name: string
@@ -83,7 +84,7 @@ class DefaultParser implements Parser {
         task.location = parsedInfo.location
         task.isRange = parsedInfo.isRange
         task.parserNo = this.parserNo
-        ipcRenderer.send('add-task', task)
+        ipcRenderer.send(CommunicateAPIName.AddTask, task)
     }
 }
 

@@ -1,8 +1,9 @@
 import * as http from 'node:http'
 import { handlePromise } from '../utils'
 import { httpRequest, getHttpRequestTextContent } from './request'
+import { ResponseStatusCode } from './response'
 import { urlRe } from './validation'
-import { getHeaders, getPreflightHeaders } from './header'
+import { getHeaders, getPreflightHeaders, Header } from './header'
 import { generateRequestOption } from './option'
 
 const parameterSpliter: string = ';'
@@ -10,6 +11,7 @@ const contentSpliter: string = '/'
 const urlSpliter: string = '/'
 const urlDoubleSpliter: string = '//'
 const fileExtensionDot: string = '.'
+const equationSpliter: string = '='
 
 const redirectLimit = 3
 
@@ -29,7 +31,7 @@ const checkRedirectStatus = (statusCode: number | undefined): boolean => {
     if (!statusCode) {
         return false
     }
-    if (statusCode === 301 || statusCode === 302 || statusCode === 307 || statusCode === 308) {
+    if (statusCode === ResponseStatusCode.MovedPermanently || statusCode === ResponseStatusCode.Found || statusCode === ResponseStatusCode.TemporaryRedirect || statusCode === ResponseStatusCode.PermanentRedirect) {
         return true
     }
     return false
@@ -39,8 +41,8 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promi
     const fetchRedirect = async (response: http.IncomingMessage): Promise<string> => {
         let redirect: string
         const data = await getHttpRequestTextContent(response)
-        if (response.headers['location']) {
-            redirect = response.headers['location']
+        if (response.headers[Header.Location]) {
+            redirect = response.headers[Header.Location] as string
         } else if (urlRe.exec(data)) {
             redirect = (urlRe.exec(data) as RegExpExecArray)[1]
         } else {
@@ -50,22 +52,21 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promi
     }
 
     let requestOptions: http.RequestOptions = await generateRequestOption(url, getHeaders)
-    let [request, response]: [http.ClientRequest, http.IncomingMessage] = await httpRequest(requestOptions)
-    request.on('error', (err: Error) => {
+    let [err, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
+    if (err) {
         throw err
-    })
+    }
     let retryCount = 0
-    while (checkRedirectStatus(response.statusCode)
-                && retryCount++ < redirectLimit) {
+    while (checkRedirectStatus(response.statusCode) && retryCount++ < redirectLimit) {
         let [err, url] = await handlePromise<string>(fetchRedirect(response))
         if (err) {
             throw err
         }
         requestOptions = await generateRequestOption(url, getHeaders)
-        ;[request, response] = await httpRequest(requestOptions)
-        request.on('error', (err: Error) => {
+        ;[err, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
+        if (err) {
             throw err
-        })
+        }
     }
     if (checkRedirectStatus(response.statusCode)) {
         throw new Error('too much redirections')
@@ -85,40 +86,41 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     parsedInfo.url = url
     parsedInfo.downloadUrl = redirectUrl
     // file's type, subtype and maybe charset
-    if (reponseHeaders['content-type']) {
-        let contentType, charset
-        if (reponseHeaders['content-type'].includes(parameterSpliter)) {
-            const parts = reponseHeaders['content-type'].split(parameterSpliter)
+    const headerContentType: string = reponseHeaders[Header.ContentType] as string
+    if (headerContentType) {
+        let contentType: string, charset: string | undefined = undefined
+        if (headerContentType.includes(parameterSpliter)) {
+            const parts: Array<string> = headerContentType.split(parameterSpliter)
             contentType = parts[0]
             parts[1] = parts[1].trim()
             if (parts[1].startsWith('charset')) {
-                charset = parts[1].split('=')[1]
+                charset = parts[1].split(equationSpliter)[1]
             }
         } else {
-            contentType = reponseHeaders['content-type']
+            contentType = headerContentType
         }
-        const parts = contentType.split(contentSpliter)
+        const parts: Array<string> = contentType.split(contentSpliter)
         parsedInfo.type = parts[0]
         parsedInfo.subType = parts[1]
         if (charset && parsedInfo.type === 'text')
             parsedInfo.charset = charset
-        
     }
     // file's name
-    if (reponseHeaders['content-disposition']) {
-        const fileNameRe = new RegExp('filename=\"(.+)\"')
-        const fileNameReResult = fileNameRe.exec(reponseHeaders['content-disposition'])
+    const headerContentDisposition: string = reponseHeaders[Header.ContentDisposition] as string
+    if (headerContentDisposition) {
+        const fileNameRe: RegExp = new RegExp('filename=\"(.+)\"')
+        const fileNameReResult: RegExpExecArray | null = fileNameRe.exec(headerContentDisposition)
         if (fileNameReResult) 
             parsedInfo.name = fileNameReResult[1] // could be undefined
     } 
     if (!parsedInfo.name) {
         if (url.indexOf(urlDoubleSpliter) !== -1) {
-            const parts = url.split(urlDoubleSpliter)
+            const parts: Array<string> = url.split(urlDoubleSpliter)
             url = parts[parts.length - 1]
         }
         if (url.indexOf(urlSpliter) !== -1 && !url.endsWith(urlSpliter)) {
-            const parts = url.split(urlSpliter)
-            const part = parts[parts.length - 1]
+            const parts: Array<string> = url.split(urlSpliter)
+            const part: string = parts[parts.length - 1]
             if (part.indexOf(fileExtensionDot) !== -1) {
                 parsedInfo.name = part
             } else {
@@ -129,15 +131,17 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         }
     }
     // file's size
-    if (responseStatusCode === 200) {
-        if (reponseHeaders['content-length']) {
-            parsedInfo.size = parseInt(reponseHeaders['content-length'])
+    if (responseStatusCode === ResponseStatusCode.OK) {
+        const headerContentLength: string = reponseHeaders[Header.ContentLength] as string
+        if (headerContentLength) {
+            parsedInfo.size = parseInt(headerContentLength)
         } else { // chunk
             parsedInfo.size = undefined
         } 
-    } else { // statusCode === 206
-        if (reponseHeaders['content-range']) {
-            const parts = reponseHeaders['content-range'].split(contentSpliter)
+    } else { // statusCode === ResponseStatusCode.PartialContent
+        const headerContentRange: string = reponseHeaders[Header.ContentRange] as string
+        if (headerContentRange) {
+            const parts: Array<string> = headerContentRange.split(contentSpliter)
             try {
                 parsedInfo.size = parseInt(parts[1])
             } catch (error: any) {
@@ -148,11 +152,12 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         }
     }
     // file's createAt time
-    if (reponseHeaders['last-modified']) {
-        parsedInfo.createAt = new Date(reponseHeaders['last-modified']).toISOString()
+    const headerLastModified: string = reponseHeaders[Header.LastModified] as string
+    if (headerLastModified) {
+        parsedInfo.createAt = new Date(headerLastModified).toISOString()
     }
     // isRange
-    if (responseStatusCode === 206) {
+    if (responseStatusCode === ResponseStatusCode.PartialContent) {
         parsedInfo.isRange = true
     } else {
         parsedInfo.isRange = false

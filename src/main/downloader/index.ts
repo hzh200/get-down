@@ -1,7 +1,7 @@
 import { taskQueue } from '../queue'
 import { TaskModel } from '../persistence'
 
-import { Downloader } from './downloader'
+import { Downloader, DownloaderEvent } from './downloader'
 import { RangeDownloader } from './range_downloader'
 import { DirectDownloader } from './direct_downloader'
 
@@ -14,4 +14,4 @@ const getDownloader = (taskNo: number): Downloader => {
     }
 }
 
-export { getDownloader, Downloader }
+export { getDownloader, Downloader, DirectDownloader, RangeDownloader, DownloaderEvent }

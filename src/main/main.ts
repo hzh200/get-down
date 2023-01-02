@@ -31,8 +31,11 @@ const createMainWindow = (): Promise<void> => {
     })
 } 
 
-// Call single instance.
-const parserWindowLock = app.requestSingleInstanceLock()
+process.on('uncaughtException', (error: Error) => {
+    Log.errorLog(error)
+})
+
+const parserWindowLock = app.requestSingleInstanceLock() // Call for single instance.
 if (!parserWindowLock) {
     app.quit()
 }

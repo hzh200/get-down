@@ -5,9 +5,10 @@ import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { mainWindow } from '../main'
 
 import { taskQueue } from '../queue'
-import { Downloader, getDownloader } from '../downloader'
+import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloader'
 import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, deleteTask, getAllTasks } from '../persistence'
 import { Log } from '../../common/log'
+import { CommunicateAPIName } from '../../common/communicate'
 
 const maxDownloadLimit: number = 3
 
@@ -18,7 +19,8 @@ class Scheduler {
         // Send tasks in database to the newly created task list interface
         getAllTasks().then(preTasks => {
             preTasks.forEach(task => {
-                mainWindow.webContents.send('new-task-item', task.get())
+                taskQueue.addTaskItem(task.taskNo, task)
+                this.addTaskItemToRenderer(task)
             })
         })
 
@@ -37,7 +39,7 @@ class Scheduler {
                 this.downloaderMap.set(taskNo, downloader)
                 this.downloaderTaskTimerMap.set(taskNo, downloadTimer)
 
-                downloader.on('done', () => {
+                downloader.on(DownloaderEvent.Done, () => {
                     this.downloaderMap.delete(taskNo)
                     clearInterval(this.downloaderTaskTimerMap.get(taskNo))
                     this.downloaderTaskTimerMap.delete(taskNo)
@@ -45,7 +47,7 @@ class Scheduler {
                     updateTask(task)
                     this.updateTaskItemToRenderer(task)
                 })
-                downloader.on('fail', () => {
+                downloader.on(DownloaderEvent.Fail, () => {
                     this.downloaderMap.delete(taskNo)
                     clearInterval(this.downloaderTaskTimerMap.get(taskNo))
                     this.downloaderTaskTimerMap.delete(taskNo)
@@ -68,7 +70,7 @@ class Scheduler {
                 }
         }, 50)
 
-        ipcMain.on('add-task', async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
+        ipcMain.on(CommunicateAPIName.AddTask, async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
             taskInfo.status = TaskStatus.waiting
             taskInfo.progress = 0
             if (taskInfo.isRange) {
@@ -81,59 +83,63 @@ class Scheduler {
             taskQueue.addTaskItem(task.taskNo, task)
             this.addTaskItemToRenderer(task)
         })
-        ipcMain.on('resume-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
+        ipcMain.on(CommunicateAPIName.ResumeTasks, async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
                 const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
                 if (task && (task.get(`${TaskField.status}`) === TaskStatus.failed || task.get(`${TaskField.status}`) === TaskStatus.paused)) {
-                    const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
-                    if (!downloader) {
-                        continue
-                    }
-                    downloader.resume()
+                    // const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
+                    // if (!downloader) {
+                    //     continue
+                    // }
+                    // downloader.resume()
                     task.status = TaskStatus.waiting
                     updateTaskStatus(task)
+                    this.updateTaskItemToRenderer(task)
                 }
             }
         })
-        ipcMain.on('pause-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
+        ipcMain.on(CommunicateAPIName.PauseTasks, (_event: IpcMainEvent, taskNos: Array<number>): void => {
             for (const taskNo of taskNos) {
                 const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
-                if (task && task.get(`${TaskField.status}`) === TaskStatus.downloading) {
+                if (task && task.get(`${TaskField.status}`) === TaskStatus.downloading && task.isRange) {
                     const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
                     if (!downloader) {
                         continue
                     }
-                    downloader.pause()
+                    this.downloaderMap.delete(taskNo)
+                    clearInterval(this.downloaderTaskTimerMap.get(taskNo))
+                    this.downloaderTaskTimerMap.delete(taskNo)
+                    ;(downloader as RangeDownloader).finish()
                     task.status = TaskStatus.paused
-                    updateTaskStatus(task)
+                    updateTask(task)
+                    this.updateTaskItemToRenderer(task)
                 }
             }
         })
-        ipcMain.on('delete-tasks', async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
+        ipcMain.on(CommunicateAPIName.DeleteTasks, async (_event: IpcMainEvent, taskNos: Array<number>): Promise<void> => {
             for (const taskNo of taskNos) {
                 const task: TaskModel | null = taskQueue.getTaskItem(taskNo)
-                if (!task) {
-                    continue
-                }
-                const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
-                if (!downloader) {
-                    continue
-                }
-                downloader.pause()
-                const [error, _]: [Error | undefined, void] = await handlePromise<void>(deleteTask(task))
-                if (error) {
-                    throw error
+                if (task && task.isRange) {
+                    const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
+                    if (!downloader) {
+                        continue
+                    }
+                    ;(downloader as RangeDownloader).finish()
+                    const [error, _]: [Error | undefined, void] = await handlePromise<void>(deleteTask(task))
+                    if (error) {
+                        throw error
+                    }
                 }
             }
         })
     }
 
     addTaskItemToRenderer = (task: TaskModel): void => {
-        mainWindow.webContents.send('new-task-item', task.get())
+        mainWindow.webContents.send(CommunicateAPIName.NewTaskItem, task.get())
     }
 
     updateTaskItemToRenderer = (task: TaskModel): void => {
-        mainWindow.webContents.send('update-task-item', task.get())
+        mainWindow.webContents.send(CommunicateAPIName.UpdateTaskItem, task.get())
     }
 }
 

@@ -9,6 +9,7 @@ import SettingPage from '../settingPage/setting_page'
 import Popup from '../../Popup/popup'
 import * as path from 'node:path'
 import { Task, TaskSet, TaskItem, TaskStatus, TaskField } from '../../../common/models'
+import { CommunicateAPIName } from '../../../common/communicate'
 import './global.css'
 
 function MainPage() {
@@ -18,10 +19,10 @@ function MainPage() {
     const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false)
     React.useEffect(() => {
         // Update taskItems for showing up.
-        ipcRenderer.on('new-task-item', (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
+        ipcRenderer.on(CommunicateAPIName.NewTaskItem, (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => taskItems.concat(updateTaskItem))
         })
-        ipcRenderer.on('update-task-item', (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
+        ipcRenderer.on(CommunicateAPIName.UpdateTaskItem, (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => {
                 let newTaskItems: Array<TaskItem> = [ ...taskItems ]
                 for (let i = 0; i < newTaskItems.length; i++) {
@@ -47,13 +48,13 @@ function MainPage() {
     }
     // Workflow control.
     const play: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
-        ipcRenderer.send('resume-tasks', selectedRows)
+        ipcRenderer.send(CommunicateAPIName.ResumeTasks, selectedRows)
     }
     const pause: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
-        ipcRenderer.send('pause-tasks', selectedRows)
+        ipcRenderer.send(CommunicateAPIName.PauseTasks, selectedRows)
     }
     const trash: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
-        ipcRenderer.send('delete-tasks', selectedRows)
+        ipcRenderer.send(CommunicateAPIName.DeleteTasks, selectedRows)
     }
     // React.MouseEventHandler<HTMLTableSectionElement>
     const onContextMenu: Function = (_event: React.MouseEvent<HTMLTableSectionElement>, taskNo: number): void => {

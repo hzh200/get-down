@@ -2,7 +2,7 @@ import * as http from 'node:http'
 import { getProxySettings, ProxySettings, ProxySetting } from "get-proxy-settings"
 import { ProxyChooses } from "../setting"
 import { globalSetting } from "../global"
-import { getHeaders } from '../http/header'
+import { getHeaders, Header } from '../http/header'
 
 enum Protocol {
     HTTPProtocol = 'http:',
@@ -26,13 +26,13 @@ const setOptionProxy = (options: http.RequestOptions, host: string, port: number
 }
 
 const setOptionDirect = (options: http.RequestOptions, url: string, headers: http.OutgoingHttpHeaders): void => {
-    if (url.startsWith('http://')) {
+    if (url.startsWith(Protocol.HTTPProtocol)) {
         options.protocol = Protocol.HTTPProtocol
     } else { // https://
         options.protocol = Protocol.HTTPSProtocol
     } // parser_page filtered other possibilities.
 
-    options.host = headers['Host'] as string
+    options.host = headers[Header.Host] as string
     options.port = undefined
 }
 

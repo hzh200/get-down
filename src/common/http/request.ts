@@ -4,6 +4,13 @@ import * as zlib from 'node:zlib'
 import * as stream from 'node:stream'
 import { Protocol } from './option'
 
+enum StreamEvent {
+    Data = 'data',
+    Error = 'error',
+    End = 'end',
+    Close = 'close'
+}
+
 const httpRequest = (options: http.RequestOptions): Promise<[http.ClientRequest, http.IncomingMessage]> => {
     // if (options.protocol === Protocol.HTTPSProtocol) {
     //     return new Promise((resolve, reject) => {
@@ -22,13 +29,17 @@ const httpRequest = (options: http.RequestOptions): Promise<[http.ClientRequest,
     //         })
     //     })
     // }
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve, reject) => {
         let requestModule: any = http
         if (options.protocol === Protocol.HTTPSProtocol) {
             requestModule = https
         }
         const request: http.ClientRequest = requestModule.get(options, (response: http.IncomingMessage) => {
+            request.removeAllListeners(StreamEvent.Error)
             resolve([request, response])
+        })
+        request.once(StreamEvent.Error, (error: Error) => {
+            reject(error)
         })
     })
 }
@@ -48,18 +59,18 @@ const getHttpRequestTextContent = (res: http.IncomingMessage): Promise<string> =
 }
 
 enum Decoding {
-    gzip = 'gzip',
-    br = 'br',
-    deflate = 'deflate'
+    Gzip = 'gzip',
+    Br = 'br',
+    Deflate = 'deflate'
 }
 
 const getDecodingStream = (encoding: string): stream.Transform => {
     let unzip: zlib.Unzip | zlib.Gunzip | zlib.BrotliDecompress | zlib.Inflate = zlib.createUnzip()
-    if (encoding === Decoding.gzip) {
+    if (encoding === Decoding.Gzip) {
         unzip = zlib.createGunzip()
-    } else if (encoding === Decoding.br) {
+    } else if (encoding === Decoding.Br) {
         unzip = zlib.createBrotliDecompress()
-    } else if (encoding === Decoding.deflate) {
+    } else if (encoding === Decoding.Deflate) {
         unzip = zlib.createInflate()
     } else {
         throw new Error('Unsupported Compress Algorithm')
@@ -67,4 +78,4 @@ const getDecodingStream = (encoding: string): stream.Transform => {
     return unzip
 }
 
-export { httpRequest, getHttpRequestTextContent, getDecodingStream }
+export { httpRequest, getHttpRequestTextContent, getDecodingStream, StreamEvent }

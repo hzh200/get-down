@@ -15,6 +15,11 @@ import { getDownloadHeaders } from '../../common/http/header'
 import { getProxySettings, ProxySettings, ProxySetting } from "get-proxy-settings"
 import { Protocol, generateRequestOption } from '../../common/http/option'
 
+enum DownloaderEvent {
+    Done = 'Done',
+    Fail = 'Fail'
+}
+
 class Downloader extends EventEmitter {
     taskNo: number
     task: TaskModel
@@ -45,34 +50,22 @@ class Downloader extends EventEmitter {
         }
     }
 
-    clear = (): void => {
+    clearResource(): void {
         fs.closeSync(this.fd)
-    }
-    
-    pause = (): void => {
-        
-    }
-
-    resume = (): void => {
-
-    }
-
-    delete = (): void => {
-
     }
 
     done = (): void => {
-        this.clear()
-        this.emit('done')
+        this.clearResource()
+        this.emit(DownloaderEvent.Done)
         Log.infoLog(`Task ${this.task.name} downloads succeed.`)
     }
 
     fail = (): void => {
-        this.clear()
-        this.emit('fail')
+        this.clearResource()
+        this.emit(DownloaderEvent.Fail)
         Log.infoLog(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
     }
 }
 
 
-export { Downloader }
+export { Downloader, DownloaderEvent }
