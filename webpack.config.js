@@ -3,7 +3,7 @@ const nodeExternals = require('webpack-node-externals')
 
 module.exports = {
     target: 'electron-renderer',
-    mode: 'development',
+    mode: 'none',
     entry: {
         app: './src/renderer/interface/mainPage/main_page.tsx',
     },
@@ -40,13 +40,8 @@ module.exports = {
             }
         ]
     },
-    // resolve: {
-    //     extensions: ['.tsx', '.ts', '.js'],
-    // },
-    // externals: {
-    //     'sequelize':"require('sequelize')"
-    //   }
-    // externals: [nodeExternals()]
-      
-    // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore']
-};
+    // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore', {
+    //     'sequelize': require('sequelize'), 
+    // }],
+    externals: [nodeExternals()]
+}

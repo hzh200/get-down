@@ -5,6 +5,7 @@ import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
 import { Log } from '../common/log'
 import { srcPath } from '../../config/path'
+import { isDev } from '../common/global'
 
 initialize()
 let mainWindow: BrowserWindow
@@ -26,6 +27,9 @@ const createMainWindow = (): Promise<void> => {
         mainWindow.loadFile(path.resolve(srcPath, 'app.html'))
         mainWindow.on('ready-to-show', () => {
             mainWindow.show()
+            if (isDev) {
+                mainWindow.webContents.openDevTools({ mode: 'detach' });
+            }
             resolve()
         })
     })
@@ -39,6 +43,18 @@ const parserWindowLock = app.requestSingleInstanceLock() // Call for single inst
 if (!parserWindowLock) {
     app.quit()
 }
+
+app.on('window-all-closed', () => { // Windows & Linux
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
+})
+
+app.on('activate', () => { // Mac
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createMainWindow()
+    }
+})
 
 app.whenReady().then(
     // Initial database connection before everything else.
