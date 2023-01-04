@@ -5,7 +5,7 @@ import * as https from 'node:https'
 import { handlePromise } from '../../share/utils'
 import { Log } from '../../share/utils'
 import { parserModule } from '../../share/parsers'
-import { Downloader } from "./downloader"
+import { Downloader } from './downloader'
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 import { generateRequestOption } from '../../share/http/option'
 import { getDownloadHeaders } from '../../share/http/header'
@@ -36,7 +36,12 @@ class RangeDownloader extends Downloader {
                 const range: Array<number> = this.getPartialRange()
                 const uuid: string = uuidv4()
                 this.rangeMap.set(uuid, range)
-                this.downloadRange(uuid)
+                this.downloadRange(uuid).catch((error: Error) => {
+                    if (this.finished) {
+                        return
+                    }
+                    Log.errorLog(error)
+                })
             }
         }, 500)
     }

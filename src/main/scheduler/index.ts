@@ -59,7 +59,9 @@ class Scheduler {
                 task.status = TaskStatus.downloading
                 updateTaskStatus(task)
                 this.updateTaskItemToRenderer(task)
-                downloader.download()
+                downloader.download().catch((error: Error) => {
+                    Log.errorLog(error)
+                })
 
                 // const parentNo = (taskQueue.getTaskItem(taskNo) as Task).parent
                 // if (parentNo && this.downloadingTaskSetNoList.indexOf(parentNo) === -1) {
