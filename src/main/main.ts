@@ -3,9 +3,9 @@ import { initialize, enable } from '@electron/remote/main'
 import * as path from 'node:path'
 import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
-import { Log } from '../common/log'
-import { srcPath } from '../../config/path'
-import { isDev } from '../common/global'
+import { Log } from '../share/utils'
+import { srcPath } from '../../configs/path'
+import { isDev } from '../share/global'
 
 initialize()
 let mainWindow: BrowserWindow
@@ -28,7 +28,7 @@ const createMainWindow = (): Promise<void> => {
         mainWindow.on('ready-to-show', () => {
             mainWindow.show()
             if (isDev) {
-                mainWindow.webContents.openDevTools({ mode: 'detach' });
+                mainWindow.webContents.openDevTools({ mode: 'undocked' });
             }
             resolve()
         })

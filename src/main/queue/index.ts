@@ -1,5 +1,5 @@
-import { Task, TaskItem, TaskStatus } from '../../common/models'
-import { TaskField } from '../../common/models/model_type'
+import { Task, TaskItem, TaskStatus } from '../../share/models'
+import { TaskField } from '../../share/models/model_type'
 import { TaskModel } from '../persistence'
 
 const instances: Array<TaskModel> = []

@@ -1,9 +1,9 @@
 import { ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { Model, Sequelize } from 'sequelize'
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../common/models'
-import { taskType, taskSetType, TaskModel, TaskSetModel, TaskField } from '../../common/models/model_type'
-import { dbPath } from '../../../config/path'
-import { handlePromise } from '../../common/utils'
+import { Task, TaskSet, TaskItem, TaskStatus } from '../../share/models'
+import { taskType, taskSetType, TaskModel, TaskSetModel, TaskField } from '../../share/models/model_type'
+import { dbPath } from '../../../configs/path'
+import { handlePromise } from '../../share/utils'
 
 const sequelize: Sequelize = new Sequelize({
     dialect: 'sqlite',

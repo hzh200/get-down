@@ -1,14 +1,14 @@
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../common/models'
-import { TaskField } from '../../common/models/model_type'
-import { handlePromise } from '../../common/utils'
+import { Task, TaskSet, TaskItem, TaskStatus } from '../../share/models'
+import { TaskField } from '../../share/models/model_type'
+import { handlePromise } from '../../share/utils'
 import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { mainWindow } from '../main'
 
 import { taskQueue } from '../queue'
-import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloader'
+import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
 import { TaskModel, createTask, createTaskSet, updateTask, updateTaskStatus, deleteTask, getAllTasks } from '../persistence'
-import { Log } from '../../common/log'
-import { CommunicateAPIName } from '../../common/communicate'
+import { Log } from '../../share/utils'
+import { CommunicateAPIName } from '../../share/communication'
 
 const maxDownloadLimit: number = 3
 

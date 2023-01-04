@@ -5,7 +5,7 @@ module.exports = {
     target: 'electron-renderer',
     mode: 'none',
     entry: {
-        app: './src/renderer/interface/mainPage/main_page.tsx',
+        app: './src/renderer/interfaces/mainPage/MainPage.tsx',
     },
     output: {
         path: path.resolve(__dirname, 'bundle'),
