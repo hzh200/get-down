@@ -6,8 +6,8 @@ class TaskItem {
     url: string
     status: TaskStatus
     progress: number
-    createAt: string // timestamp added automatically by Sequelize
-    updateAt: string // timestamp added automatically by Sequelize
+    createdAt: string // timestamp added automatically by Sequelize
+    updatedAt: string // timestamp added automatically by Sequelize
 }
 
 enum TaskStatus {

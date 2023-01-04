@@ -9,8 +9,8 @@ class Task extends TaskItem {
     declare status: TaskStatus
     declare progress: number
     declare parserNo: number
-    declare createAt: string // timestamp added automatically by Sequelize
-    declare updateAt: string // timestamp added automatically by Sequelize
+    declare createdAt: string // timestamp added automatically by Sequelize
+    declare updatedAt: string // timestamp added automatically by Sequelize
 
     downloadUrl: string
     subType: string

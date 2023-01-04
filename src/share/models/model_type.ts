@@ -11,8 +11,8 @@ enum TaskField {
     status = 'status',
     progress = 'progress',
     parserNo = 'parserNo',
-    createAt = 'createAt',
-    updateAt = 'updateAt',
+    createdAt = 'createdAt',
+    updatedAt = 'updatedAt',
     // Task
     downloadUrl = 'downloadUrl',
     subType = 'subType',
@@ -134,8 +134,8 @@ class TaskModel extends Model {
     declare status: TaskStatus
     declare progress: number
     declare parserNo: number
-    declare createAt: string
-    declare updateAt: string
+    declare createdAt: string
+    declare updatedAt: string
     declare downloadUrl: string
     declare subType: string
     declare charset: string | undefined
@@ -154,8 +154,8 @@ class TaskSetModel extends Model {
     declare status: TaskStatus
     declare progress: number
     declare parserNo: number
-    declare createAt: string
-    declare updateAt: string
+    declare createdAt: string
+    declare updatedAt: string
     declare children: Array<number>
 }
 

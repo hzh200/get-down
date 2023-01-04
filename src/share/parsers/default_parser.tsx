@@ -15,14 +15,14 @@ class DefaultParsedInfo extends ParsedInfo {
     declare size: number | undefined
     declare type: string
     declare url: string
-    declare createAt: string
+    declare createdAt: string
     declare downloadUrl: string
     declare subType: string
     declare charset: string | undefined
     declare isRange: boolean
     // status: string
     // progress: number
-    // updateAt: string
+    // updatedAt: string
     // downloadRanges: Array<Array<number>>
     location: string
     parent: number | undefined
@@ -40,7 +40,7 @@ class DefaultParser implements Parser {
         parsedInfo.size = preflightParsedInfo.size
         parsedInfo.type = preflightParsedInfo.type
         parsedInfo.url = preflightParsedInfo.url
-        parsedInfo.createAt = preflightParsedInfo.createAt
+        parsedInfo.createdAt = preflightParsedInfo.createdAt
         parsedInfo.downloadUrl = preflightParsedInfo.downloadUrl
         parsedInfo.subType = preflightParsedInfo.subType
         parsedInfo.charset = preflightParsedInfo.charset
@@ -78,7 +78,7 @@ class DefaultParser implements Parser {
         task.type = parsedInfo.type
         task.url = parsedInfo.url
         task.downloadUrl = parsedInfo.downloadUrl
-        task.createAt = parsedInfo.createAt
+        task.createdAt = parsedInfo.createdAt
         task.subType = parsedInfo.subType
         task.charset = parsedInfo.charset
         task.location = parsedInfo.location

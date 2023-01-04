@@ -1,7 +1,9 @@
 import * as React from 'react'
+import { TaskItem, TaskStatus } from '../../../share/models'
+import { getLocaleDateString } from '../../../share/utils'
 import './task_list.css'
 
-import { TaskItem, TaskStatus } from '../../../share/models'
+
 
 function TaskList({ tasks, selectedRows, selectRow, onContextMenu, selectAllRows }: 
     { tasks: Array<TaskItem>, selectedRows: Array<Number>, selectRow: Function, onContextMenu: Function,
@@ -69,7 +71,8 @@ function TaskListTableBody({ tasks, selectedRows, selectRow, onContextMenu, sele
     { tasks: Array<TaskItem>, selectedRows: Array<Number>, selectRow: Function, onContextMenu: Function,
         selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> }) {
     return (
-        <tbody tabIndex={-1} onKeyDown={selectAllRows}> {/* tabIndex is a necessery property to use 'onKeyDown' */}
+        <tbody tabIndex={-1} onKeyDown={selectAllRows}>
+            {/* tabIndex is a necessery property to use 'onKeyDown' */}
             {tasks.map((task: TaskItem, index: number) => {
                 return <TaskListTableBodyRow task={task} selected={selectedRows.includes(task.taskNo)} selectRow={selectRow} key={index} onContextMenu={onContextMenu} />
             })}
@@ -87,7 +90,7 @@ function TaskListTableBodyRow({ task, selected, selectRow, onContextMenu }:
             <td>{task.name}</td>
             <td>{task.status === TaskStatus.downloading ? task.progress : task.status}</td>
             <td>{task.size === -1 ? '' : task.size}</td>
-            <td>{task.createAt}</td>
+            <td>{getLocaleDateString(task.createdAt)}</td>
         </tr>
     )
 }

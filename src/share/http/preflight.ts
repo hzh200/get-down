@@ -20,7 +20,7 @@ class ParsedInfo {
     size: number | undefined
     type: string
     url: string
-    createAt: string
+    createdAt: string
     downloadUrl: string
     subType: string
     charset: string | undefined
@@ -151,10 +151,10 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
             parsedInfo.size = undefined
         }
     }
-    // file's createAt time
+    // file's createdAt time
     const headerLastModified: string = reponseHeaders[Header.LastModified] as string
     if (headerLastModified) {
-        parsedInfo.createAt = new Date(headerLastModified).toISOString()
+        parsedInfo.createdAt = new Date(headerLastModified).toISOString()
     }
     // isRange
     if (responseStatusCode === ResponseStatusCode.PartialContent) {
