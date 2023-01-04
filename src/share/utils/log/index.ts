@@ -1,4 +1,5 @@
 import { logPath } from '../../../../configs/path'
+import { isDev } from '../../../share/global'
 import * as fs from 'fs'
 
 // let fd: number
@@ -12,8 +13,13 @@ import * as fs from 'fs'
 
 class Log {
     private static log = (message: string) => {
-        const localeDateTime = new Date().toLocaleString()
-        fs.appendFileSync(logPath, localeDateTime + ' ' + message + '\n')
+        const localeDateTime: string = new Date().toLocaleString()
+        const logMessage: string = localeDateTime + ' ' + message + '\n'
+        if (isDev) {
+            process.stdout.write(logMessage)
+        } else {
+            fs.appendFileSync(logPath, logMessage)
+        }
     }
 
     static infoLog = (message: string) => {

@@ -35,7 +35,7 @@ const createMainWindow = (): Promise<void> => {
     })
 } 
 
-process.on('uncaughtException', (error: Error) => {
+process.on('uncaughtException', (error: Error, _origin: NodeJS.UncaughtExceptionOrigin) => {
     Log.errorLog(error)
 })
 
