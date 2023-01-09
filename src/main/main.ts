@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
 import { Log } from '../share/utils'
-import { srcPath } from '../../configs/path'
+import { SrcPath } from '../../configs/path'
 import { isDev } from '../share/global'
 
 initialize()
@@ -24,11 +24,11 @@ const createMainWindow = (): Promise<void> => {
             }
         })
         enable(mainWindow.webContents)
-        mainWindow.loadFile(path.resolve(srcPath, 'app.html'))
+        mainWindow.loadFile(path.resolve(SrcPath, 'app.html'))
         mainWindow.on('ready-to-show', () => {
             mainWindow.show()
             if (isDev) {
-                mainWindow.webContents.openDevTools({ mode: 'undocked' });
+                mainWindow.webContents.openDevTools({ mode: 'undocked' })
             }
             resolve()
         })

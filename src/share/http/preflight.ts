@@ -2,18 +2,19 @@ import * as http from 'node:http'
 import { handlePromise } from '../utils'
 import { httpRequest, getHttpRequestTextContent } from './request'
 import { ResponseStatusCode, Header } from './constants'
-import { urlRe } from './validation'
+import { URL_REGEX } from './validation'
 import { getHeaders, getPreflightHeaders } from './header'
 import { generateRequestOption } from './option'
 
-const parameterSpliter: string = ';'
-const contentSpliter: string = '/'
-const urlSpliter: string = '/'
-const urlDoubleSpliter: string = '//'
-const fileExtensionDot: string = '.'
-const equationSpliter: string = '='
+const DIRECTIVE_SPLITER: string = ';'
+const MEDIA_TYPE_SPLITER: string = '/'
+const URL_ROUTER_SPLITER: string = '/'
+const URL_PROTOCOL_SPLITER: string = '//'
+const URL_PARAMETER_SPLITER: string = '?'
+const FILE_EXTENSION_DOT: string = '.'
+const ASSIGNMENT_SPLITER: string = '='
 
-const redirectLimit = 3
+const REDIRECT_LIMIT = 3
 
 class ParsedInfo {
     name: string
@@ -43,8 +44,8 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promi
         const data = await getHttpRequestTextContent(response)
         if (response.headers[Header.Location]) {
             redirect = response.headers[Header.Location] as string
-        } else if (urlRe.exec(data)) {
-            redirect = (urlRe.exec(data) as RegExpExecArray)[1]
+        } else if (URL_REGEX.exec(data)) {
+            redirect = (URL_REGEX.exec(data) as RegExpExecArray)[1]
         } else {
             throw new Error('no redirect url parsed out')
         }
@@ -57,7 +58,7 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promi
         throw err
     }
     let retryCount = 0
-    while (checkRedirectStatus(response.statusCode) && retryCount++ < redirectLimit) {
+    while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
         let [err, url] = await handlePromise<string>(fetchRedirect(response))
         if (err) {
             throw err
@@ -82,6 +83,10 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     const reponseHeaders: http.IncomingHttpHeaders = res.headers
     const responseStatusCode: number = res.statusCode as number
 
+    if (responseStatusCode !== ResponseStatusCode.OK && responseStatusCode !== ResponseStatusCode.PartialContent) {
+        throw new Error(`Response status code ${responseStatusCode}`)
+    }
+
     const parsedInfo = new ParsedInfo()
     parsedInfo.url = url
     parsedInfo.downloadUrl = redirectUrl
@@ -89,17 +94,17 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     const headerContentType: string = reponseHeaders[Header.ContentType] as string
     if (headerContentType) {
         let contentType: string, charset: string | undefined = undefined
-        if (headerContentType.includes(parameterSpliter)) {
-            const parts: Array<string> = headerContentType.split(parameterSpliter)
+        if (headerContentType.includes(DIRECTIVE_SPLITER)) {
+            const parts: Array<string> = headerContentType.split(DIRECTIVE_SPLITER)
             contentType = parts[0]
             parts[1] = parts[1].trim()
             if (parts[1].startsWith('charset')) {
-                charset = parts[1].split(equationSpliter)[1]
+                charset = parts[1].split(ASSIGNMENT_SPLITER)[1]
             }
         } else {
             contentType = headerContentType
         }
-        const parts: Array<string> = contentType.split(contentSpliter)
+        const parts: Array<string> = contentType.split(MEDIA_TYPE_SPLITER)
         parsedInfo.type = parts[0]
         parsedInfo.subType = parts[1]
         if (charset && parsedInfo.type === 'text')
@@ -114,20 +119,27 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
             parsedInfo.name = fileNameReResult[1] // could be undefined
     } 
     if (!parsedInfo.name) {
-        if (url.indexOf(urlDoubleSpliter) !== -1) {
-            const parts: Array<string> = url.split(urlDoubleSpliter)
+        if (url.includes(URL_PROTOCOL_SPLITER)) {
+            const parts: Array<string> = url.split(URL_PROTOCOL_SPLITER)
             url = parts[parts.length - 1]
         }
-        if (url.indexOf(urlSpliter) !== -1 && !url.endsWith(urlSpliter)) {
-            const parts: Array<string> = url.split(urlSpliter)
-            const part: string = parts[parts.length - 1]
-            if (part.indexOf(fileExtensionDot) !== -1) {
-                parsedInfo.name = part
+        if (url.includes(URL_ROUTER_SPLITER) && !url.endsWith(URL_ROUTER_SPLITER)) {
+            const routes: Array<string> = url.split(URL_ROUTER_SPLITER)
+            const routeWithParameter: string = routes[routes.length - 1]
+            let route: string
+            if (routeWithParameter.includes(URL_PARAMETER_SPLITER)) {
+                const routeParts: Array<string> = routeWithParameter.split(URL_PARAMETER_SPLITER)
+                route = routeParts[0]
             } else {
-                parsedInfo.name = part + fileExtensionDot + parsedInfo.subType
+                route = routeWithParameter
+            }
+            if (route.includes(FILE_EXTENSION_DOT)) {
+                parsedInfo.name = route
+            } else {
+                parsedInfo.name = route + FILE_EXTENSION_DOT + parsedInfo.subType
             }
         } else {
-            parsedInfo.name = parsedInfo.type + fileExtensionDot + parsedInfo.subType
+            parsedInfo.name = parsedInfo.type + FILE_EXTENSION_DOT + parsedInfo.subType
         }
     }
     // file's size
@@ -141,7 +153,7 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     } else { // statusCode === ResponseStatusCode.PartialContent
         const headerContentRange: string = reponseHeaders[Header.ContentRange] as string
         if (headerContentRange) {
-            const parts: Array<string> = headerContentRange.split(contentSpliter)
+            const parts: Array<string> = headerContentRange.split(MEDIA_TYPE_SPLITER)
             try {
                 parsedInfo.size = parseInt(parts[1])
             } catch (error: any) {

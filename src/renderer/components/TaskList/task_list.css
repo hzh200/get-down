@@ -1,7 +1,3 @@
-.tasklist-table-body-row > td {
-    text-align: center;
-}
-
 .task-list {
     min-height: 25px;
     min-width: 5px;
@@ -13,7 +9,11 @@
     /* margin-bottom: 5px; */
 }
 
-.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:nth-child(odd){
+.task-list > .task-list-body > table {
+    table-layout: fixed; /* Fix the table layout, and make td to be ellipsisable. */
+}
+
+.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:nth-child(odd) {
     background-color: rgb(236, 236, 236);
 }
 
@@ -23,6 +23,14 @@
 
 .task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:hover {
     background-color: rgb(252, 236, 215);
+}
+
+.task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row > td {
+    text-align: center;
+    white-space: nowrap; /* Show content in one line. */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Replace overflowed text content to ... . */
+    word-break: keep-all;  /* Allow to break single words. */
 }
 
 .type-thead-th {
@@ -43,8 +51,4 @@
 
 .time-thead-th {
     width: 10%;
-}
-
-.taskno-tbody-td {
-    display: none;
 }

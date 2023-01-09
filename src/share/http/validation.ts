@@ -1,10 +1,10 @@
-const urlRe = new RegExp('^(https?):\/\/[-A-Za-z0-9+&@#\/%?=~_|!:,.;]+[-A-Za-z0-9+&@#\/%=~_|]')
+const URL_REGEX = new RegExp('^(https?):\/\/[-A-Za-z0-9+&@#\/%?=~_|!:,.;]+[-A-Za-z0-9+&@#\/%=~_|]')
 
 const validateUrl = (url: string): boolean => {
-    if (urlRe.exec(url)) {
+    if (URL_REGEX.exec(url)) {
         return true
     }
     return false
 }
 
-export { urlRe, validateUrl }
+export { URL_REGEX, validateUrl }

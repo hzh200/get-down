@@ -3,8 +3,6 @@ import { TaskItem, TaskStatus } from '../../../share/models'
 import { getLocaleDateString } from '../../../share/utils'
 import './task_list.css'
 
-
-
 function TaskList({ tasks, selectedRows, selectRow, onContextMenu, selectAllRows }: 
     { tasks: Array<TaskItem>, selectedRows: Array<Number>, selectRow: Function, onContextMenu: Function,
         selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> }) {

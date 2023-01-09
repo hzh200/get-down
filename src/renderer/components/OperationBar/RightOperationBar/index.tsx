@@ -1,6 +1,5 @@
 import * as React from 'react'
 import OperationBarItem from '../OperationButton'
-
 import cogSvg from './cog.svg'
 
 function RightOperationBar({ openSetting }: { openSetting: React.MouseEventHandler<HTMLDivElement> }) {

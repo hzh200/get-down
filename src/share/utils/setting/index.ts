@@ -1,4 +1,4 @@
-import { settingPath } from '../../../../configs/path'
+import { SettingPath } from '../../../../configs/path'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
@@ -48,17 +48,17 @@ const getDefaultSetting = (): Setting => {
 
 // Write new setting to the setting file.
 const writeSetting = (setting: Setting): void => {
-    fs.writeFileSync(settingPath, JSON.stringify(setting, null, '\t'))
+    fs.writeFileSync(SettingPath, JSON.stringify(setting, null, '\t'))
 }
 
 // Read setting from the setting file, beacuse it's used by both main and renderer processes.
 const readSetting = (): Setting => {
     let setting: Setting
-    if (!fs.existsSync(settingPath)) {
+    if (!fs.existsSync(SettingPath)) {
         setting = getDefaultSetting()
         writeSetting(setting)
     } else {
-        setting = JSON.parse(fs.readFileSync(settingPath, { encoding: 'utf-8' }))
+        setting = JSON.parse(fs.readFileSync(SettingPath, { encoding: 'utf-8' }))
     }
     return setting
 }

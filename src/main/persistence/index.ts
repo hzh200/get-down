@@ -2,12 +2,13 @@ import { ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { Model, Sequelize } from 'sequelize'
 import { Task, TaskSet, TaskItem, TaskStatus } from '../../share/models'
 import { taskType, taskSetType, TaskModel, TaskSetModel, TaskField } from '../../share/models/model_type'
-import { dbPath } from '../../../configs/path'
+import { DBPath } from '../../../configs/path'
 import { handlePromise } from '../../share/utils'
 
-const sequelize: Sequelize = new Sequelize({
+// Must be named by sequelize, because of Model.init function behavior.
+const sequelize: Sequelize = new Sequelize({ 
     dialect: 'sqlite',
-    storage: dbPath,
+    storage: DBPath,
     logging: false
 })
 

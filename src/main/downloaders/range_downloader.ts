@@ -13,8 +13,8 @@ import { Header, StreamEvent } from '../../share/http/constants'
 
 const { v4: uuidv4 } = require('uuid')
 
-const rangeLength: number = 1024 * 1024 // 1 MB
-const rangeLimit: number = 20
+const RangeLength: number = 1024 * 1024 // 1 MB
+const RangeLimit: number = 20
 
 class RangeDownloader extends Downloader {
     rangeMap: Map<string, Array<number>> = new Map<string, Array<number>>()
@@ -32,7 +32,7 @@ class RangeDownloader extends Downloader {
             if ((this.task.downloadRanges as Array<Array<number>>).length === 0 && this.rangeMap.size === 0 && this.task.progress >= this.task.size) {
                 this.done()
             }
-            for (let i = 0; this.isRangeLeft() && i < (rangeLimit - this.rangeMap.size); i++) {
+            for (let i = 0; this.isRangeLeft() && i < (RangeLimit - this.rangeMap.size); i++) {
                 const range: Array<number> = this.getPartialRange()
                 const uuid: string = uuidv4()
                 this.rangeMap.set(uuid, range)
@@ -60,11 +60,11 @@ class RangeDownloader extends Downloader {
 
     getPartialRange = (): Array<number> => {
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>
-        if (ranges[0][1] - ranges[0][0] <= rangeLength) {
+        if (ranges[0][1] - ranges[0][0] <= RangeLength) {
             return ranges.splice(0, 1)[0]
         } else {
             const left = ranges[0][0]
-            ranges[0][0] += rangeLength
+            ranges[0][0] += RangeLength
             return [left, ranges[0][0] - 1]
         }
     }

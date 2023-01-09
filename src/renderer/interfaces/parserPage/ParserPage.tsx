@@ -1,12 +1,10 @@
 import * as React from 'react'
 import UrlBar from '../../components/UrlBar'
 import StatusPanel, { ParserStatus } from '../../components/StatusPanel'
-
 import { parserModule } from '../../../share/parsers'
 import { handlePromise } from '../../../share/utils'
 import { DefaultParsedInfo } from '../../../share/parsers/default_parser'
 import { validateUrl } from '../../../share/http/validation'
-
 
 function ParserPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([])

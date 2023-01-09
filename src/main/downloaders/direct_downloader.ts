@@ -65,9 +65,7 @@ class DirectDownloader extends Downloader {
         request.on(StreamEvent.Error, (error: Error) => {
             handleError(error)
         })
-
     }
 }
-
 
 export { DirectDownloader }
