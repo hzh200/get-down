@@ -1,5 +1,6 @@
 import { Model, DataTypes, ModelAttributes } from 'sequelize'
 import { TaskStatus } from './task_item'
+import { DownloadType } from './task'
 
 enum TaskField {
     // TaskItem
@@ -18,7 +19,7 @@ enum TaskField {
     subType = 'subType',
     charset = 'charset',
     location = 'location',
-    isRange = 'isRange',
+    downloadType = 'downloadType',
     downloadRanges = 'downloadRanges',
     parent = 'parent',
     // TaskSet
@@ -67,8 +68,8 @@ const taskType: ModelAttributes = {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.isRange]: {
-        type: DataTypes.BOOLEAN,
+    [TaskField.downloadType]: {
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     [TaskField.downloadRanges]: {
@@ -76,11 +77,11 @@ const taskType: ModelAttributes = {
         allowNull: true,
     },
     [TaskField.progress]: {
-        type: DataTypes.NUMBER,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     [TaskField.parserNo]: {
-        type: DataTypes.NUMBER,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     [TaskField.parent]: {
@@ -112,11 +113,11 @@ const taskSetType = {
         allowNull: false
     },
     [TaskField.progress]: {
-        type: DataTypes.NUMBER,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     [TaskField.parserNo]: {
-        type: DataTypes.NUMBER,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     [TaskField.children]: {
@@ -140,7 +141,7 @@ class TaskModel extends Model {
     declare subType: string
     declare charset: string | undefined
     declare location: string
-    declare isRange: boolean
+    declare downloadType: DownloadType
     declare downloadRanges: Array<Array<number>> | Array<null> | undefined
     declare parent: number | undefined
 }

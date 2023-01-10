@@ -1,5 +1,6 @@
 import * as http from 'node:http'
 import { handlePromise } from '../utils'
+import { DownloadType } from '../models'
 import { httpRequest, getHttpRequestTextContent } from './request'
 import { ResponseStatusCode, Header } from './constants'
 import { URL_REGEX } from './validation'
@@ -25,7 +26,7 @@ class ParsedInfo {
     downloadUrl: string
     subType: string
     charset: string | undefined
-    isRange: boolean
+    downloadType: DownloadType
 }
 
 const checkRedirectStatus = (statusCode: number | undefined): boolean => {
@@ -168,11 +169,16 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
     if (headerLastModified) {
         parsedInfo.createdAt = new Date(headerLastModified).toISOString()
     }
-    // isRange
+    // downloadType
     if (responseStatusCode === ResponseStatusCode.PartialContent) {
-        parsedInfo.isRange = true
+        parsedInfo.downloadType = DownloadType.Range
     } else {
-        parsedInfo.isRange = false
+        if (parsedInfo.type === 'application' && 
+            (parsedInfo.subType === 'x-mpegURL' || parsedInfo.subType === 'vnd.apple.mpegURL')) {
+            parsedInfo.downloadType = DownloadType.Blob
+        } else {
+            parsedInfo.downloadType = DownloadType.Direct
+        }
     }
     return parsedInfo
 }

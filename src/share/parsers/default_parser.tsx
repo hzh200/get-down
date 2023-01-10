@@ -3,7 +3,7 @@ import * as http from 'http'
 import { Parser } from './index'
 import { InfoRow } from '../../renderer/components/StatusPanel'
 
-import { Task } from '../../share/models'
+import { Task, DownloadType } from '../../share/models'
 import { handlePromise } from '../utils'
 import { Setting } from '../utils'
 import { ParsedInfo, preflight } from '../http/preflight'
@@ -19,7 +19,7 @@ class DefaultParsedInfo extends ParsedInfo {
     declare downloadUrl: string
     declare subType: string
     declare charset: string | undefined
-    declare isRange: boolean
+    declare downloadType: DownloadType
     // status: string
     // progress: number
     // updatedAt: string
@@ -44,7 +44,7 @@ class DefaultParser implements Parser {
         parsedInfo.downloadUrl = preflightParsedInfo.downloadUrl
         parsedInfo.subType = preflightParsedInfo.subType
         parsedInfo.charset = preflightParsedInfo.charset
-        parsedInfo.isRange = preflightParsedInfo.isRange
+        parsedInfo.downloadType = preflightParsedInfo.downloadType
         parsedInfo.location = setting.location
         // parsedInfo.parent
         return parsedInfo
@@ -82,7 +82,7 @@ class DefaultParser implements Parser {
         task.subType = parsedInfo.subType
         task.charset = parsedInfo.charset
         task.location = parsedInfo.location
-        task.isRange = parsedInfo.isRange
+        task.downloadType = parsedInfo.downloadType
         task.parserNo = this.parserNo
         ipcRenderer.send(CommunicateAPIName.AddTask, task)
     }

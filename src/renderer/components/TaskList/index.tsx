@@ -38,31 +38,17 @@ function TaskListBody({ tasks, selectedRows, selectRow, onContextMenu, selectAll
 }
 
 function TaskListTableThead({ namedHead }: { namedHead: boolean }) {
-    if (namedHead) {
-        return (
-            <thead>
-                <tr>
-                    <th className='type-thead-th'>Type</th>
-                    <th className='name-thead-th'>Name</th>
-                    <th className='progress-thead-th'>Progress</th>
-                    <th className='size-thead-th'>Size</th>
-                    <th className='time-thead-th'>Time</th>
-                </tr>
-            </thead>
-        )
-    } else {
-        return (
-            <thead>
-                <tr>
-                    <th className='type-thead-th'></th>
-                    <th className='name-thead-th'></th>
-                    <th className='progress-thead-th'></th>
-                    <th className='size-thead-th'></th>
-                    <th className='time-thead-th'></th>
-                </tr>
-            </thead>
-        )
-    }
+    return (
+        <thead>
+            <tr>
+                <th className='type-thead-th'>{namedHead ? 'Type' : ''}</th>
+                <th className='name-thead-th'>{namedHead ? 'Name' : ''}</th>
+                <th className='progress-thead-th'>{namedHead ? 'Progress' : ''}</th>
+                <th className='size-thead-th'>{namedHead ? 'Size' : ''}</th>
+                <th className='time-thead-th'>{namedHead ? 'Time' : ''}</th>
+            </tr>
+        </thead>
+    )
 }
 
 function TaskListTableBody({ tasks, selectedRows, selectRow, onContextMenu, selectAllRows }: 
@@ -86,7 +72,7 @@ function TaskListTableBodyRow({ task, selected, selectRow, onContextMenu }:
             {/* <td className='taskno-tbody-td'>{task.taskNo}</td> */}
             <td>{task.type}</td>
             <td>{task.name}</td>
-            <td>{task.status === TaskStatus.downloading ? task.progress : task.status}</td>
+            <td>{task.status === TaskStatus.Downloading ? task.progress : task.status}</td>
             <td>{task.size === -1 ? '' : task.size}</td>
             <td>{getLocaleDateString(task.createdAt)}</td>
         </tr>

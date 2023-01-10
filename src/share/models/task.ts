@@ -16,9 +16,15 @@ class Task extends TaskItem {
     subType: string
     charset: string | undefined
     location: string
-    isRange: boolean
+    downloadType: DownloadType
     downloadRanges: Array<Array<number>> | undefined
     parent: number | undefined // parent TaskSet
 }
 
-export { Task }
+enum DownloadType {
+    Direct,
+    Range,
+    Blob, // m3u8
+}
+
+export { Task, DownloadType }

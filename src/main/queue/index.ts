@@ -20,7 +20,7 @@ const taskQueue = {
     // getTaskItems: (): Array<TaskModel> => instances,
     getWaitingTaskNo: (): number | null => {
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.waiting) {
+            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.Waiting) {
                 return instances[i].get(`${TaskField.taskNo}`) as number
             }
         }
@@ -29,7 +29,7 @@ const taskQueue = {
     getWaitingTaskNos: (num: number): Array<number> | null => {
         const waitingItemArray: Array<number> = []
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.waiting) {
+            if (instances[i] instanceof TaskModel && instances[i].get(`${TaskField.status}`) as TaskStatus === TaskStatus.Waiting) {
                 waitingItemArray.push(instances[i].get(`${TaskField.taskNo}`) as number);
                 num = num - 1
                 if (num === 0) break

@@ -11,11 +11,11 @@ class TaskItem {
 }
 
 enum TaskStatus {
-    waiting = 'waiting',
-    downloading = 'downloading',
-    paused = 'paused',
-    done = 'done',
-    failed = 'failed'
+    Waiting = 'Waiting',
+    Downloading = 'Downloading',
+    Paused = 'Paused',
+    Done = 'Done',
+    Failed = 'Failed'
 }
 
 export { TaskItem, TaskStatus }
