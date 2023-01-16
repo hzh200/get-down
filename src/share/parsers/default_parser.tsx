@@ -1,40 +1,42 @@
 import * as React from 'react'
 import * as http from 'http'
-import { Parser } from './index'
-import { InfoRow } from '../../renderer/components/StatusPanel'
+import { Parser, ParsedInfo } from './parser'
+import InfoRow from './InfoRow'
+import { PreflightInfo, preflight } from '../http/preflight'
 
 import { Task, DownloadType } from '../../share/models'
-import { handlePromise } from '../utils'
-import { Setting } from '../utils'
-import { ParsedInfo, preflight } from '../http/preflight'
+import { Setting, readSetting, handlePromise } from '../utils'
 import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../communication'
 
 class DefaultParsedInfo extends ParsedInfo {
     declare name: string
-    declare size: number | undefined
-    declare type: string
-    declare url: string
-    declare createdAt: string
-    declare downloadUrl: string
-    declare subType: string
-    declare charset: string | undefined
-    declare downloadType: DownloadType
+    size: number | undefined
+    type: string
+    url: string
+    createdAt: string
+    downloadUrl: string
+    subType: string
+    charset: string | undefined
+    downloadType: DownloadType
     // status: string
     // progress: number
     // updatedAt: string
     // downloadRanges: Array<Array<number>>
-    location: string
+    declare location: string
     parent: number | undefined
 }
 
 class DefaultParser implements Parser {
     parserNo: number = 0
     parseTarget: string = 'default'
-    getParserNo = (): number => this.parserNo
-    getParserTarget = (): string => this.parseTarget
 
-    parse = async (url: string, preflightParsedInfo: ParsedInfo, setting: Setting): Promise<DefaultParsedInfo> => {
+    parse = async (url: string): Promise<ParsedInfo> => {
+        const setting: Setting = readSetting()
+        const [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = await handlePromise<PreflightInfo>(preflight(url))
+        if (err) {
+            throw err
+        }
         const parsedInfo = new DefaultParsedInfo()
         parsedInfo.name = preflightParsedInfo.name
         parsedInfo.size = preflightParsedInfo.size
@@ -50,16 +52,16 @@ class DefaultParser implements Parser {
         return parsedInfo
     }
 
-    downloadOptions = ({ parsedInfo, handleInfoChange } : 
+    DownloadOptions = ({ parsedInfo, handleInfoChange } : 
         { parsedInfo: DefaultParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLInputElement> }): React.ReactElement => {
         return (
             <React.Fragment>
                 <InfoRow>
-                    <label>File name: </label>
+                    <label>File name:</label>
                     <input className="resource-name" type="text" value={parsedInfo.name} name='name' onChange={handleInfoChange} />
                 </InfoRow>
                 <InfoRow>
-                    <label>Location: </label>
+                    <label>Location:</label>
                     <input className="download-location" type="text" value={parsedInfo.location} name='location' onChange={handleInfoChange} />
                     <label>{parsedInfo.size ? parsedInfo.size : ''}</label>
                 </InfoRow>
@@ -71,7 +73,7 @@ class DefaultParser implements Parser {
         )
     }
 
-    addTask = (parsedInfo: DefaultParsedInfo): void => {
+    addTask = async (parsedInfo: DefaultParsedInfo): Promise<void> => {
         const task = new Task()
         task.name = parsedInfo.name
         task.size = parsedInfo.size

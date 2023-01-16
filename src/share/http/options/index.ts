@@ -1,19 +1,10 @@
 import * as http from 'node:http'
-import { getProxySettings, ProxySettings, ProxySetting } from "get-proxy-settings"
-import { ProxyChooses } from "../utils"
-import { globalSetting } from "../global"
-import { getHeaders } from '../http/header'
-import { Protocol, Header } from './constants'
-
-// ProxySetting { protocol: 'http', host: '127.0.0.1', port: '7890' }
-const fetchSystemProxySetting = async (): Promise<ProxySetting> => {
-    const proxy = await getProxySettings() as ProxySettings
-    if (!proxy) {
-        throw new Error('No system proxy found.')
-    }
-    // console.log(proxy.http, proxy.https)
-    return proxy.http as ProxySetting
-}
+import { ProxySetting } from 'get-proxy-settings'
+import { ProxyChooses } from '../../utils'
+import { globalSetting } from '../../global'
+import { Protocol, Header } from '../constants'
+import { getHeaders, getPreflightHeaders, getDownloadHeaders } from './header'
+import { fetchSystemProxySetting } from './proxy'
 
 const setOptionProxy = (options: http.RequestOptions, host: string, port: number): void => {
     options.protocol = Protocol.HTTPProtocol
@@ -32,7 +23,7 @@ const setOptionDirect = (options: http.RequestOptions, url: string, headers: htt
     options.port = undefined
 }
 
-const generateRequestOption = async (url: string, getHeaders: getHeaders): Promise<http.RequestOptions> => {
+const generateRequestOption = async (url: string, getHeaders: getHeaders, additionHeaders?: http.OutgoingHttpHeaders): Promise<http.RequestOptions> => {
     const options: http.RequestOptions = {
         protocol: '',
         host: '',
@@ -43,7 +34,13 @@ const generateRequestOption = async (url: string, getHeaders: getHeaders): Promi
         }
     }
 
-    const headers: http.OutgoingHttpHeaders = getHeaders(url)
+    let headers: http.OutgoingHttpHeaders = getHeaders(url)
+    if (additionHeaders) {
+        headers = {
+            ...headers,
+            ...additionHeaders
+        }
+    }
     if (globalSetting.proxy.proxyChoosen === ProxyChooses.SetManually && globalSetting.proxy.host && globalSetting.proxy.port) {
         setOptionProxy(options, globalSetting.proxy.host, globalSetting.proxy.port)
     } else if (globalSetting.proxy.proxyChoosen === ProxyChooses.UseSystemProxy) {
@@ -61,4 +58,4 @@ const generateRequestOption = async (url: string, getHeaders: getHeaders): Promi
     return options
 }
 
-export { generateRequestOption }
+export { generateRequestOption, getHeaders, getPreflightHeaders, getDownloadHeaders }

@@ -1,13 +1,15 @@
-import { Task, DownloadType } from './task'
+import { TaskType, TaskStatus, DownloadType } from './constants'
+import { Task } from './task'
 import { TaskSet } from './task_set'
-import { TaskItem, TaskStatus } from './task_item'
-import { TaskField } from './model_type'
+import { TaskItem } from './task_item'
+import { Sequence } from './sequence'
 
 export {
     Task,
     TaskSet,
     TaskItem,
+    Sequence,
     TaskStatus,
-    TaskField,
+    TaskType,
     DownloadType
 }

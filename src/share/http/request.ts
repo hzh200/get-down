@@ -37,11 +37,18 @@ const httpRequest = (options: http.RequestOptions): Promise<[http.ClientRequest,
     })
 }
 
-const getHttpRequestTextContent = (res: http.IncomingMessage): Promise<string> => {
+const getHttpRequestTextContent = (request: http.ClientRequest, response: http.IncomingMessage): Promise<string> => {
     return new Promise(async (resolve, reject) => {
+        request.on('error', (error: Error) => {
+            reject(error)
+        })
+        response.setTimeout(15000, () => {
+            reject(new Error('parse timeout'))
+        })
+        response.setEncoding('utf-8')
         try {
             let resData: string = ''
-            for await (const chunk of res) {
+            for await (const chunk of response) {
                 resData += chunk
             }
             resolve(resData)

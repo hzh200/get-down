@@ -4,11 +4,10 @@ import * as stream from 'node:stream'
 import * as https from 'node:https'
 import { handlePromise } from '../../share/utils'
 import { Log } from '../../share/utils'
-import { parserModule } from '../../share/parsers'
+import parserModule from '../../share/parsers'
 import { Downloader } from "./downloader"
 import { httpRequest, getDecodingStream } from '../../share/http/request'
-import { generateRequestOption } from '../../share/http/option'
-import { getDownloadHeaders } from '../../share/http/header'
+// import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Header, StreamEvent } from '../../share/http/constants'
 
 class DirectDownloader extends Downloader {
@@ -45,7 +44,7 @@ class DirectDownloader extends Downloader {
             })
         }
 
-        const requestOptions: http.RequestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
+        const requestOptions: http.RequestOptions = await this.generateDownloadOption()
         const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
         if (error) {
             handleError(error)

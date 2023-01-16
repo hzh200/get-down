@@ -1,12 +1,11 @@
 import * as React from 'react'
 import './status_panel.css'
-import InfoRow from './InfoRow'
 import { ParserStatus } from './parser_status'
-import { parserModule } from '../../../share/parsers'
-import { DefaultParsedInfo } from '../../../share/parsers/default_parser'
+import parserModule from '../../../share/parsers'
+import { ParsedInfo } from '../../../share/parsers/parser'
 
-function StatusPanel({ status, parsedInfo, handleInfoPanelChange, errorMessage, downloadUrl }: { status: ParserStatus, 
-        parsedInfo: DefaultParsedInfo, handleInfoPanelChange: React.ChangeEventHandler, errorMessage: string, 
+function StatusPanel({ status, optionsInfo, handleInfoPanelChange, errorMessage, downloadUrl }: { status: ParserStatus, 
+    optionsInfo: ParsedInfo, handleInfoPanelChange: React.ChangeEventHandler, errorMessage: string, 
         downloadUrl: React.MouseEventHandler<HTMLButtonElement>}): React.ReactElement {
     if (status === ParserStatus.failed) {
         return (
@@ -14,10 +13,13 @@ function StatusPanel({ status, parsedInfo, handleInfoPanelChange, errorMessage, 
                 {errorMessage}
             </div>
         )
-    } else if (status === ParserStatus.succeed && parsedInfo) {
+    } else if (status === ParserStatus.succeed && optionsInfo) {
         return (
             <div className="info-panel">
-                {parserModule.getDownloadOptions(parsedInfo, handleInfoPanelChange)}
+                {parserModule.getDownloadOptions(optionsInfo, handleInfoPanelChange)}
+                <div className="feedback">
+                    {errorMessage}
+                </div>
                 <div className='download-button-row'>
                     <button className="download-button" onClick={downloadUrl}>Download</button>
                 </div>
@@ -34,4 +36,4 @@ function StatusPanel({ status, parsedInfo, handleInfoPanelChange, errorMessage, 
 }
 
 export default StatusPanel
-export { InfoRow, ParserStatus }
+export { ParserStatus }

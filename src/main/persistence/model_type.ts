@@ -1,8 +1,7 @@
 import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskStatus } from './task_item'
-import { DownloadType } from './task'
+import { TaskType, TaskStatus, DownloadType } from '../../share/models'
 
-enum TaskField {
+enum ModelField {
     // TaskItem
     taskNo = 'taskNo',
     name = 'name',
@@ -11,6 +10,7 @@ enum TaskField {
     url = 'url',
     status = 'status',
     progress = 'progress',
+    location = 'location',
     parserNo = 'parserNo',
     createdAt = 'createdAt',
     updatedAt = 'updatedAt',
@@ -18,112 +18,130 @@ enum TaskField {
     downloadUrl = 'downloadUrl',
     subType = 'subType',
     charset = 'charset',
-    location = 'location',
     downloadType = 'downloadType',
     downloadRanges = 'downloadRanges',
     parent = 'parent',
     // TaskSet
-    children = 'children'
+    children = 'children',
+    // Sequence
+    sequenceNo = 'sequenceNo',
+    taskType = 'taskType'
 }
 
 const taskType: ModelAttributes = {
-    [TaskField.taskNo]: {
+    [ModelField.taskNo]: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    [TaskField.name]: {
+    [ModelField.name]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.type]: {
+    [ModelField.type]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.subType]: {
+    [ModelField.subType]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.charset]: {
+    [ModelField.charset]: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    [TaskField.size]: {
+    [ModelField.size]: {
         type: DataTypes.INTEGER,
         allowNull: true
     },
-    [TaskField.location]: {
+    [ModelField.location]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.url]: {
+    [ModelField.url]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.downloadUrl]: {
+    [ModelField.downloadUrl]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.status]: {
+    [ModelField.status]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.downloadType]: {
+    [ModelField.downloadType]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    [TaskField.downloadRanges]: {
+    [ModelField.downloadRanges]: {
         type: DataTypes.JSON,
         allowNull: true,
     },
-    [TaskField.progress]: {
+    [ModelField.progress]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    [TaskField.parserNo]: {
+    [ModelField.parserNo]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    [TaskField.parent]: {
+    [ModelField.parent]: {
         type: DataTypes.INTEGER,
         allowNull: true
     }
 }
 
-const taskSetType = {
-    [TaskField.taskNo]: {
+const taskSetType: ModelAttributes = {
+    [ModelField.taskNo]: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    [TaskField.name]: {
+    [ModelField.name]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.size]: {
+    [ModelField.size]: {
         type: DataTypes.INTEGER,
         allowNull: true
     },
-    [TaskField.url]: {
+    [ModelField.url]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.status]: {
+    [ModelField.status]: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [TaskField.progress]: {
+    [ModelField.progress]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    [TaskField.parserNo]: {
+    [ModelField.parserNo]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    [TaskField.children]: {
-        type: DataTypes.STRING,
+    [ModelField.children]: {
+        type: DataTypes.JSON,
         allowNull: false
     }
+}
+
+const sequenceType: ModelAttributes = {
+    [ModelField.sequenceNo]: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    [ModelField.taskNo]: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    [ModelField.taskType]: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
 }
 
 class TaskModel extends Model {
@@ -160,4 +178,12 @@ class TaskSetModel extends Model {
     declare children: Array<number>
 }
 
-export { taskType, taskSetType, TaskModel, TaskSetModel, TaskField }
+class SequenceModel extends Model {
+    declare sequenceNo: number
+    declare taskNo: number
+    declare taskType: TaskType
+    declare createdAt: string
+    declare updatedAt: string
+}
+
+export { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField }

@@ -8,7 +8,9 @@ function UrlBar({ parserNames, choosenParserName, handleParserChange, url, handl
         <div className="url-bar">
             <select className="parser-row-name-selecter" value={choosenParserName} onChange={handleParserChange}>
                 {
-                    parserNames.map((parserName, index) => <option value={parserName} key={index}>{parserName}</option>)
+                    parserNames.map((parserName: string, index: number, _array: Array<string>) => 
+                            <option value={parserName} key={index}>{parserName}</option>
+                    )
                 }
             </select>
             <input className="parser-row-text-input" type="text" value={url} onChange={handleUrlChange} />

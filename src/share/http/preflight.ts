@@ -2,22 +2,15 @@ import * as http from 'node:http'
 import { handlePromise } from '../utils'
 import { DownloadType } from '../models'
 import { httpRequest, getHttpRequestTextContent } from './request'
-import { ResponseStatusCode, Header } from './constants'
-import { URL_REGEX } from './validation'
-import { getHeaders, getPreflightHeaders } from './header'
-import { generateRequestOption } from './option'
-
-const DIRECTIVE_SPLITER: string = ';'
-const MEDIA_TYPE_SPLITER: string = '/'
-const URL_ROUTER_SPLITER: string = '/'
-const URL_PROTOCOL_SPLITER: string = '//'
-const URL_PARAMETER_SPLITER: string = '?'
-const FILE_EXTENSION_DOT: string = '.'
-const ASSIGNMENT_SPLITER: string = '='
+import { ResponseStatusCode, Header, URL_REGEX, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 
+    URL_ROUTER_SPLITER, URL_PROTOCOL_SPLITER, URL_PARAMETER_SPLITER, FILE_EXTENSION_DOT, 
+    ASSIGNMENT_SPLITER, Protocol} from './constants'
+import { generateRequestOption, getHeaders, getPreflightHeaders } from './options'
+import { combineRelativePath } from './util'
 
 const REDIRECT_LIMIT = 3
 
-class ParsedInfo {
+class PreflightInfo {
     name: string
     size: number | undefined
     type: string
@@ -33,51 +26,57 @@ const checkRedirectStatus = (statusCode: number | undefined): boolean => {
     if (!statusCode) {
         return false
     }
-    if (statusCode === ResponseStatusCode.MovedPermanently || statusCode === ResponseStatusCode.Found || statusCode === ResponseStatusCode.TemporaryRedirect || statusCode === ResponseStatusCode.PermanentRedirect) {
+    if (statusCode === ResponseStatusCode.MovedPermanently || statusCode === ResponseStatusCode.Found 
+        || statusCode === ResponseStatusCode.TemporaryRedirect || statusCode === ResponseStatusCode.PermanentRedirect) {
         return true
     }
     return false
 }
 
-const handleRedirectRequest = async (url: string, getHeaders: getHeaders): Promise<[http.IncomingMessage, string]> => {
-    const fetchRedirect = async (response: http.IncomingMessage): Promise<string> => {
-        let redirect: string
-        const data = await getHttpRequestTextContent(response)
-        if (response.headers[Header.Location]) {
-            redirect = response.headers[Header.Location] as string
-        } else if (URL_REGEX.exec(data)) {
-            redirect = (URL_REGEX.exec(data) as RegExpExecArray)[1]
-        } else {
-            throw new Error('no redirect url parsed out')
+const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<PreflightInfo> => {
+    const handleRedirectRequest = async (): Promise<[http.IncomingMessage, string]> => {
+        const fetchRedirect = async (request: http.ClientRequest, response: http.IncomingMessage): Promise<string> => {
+            let redirect: string
+            const data = await getHttpRequestTextContent(request, response)
+            if (response.headers[Header.Location]) {
+                redirect = response.headers[Header.Location] as string
+            } else if (URL_REGEX.exec(data)) {
+                redirect = (URL_REGEX.exec(data) as RegExpExecArray)[1]
+            } else {
+                throw new Error('no redirect url parsed out')
+            }
+            if (!redirect.startsWith(Protocol.HTTPProtocol) && !redirect.startsWith(Protocol.HTTPSProtocol)) {
+                redirect = combineRelativePath(url, redirect)
+            }
+            return redirect
         }
-        return redirect
-    }
-
-    let requestOptions: http.RequestOptions = await generateRequestOption(url, getHeaders)
-    let [err, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-    if (err) {
-        throw err
-    }
-    let retryCount = 0
-    while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
-        let [err, url] = await handlePromise<string>(fetchRedirect(response))
+    
+        let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
+        let [err, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
+            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
         if (err) {
             throw err
         }
-        requestOptions = await generateRequestOption(url, getHeaders)
-        ;[err, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (err) {
-            throw err
+        let retryCount = 0
+        while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
+            ;[err, url] = await handlePromise<string>(fetchRedirect(request, response))
+            if (err) {
+                throw err
+            }
+            requestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
+            ;[err, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
+            if (err) {
+                throw err
+            }
         }
+        if (checkRedirectStatus(response.statusCode)) {
+            throw new Error('too much redirections')
+        }
+        return [response, url]
     }
-    if (checkRedirectStatus(response.statusCode)) {
-        throw new Error('too much redirections')
-    }
-    return [response, url]
-}
 
-const preflight = async (url: string): Promise<ParsedInfo> => {
-    const [err, [res, redirectUrl]]: [Error | undefined, [http.IncomingMessage, string]] = await handlePromise<[http.IncomingMessage, string]>(handleRedirectRequest(url, getPreflightHeaders))
+    const [err, [res, redirectUrl]]: [Error | undefined, [http.IncomingMessage, string]] = 
+        await handlePromise<[http.IncomingMessage, string]>(handleRedirectRequest())
     if (err) {
         throw err
     }
@@ -88,9 +87,9 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         throw new Error(`Response status code ${responseStatusCode}`)
     }
 
-    const parsedInfo = new ParsedInfo()
-    parsedInfo.url = url
-    parsedInfo.downloadUrl = redirectUrl
+    const preflightInfo = new PreflightInfo()
+    preflightInfo.url = url
+    preflightInfo.downloadUrl = redirectUrl
     // file's type, subtype and maybe charset
     const headerContentType: string = reponseHeaders[Header.ContentType] as string
     if (headerContentType) {
@@ -106,10 +105,10 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
             contentType = headerContentType
         }
         const parts: Array<string> = contentType.split(MEDIA_TYPE_SPLITER)
-        parsedInfo.type = parts[0]
-        parsedInfo.subType = parts[1]
-        if (charset && parsedInfo.type === 'text')
-            parsedInfo.charset = charset
+        preflightInfo.type = parts[0]
+        preflightInfo.subType = parts[1]
+        if (charset && preflightInfo.type === 'text')
+            preflightInfo.charset = charset
     }
     // file's name
     const headerContentDisposition: string = reponseHeaders[Header.ContentDisposition] as string
@@ -117,9 +116,9 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
         const fileNameRe: RegExp = new RegExp('filename=\"(.+)\"')
         const fileNameReResult: RegExpExecArray | null = fileNameRe.exec(headerContentDisposition)
         if (fileNameReResult) 
-            parsedInfo.name = fileNameReResult[1] // could be undefined
+            preflightInfo.name = fileNameReResult[1] // could be undefined
     } 
-    if (!parsedInfo.name) {
+    if (!preflightInfo.name) {
         if (url.includes(URL_PROTOCOL_SPLITER)) {
             const parts: Array<string> = url.split(URL_PROTOCOL_SPLITER)
             url = parts[parts.length - 1]
@@ -135,52 +134,52 @@ const preflight = async (url: string): Promise<ParsedInfo> => {
                 route = routeWithParameter
             }
             if (route.includes(FILE_EXTENSION_DOT)) {
-                parsedInfo.name = route
+                preflightInfo.name = route
             } else {
-                parsedInfo.name = route + FILE_EXTENSION_DOT + parsedInfo.subType
+                preflightInfo.name = route + FILE_EXTENSION_DOT + preflightInfo.subType
             }
         } else {
-            parsedInfo.name = parsedInfo.type + FILE_EXTENSION_DOT + parsedInfo.subType
+            preflightInfo.name = preflightInfo.type + FILE_EXTENSION_DOT + preflightInfo.subType
         }
     }
     // file's size
     if (responseStatusCode === ResponseStatusCode.OK) {
         const headerContentLength: string = reponseHeaders[Header.ContentLength] as string
         if (headerContentLength) {
-            parsedInfo.size = parseInt(headerContentLength)
+            preflightInfo.size = parseInt(headerContentLength)
         } else { // chunk
-            parsedInfo.size = undefined
+            preflightInfo.size = undefined
         } 
     } else { // statusCode === ResponseStatusCode.PartialContent
         const headerContentRange: string = reponseHeaders[Header.ContentRange] as string
         if (headerContentRange) {
             const parts: Array<string> = headerContentRange.split(MEDIA_TYPE_SPLITER)
             try {
-                parsedInfo.size = parseInt(parts[1])
+                preflightInfo.size = parseInt(parts[1])
             } catch (error: any) {
-                parsedInfo.size = undefined
+                preflightInfo.size = undefined
             }
         } else {
-            parsedInfo.size = undefined
+            preflightInfo.size = undefined
         }
     }
     // file's createdAt time
     const headerLastModified: string = reponseHeaders[Header.LastModified] as string
     if (headerLastModified) {
-        parsedInfo.createdAt = new Date(headerLastModified).toISOString()
+        preflightInfo.createdAt = new Date(headerLastModified).toISOString()
     }
     // downloadType
     if (responseStatusCode === ResponseStatusCode.PartialContent) {
-        parsedInfo.downloadType = DownloadType.Range
+        preflightInfo.downloadType = DownloadType.Range
     } else {
-        if (parsedInfo.type === 'application' && 
-            (parsedInfo.subType === 'x-mpegURL' || parsedInfo.subType === 'vnd.apple.mpegURL')) {
-            parsedInfo.downloadType = DownloadType.Blob
+        if (preflightInfo.type === 'application' && 
+            (preflightInfo.subType === 'x-mpegURL' || preflightInfo.subType === 'vnd.apple.mpegURL')) {
+            preflightInfo.downloadType = DownloadType.Blob
         } else {
-            parsedInfo.downloadType = DownloadType.Direct
+            preflightInfo.downloadType = DownloadType.Direct
         }
     }
-    return parsedInfo
+    return preflightInfo
 }
 
-export { ParsedInfo, preflight }
+export { PreflightInfo, preflight }

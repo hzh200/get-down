@@ -1,4 +1,4 @@
-import { Parser } from './index'
+import { Parser } from './parser'
 import DefaultParser from './default_parser'
 
 class YoutubeParser extends DefaultParser implements Parser {

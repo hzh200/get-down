@@ -1,3 +1,5 @@
+import { TaskType, TaskStatus } from './constants'
+
 class TaskItem {
     taskNo: number
     name: string
@@ -6,16 +8,12 @@ class TaskItem {
     url: string
     status: TaskStatus
     progress: number
-    createdAt: string // timestamp added automatically by Sequelize
-    updatedAt: string // timestamp added automatically by Sequelize
+    location: string
+    parserNo: number
+    createdAt: string // timestamp added automatically by Sequelize.
+    updatedAt: string // timestamp added automatically by Sequelize.
+
+    taskType: TaskType // Differ from database fields.
 }
 
-enum TaskStatus {
-    Waiting = 'Waiting',
-    Downloading = 'Downloading',
-    Paused = 'Paused',
-    Done = 'Done',
-    Failed = 'Failed'
-}
-
-export { TaskItem, TaskStatus }
+export { TaskItem }

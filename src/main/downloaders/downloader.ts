@@ -1,20 +1,13 @@
-import * as fs from 'node:fs'
 import * as http from 'node:http'
-import * as https from 'node:https'
+import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as EventEmitter from 'events'
-import { Task, TaskSet, TaskItem, TaskStatus } from '../../share/models'
-import { handlePromise } from '../../share/utils'
 import { taskQueue } from '../queue'
 import { Log } from '../../share/utils'
-import { TaskModel } from '../persistence'
-import { parserModule } from '../../share/parsers'
-import { ProxyChooses, readSetting, writeSetting, Setting } from '../../share/utils'
-import { globalSetting } from '../../share/global'
-import { getDownloadHeaders } from '../../share/http/header'
-import { getProxySettings, ProxySettings, ProxySetting } from "get-proxy-settings"
-import { generateRequestOption } from '../../share/http/option'
-import { Protocol } from '../../share/http/constants'
+import parserModule from '../../share/parsers'
+import { TaskModel } from '../persistence/model_type'
+import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
+import { Parser } from 'src/share/parsers/parser'
 
 enum DownloaderEvent {
     Done = 'Done',
@@ -35,15 +28,27 @@ class Downloader extends EventEmitter {
     constructor(taskNo: number) {
         super()
         this.taskNo = taskNo
-        try {
-            this.task = taskQueue.getTaskItem(taskNo) as TaskModel
-        } catch (error: any) {
-            Log.errorLog(error)
-        }
+        this.task = taskQueue.getTask(taskNo) as TaskModel
         this.filePath = path.join(this.task.location, this.task.name)
     }
 
+    async generateDownloadOption(): Promise<http.RequestOptions> {
+        const option: http.RequestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
+        const parser: Parser= parserModule.getParser(this.task.parserNo)
+        if (parser.requestHeaders) {
+            option.headers = {
+                ...option.headers,
+                ...parser.requestHeaders
+            }
+        }
+        return option
+    }
+
     async download(): Promise<void> {
+        const parentPath: string = path.dirname(this.filePath)
+        if (!fs.existsSync(parentPath)) {
+            fs.mkdirSync(parentPath, { recursive: true });
+        }
         if (!fs.existsSync(this.filePath)) {
             this.fd = fs.openSync(this.filePath, 'w')
         } else {
@@ -67,6 +72,5 @@ class Downloader extends EventEmitter {
         Log.infoLog(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
     }
 }
-
 
 export { Downloader, DownloaderEvent }

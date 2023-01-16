@@ -5,8 +5,12 @@
 
 *, *::after, *::before {
     box-sizing: border-box;
-    border-radius: 2px;
+    /* border-radius: 2px; */
     user-select: none;
+}
+
+label::after {
+    content: ' ';
 }
 
 img {

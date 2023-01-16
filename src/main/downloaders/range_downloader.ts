@@ -4,11 +4,9 @@ import * as stream from 'node:stream'
 import * as https from 'node:https'
 import { handlePromise } from '../../share/utils'
 import { Log } from '../../share/utils'
-import { parserModule } from '../../share/parsers'
+import parserModule from '../../share/parsers'
 import { Downloader } from './downloader'
 import { httpRequest, getDecodingStream } from '../../share/http/request'
-import { generateRequestOption } from '../../share/http/option'
-import { getDownloadHeaders } from '../../share/http/header'
 import { Header, StreamEvent } from '../../share/http/constants'
 
 const { v4: uuidv4 } = require('uuid')
@@ -117,7 +115,8 @@ class RangeDownloader extends Downloader {
         }
 
         const range: Array<number> = this.rangeMap.get(uuid) as Array<number>
-        const requestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
+        const requestOptions = await this.generateDownloadOption()
+        // const requestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
         ;(requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`
         const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
             await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
