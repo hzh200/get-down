@@ -13,6 +13,6 @@ label::after {
     content: ' ';
 }
 
-img {
-    display: block;
+img { /* display is inline by default */
+    vertical-align: middle;
 }

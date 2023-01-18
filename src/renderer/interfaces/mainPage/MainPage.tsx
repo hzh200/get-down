@@ -10,10 +10,12 @@ import Popup from '../../components/Popup'
 import * as path from 'node:path'
 import { Task, TaskSet, TaskItem, TaskStatus, TaskType } from '../../../share/models'
 import { CommunicateAPIName } from '../../../share/communication'
+import DownloadInfo from './download_info'
 import './global.css'
 
 function MainPage() {
     const [taskItems, setTaskItems] = React.useState<Array<TaskItem>>([])
+    const [downloadInfos, setDownloadInfos] = React.useState<Map<string, DownloadInfo>>(new Map())
     const [selectedRows, setSelectedRows] = React.useState<Array<[number, TaskType]>>([])
     const [showParserWindow, setShowParserWindow] = React.useState<boolean>(false)
     const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false)
@@ -33,6 +35,24 @@ function MainPage() {
                 }
                 return newTaskItems
             })
+            if (!downloadInfos.has(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`) 
+                    && updateTaskItem.status === TaskStatus.Downloading) {
+                setDownloadInfos(downloadInfos => {
+                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
+                    const downloadInfo: DownloadInfo = new DownloadInfo()
+                    downloadInfo.taskNo = updateTaskItem.taskNo
+                    downloadInfo.taskType = updateTaskItem.taskType
+                    downloadInfo.speed = ''
+                    newDownloadInfos.set(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`, downloadInfo) 
+                    return newDownloadInfos
+                })
+            } else if (!downloadInfos.has(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`)) {
+                setDownloadInfos(downloadInfos => {
+                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
+                    newDownloadInfos.delete(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`)
+                    return newDownloadInfos
+                })
+            }
         })
         ipcRenderer.on(CommunicateAPIName.DeleteTaskItem, (_event: IpcRendererEvent, deletedTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => {
@@ -47,6 +67,13 @@ function MainPage() {
                 newTaskItems.splice(deletedTaskItemIndex, 1)
                 return newTaskItems
             })
+            if (downloadInfos.has(`${deletedTaskItem.taskType}${deletedTaskItem.taskNo}`)) {
+                setDownloadInfos(downloadInfos => {
+                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
+                    newDownloadInfos.delete(`${deletedTaskItem.taskType}${deletedTaskItem.taskNo}`)
+                    return newDownloadInfos
+                })
+            }
         })
     }, [])
 
@@ -133,7 +160,14 @@ function MainPage() {
         // const taskNo: number = parseInt(target.parentElement?.children[0]?.innerHTML as string)
         let newSelectedRows: Array<[number, TaskType]> = [...selectedRows]
         if ((window as any).event.ctrlKey) {
-            if (newSelectedRows.includes([taskNo, taskType])) {
+            let isContained: boolean = false
+            for (const [selectedTaskNo, selectedTaskType] of newSelectedRows) {
+                if (selectedTaskNo === taskNo && selectedTaskType === taskType) {
+                    isContained = true
+                }
+            }
+
+            if (isContained) {
                 newSelectedRows = newSelectedRows.filter(([selectedTaskNo, selectedTaskType]: [number, TaskType], _index: number, _array: Array<[number, TaskType]>) => {
                     return selectedTaskNo !== taskNo || selectedTaskType !== taskType
                 })
@@ -143,7 +177,6 @@ function MainPage() {
         } else {
             newSelectedRows = [[taskNo, taskType]]
         }
-        console.log(newSelectedRows)
         setSelectedRows((_selectedRows: Array<[number, TaskType]>) => {
             return newSelectedRows
         })

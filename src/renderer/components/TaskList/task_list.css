@@ -18,7 +18,7 @@
 }
 
 .task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row.selected-row {
-    background-color: burlywood;
+    background-color: rgb(255, 229, 193);
 }
 
 .task-list > .task-list-body > table > tbody > tr.tasklist-table-body-row:hover {
@@ -34,11 +34,11 @@
 }
 
 .type-thead-th {
-    width: 10%;
+    width: 3%;
 }
 
 .name-thead-th {
-    width: 50%;
+    width: 57%;
 }
 
 .progress-thead-th {
@@ -46,7 +46,7 @@
 }
 
 .size-thead-th {
-    width: 10%;
+    width: 20%;
 }
 
 .time-thead-th {
