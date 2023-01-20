@@ -5,23 +5,6 @@ import * as stream from 'node:stream'
 import { Protocol, StreamEvent, Decoding } from './constants'
 
 const httpRequest = (options: http.RequestOptions): Promise<[http.ClientRequest, http.IncomingMessage]> => {
-    // if (options.protocol === Protocol.HTTPSProtocol) {
-    //     return new Promise((resolve, reject) => {
-    //         https.get(options, (res: http.IncomingMessage) => {
-    //             resolve(res)
-    //         }).on('error', (err: Error) => {
-    //             reject(err)
-    //         })
-    //     })
-    // } else { // http://
-    //     return new Promise((resolve, reject) => {
-    //         http.get(options, (res: http.IncomingMessage) => {
-    //             resolve(res)
-    //         }).on('error', (err: Error) => {
-    //             reject(err)
-    //         })
-    //     })
-    // }
     return new Promise((resolve, reject) => {
         let requestModule: any = http
         if (options.protocol === Protocol.HTTPSProtocol) {

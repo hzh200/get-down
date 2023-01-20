@@ -1,4 +1,4 @@
-import { taskQueue } from '../queue'
+import taskQueue from '../queue'
 import { DownloadType } from '../../share/models'
 import { Downloader, DownloaderEvent } from './downloader'
 import { RangeDownloader } from './range_downloader'

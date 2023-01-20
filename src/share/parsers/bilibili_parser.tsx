@@ -292,7 +292,6 @@ class BiliBiliParser implements Parser {
     
             ipcRenderer.send(CommunicateAPIName.AddTaskSet, [taskSet, tasks])
         }
-
     }
 }
 

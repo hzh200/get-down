@@ -4,13 +4,11 @@ import DefaultParser from './default_parser'
 import BiliBiliParser from './bilibili_parser'
 import YoutubeParser from './youtube_parser'
 
-const parsers: Array<Parser> = []
-const defaultParser: Parser = new DefaultParser()
-const bilibiliParser: Parser = new BiliBiliParser()
-const youtubeParser: Parser = new YoutubeParser()
-parsers.push(defaultParser)
-parsers.push(bilibiliParser)
-parsers.push(youtubeParser)
+const parsers: Array<Parser> = [
+    new DefaultParser(),
+    new BiliBiliParser(),
+    new YoutubeParser()
+]
 
 const parserModule = {
     index: 0,

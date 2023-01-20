@@ -8,7 +8,8 @@ enum TaskStatus {
     Downloading = 'Downloading',
     Paused = 'Paused',
     Done = 'Done',
-    Failed = 'Failed'
+    Failed = 'Failed',
+    Processing = 'Processing'
 }
 
 enum DownloadType {

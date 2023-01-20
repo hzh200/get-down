@@ -2,12 +2,12 @@ import * as http from 'node:http'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as EventEmitter from 'events'
-import { taskQueue } from '../queue'
+import taskQueue from '../queue'
 import { Log } from '../../share/utils'
 import parserModule from '../../share/parsers'
 import { TaskModel } from '../persistence/model_type'
 import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
-import { Parser } from 'src/share/parsers/parser'
+import { Parser } from '../../share/parsers/parser'
 
 enum DownloaderEvent {
     Done = 'Done',

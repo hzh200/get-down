@@ -13,6 +13,7 @@ function ParserPage() {
     const [status, setStatus] = React.useState<ParserStatus>(ParserStatus.static)
     const [optionsInfo, setOptionsInfo] = React.useState<ParsedInfo>(new ParsedInfo())
     const [errorMessage, setErrorMessage] = React.useState<string>('')
+    const [feedbackMessage, setFeedbackMessage] = React.useState<string>('')
     React.useEffect(() => {
         for (const parser of parserModule.parsers) {
             setParserNames((parsers) => [...parsers, parser.parseTarget])
@@ -47,6 +48,7 @@ function ParserPage() {
         setOptionsInfo(parsedInfo)
         setStatus(ParserStatus.succeed)
         setErrorMessage('')
+        setFeedbackMessage('')
     }
     const handleInfoPanelChange: React.ChangeEventHandler<HTMLInputElement> = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const elementTarget: HTMLInputElement = event.target as HTMLInputElement
@@ -87,16 +89,20 @@ function ParserPage() {
     }
     const download: React.MouseEventHandler<HTMLButtonElement> = async () => {
         if (optionsInfo) {
-            parserModule.addTask(optionsInfo).catch((error: Error) => {
-                setErrorMessage(error.name + ':' + error.message)
-            })
+            setFeedbackMessage('adding tasks')
+            try {
+                await parserModule.addTask(optionsInfo)
+                setFeedbackMessage('add tasks succeed')
+            } catch (error: any) {
+                setFeedbackMessage(error.name + ':' + error.message)
+            }
         }
     }
     return (
         <div className='parser-page'>
             <UrlBar parserNames={parserNames} choosenParserName={choosenParserName} handleParserChange={handleParserChange}
                 url={url} handleUrlChange={handleUrlChange} parseUrl={parseUrl} />
-            <StatusPanel status={status} optionsInfo={optionsInfo} handleInfoPanelChange={handleInfoPanelChange} errorMessage={errorMessage} downloadUrl={download} />
+            <StatusPanel status={status} optionsInfo={optionsInfo} handleInfoPanelChange={handleInfoPanelChange} errorMessage={errorMessage} feedbackMessage={feedbackMessage} downloadUrl={download} />
         </div>
     )
 }

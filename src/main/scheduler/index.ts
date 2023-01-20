@@ -2,12 +2,13 @@ import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { Task, TaskSet, TaskItem, TaskStatus, DownloadType, TaskType } from '../../share/models'
 import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_type'
 import { mainWindow } from '../main'
-import { taskQueue } from '../queue'
+import taskQueue from '../queue'
 import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
 import { createTaskModel, createTaskSetModel, updateTaskModel, updateTaskModelStatus, updateTaskModelParent, deleteTaskModel, getAllTaskModels, 
     updateTaskSetModel, updateTaskSetModelStatus, updateTaskSetModelChildren, deleteTaskSetModel, getAllTaskSetModels, getAllSequenceModels } from '../persistence'
 import { Log, handlePromise } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/communication'
+import parserModule from '../../share/parsers'
 
 const maxDownloadLimit: number = 3
 
@@ -36,25 +37,53 @@ class Scheduler {
                 if (!taskNo) {
                     return
                 }
-
+                const parentTaskSetNo: number | null = this.getParentTaskNo(taskNo)
                 const downloader: Downloader = this.downloadTask(taskNo)
+                const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
 
-                // const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
-                if (this.getParentTaskNo(taskNo)) {
-                    this.downloadTaskSet(this.getParentTaskNo(taskNo) as number)
+                if (parentTaskSetNo) {
+                    this.downloadTaskSet(parentTaskSetNo)
                 }
 
-                downloader.on(DownloaderEvent.Done, () => {
-                    this.finishDownloadTask(taskNo, TaskStatus.Done)
-                    if (this.getParentTaskNo(taskNo)) {
-                        this.finishDownloadTaskSet(this.getParentTaskNo(taskNo) as number)
+                downloader.on(DownloaderEvent.Done, async () => {
+                    const taskCallback = parserModule.getParser(task.parserNo).taskCallback
+                    const taskSetCallback = parserModule.getParser(task.parserNo).taskSetCallback
+                    if (taskCallback) {
+                        try {
+                            await taskCallback(taskNo)
+                            this.finishDownloadTask(taskNo, TaskStatus.Done)
+                        } catch (error: any) {
+                            this.finishDownloadTask(taskNo, TaskStatus.Failed)
+                        }
+                    } else {
+                        this.finishDownloadTask(taskNo, TaskStatus.Done)
+                    }
+                    if (parentTaskSetNo) {
+                        const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
+                        for (const child of taskSet.children) {
+                            if (this.taskProcesserMap.has(child)) return
+                        }
+                        if (taskSetCallback) {
+                            taskSet.status = TaskStatus.Processing
+                            updateTaskSetModel(taskSet)
+                            try {
+                                await taskSetCallback(parentTaskSetNo)
+                            } catch (error: any) {
+                                Log.errorLog(error)
+                            }
+                        }
+                        this.finishDownloadTaskSet(parentTaskSetNo)
                     }
                 })
 
                 downloader.on(DownloaderEvent.Fail, () => {
                     this.finishDownloadTask(taskNo, TaskStatus.Failed)
-                    if (this.getParentTaskNo(taskNo)) {
-                        this.finishDownloadTaskSet(this.getParentTaskNo(taskNo) as number)
+                    if (parentTaskSetNo) {
+                        const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
+                        for (const child of taskSet.children) {
+                            if (this.taskProcesserMap.has(child)) return
+                        }
+                        this.finishDownloadTaskSet(parentTaskSetNo)
                     }
                 })
 
@@ -225,7 +254,9 @@ class Scheduler {
         }
         const taskSetTimer: NodeJS.Timer = setInterval(() => {
             const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo as number) as TaskSetModel
-            this.calculateTaskSetStatus(taskSet)
+            if (taskSet.status !== TaskStatus.Processing) {
+                this.calculateTaskSetStatus(taskSet)
+            }
             this.calculateTaskSetProgress(taskSet)
             updateTaskSetModel(taskSet)
             this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet)
@@ -245,12 +276,6 @@ class Scheduler {
 
     finishDownloadTaskSet = (taskNo: number): void => {
         const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel
-        for (const child of taskSet.children) {
-            if (this.taskProcesserMap.has(child)) {
-                return
-            }
-        }
-
         this.calculateTaskSetStatus(taskSet)
         this.calculateTaskSetProgress(taskSet)
         clearInterval(this.taskSetProcesserMap.get(taskNo) as NodeJS.Timer)

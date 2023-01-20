@@ -9,7 +9,7 @@
     user-select: none;
 }
 
-label::after {
+label::after, label::before {
     content: ' ';
 }
 

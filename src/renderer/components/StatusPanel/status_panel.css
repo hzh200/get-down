@@ -4,6 +4,10 @@
     align-items: stretch;
 }
 
+.info-panel > .info-panel-row > input {
+    width: 400px;
+}
+
 .info-panel > .download-button-row {
     display: flex;
     justify-content: flex-end;

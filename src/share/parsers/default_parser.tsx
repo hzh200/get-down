@@ -29,7 +29,7 @@ class DefaultParsedInfo extends ParsedInfo {
 
 class DefaultParser implements Parser {
     parserNo: number = 0
-    parseTarget: string = 'default'
+    parseTarget: string = 'Default'
 
     parse = async (url: string): Promise<ParsedInfo> => {
         const setting: Setting = readSetting()

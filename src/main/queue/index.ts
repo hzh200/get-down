@@ -67,4 +67,4 @@ const taskQueue = {
     }
 }
 
-export { taskQueue }
+export default taskQueue
