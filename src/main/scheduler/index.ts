@@ -146,7 +146,7 @@ class Scheduler {
                         if (!downloader) {
                             return
                         }
-                        (downloader as RangeDownloader).finish()
+                        (downloader as RangeDownloader).destroy()
                         this.finishDownloadTask(taskNo, TaskStatus.Paused)
                     }
                 }
@@ -209,7 +209,7 @@ class Scheduler {
                         if (!downloader) {
                             return
                         }
-                        ;(downloader as RangeDownloader).finish()
+                        ;(downloader as RangeDownloader).destroy()
                         this.finishDownloadTask(taskNo, TaskStatus.Paused)
                         const [deleteError, __]: [Error | undefined, void] = await handlePromise<void>(deleteTaskModel(task))
                         if (deleteError) {

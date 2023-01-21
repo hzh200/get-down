@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as http from 'http'
 import { Parser, ParsedInfo } from './parser'
 import InfoRow from './InfoRow'
-import { PreflightInfo, preflight } from '../http/preflight'
+import { PreflightInfo, preflight } from './preflight'
 
 import { Task, DownloadType } from '../../share/models'
 import { Setting, readSetting, handlePromise } from '../utils'

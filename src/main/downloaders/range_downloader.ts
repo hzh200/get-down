@@ -8,17 +8,22 @@ import parserModule from '../../share/parsers'
 import { Downloader } from './downloader'
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 import { Header, StreamEvent } from '../../share/http/constants'
-
+import { TaskModel } from '../persistence/model_type'
+import { DownloaderEvent } from './downloader'
 const { v4: uuidv4 } = require('uuid')
 
-const RangeLength: number = 1024 * 1024 // 1 MB
 const RangeLimit: number = 20
 
 class RangeDownloader extends Downloader {
+    declare taskNo: number
+    declare task: TaskModel
+    declare fd: number
+    declare filePath: string
     rangeMap: Map<string, Array<number>> = new Map<string, Array<number>>()
     responseStreamMap: Map<string, stream.Readable> = new Map<string, stream.Readable>()
     downloadTimer: NodeJS.Timer
-    finished: boolean = false
+    destroyed: boolean = false
+
     constructor(taskNo: number) {
         super(taskNo)
     }
@@ -26,7 +31,7 @@ class RangeDownloader extends Downloader {
     async download(): Promise<void> {
         await super.download()
         this.downloadTimer = setInterval(() => {
-            if (this.finished) return
+            if (this.destroyed) return
             if ((this.task.downloadRanges as Array<Array<number>>).length === 0 && this.rangeMap.size === 0 && this.task.progress >= this.task.size) {
                 this.done()
             }
@@ -35,7 +40,7 @@ class RangeDownloader extends Downloader {
                 const uuid: string = uuidv4()
                 this.rangeMap.set(uuid, range)
                 this.downloadRange(uuid).catch((error: Error) => {
-                    if (this.finished) {
+                    if (this.destroyed) {
                         return
                     }
                     Log.errorLog(error)
@@ -44,6 +49,9 @@ class RangeDownloader extends Downloader {
         }, 500)
     }
 
+    /* 
+        Task range manuvour functions
+    */
     isRangeLeft = (): boolean => {
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>
         if (!ranges) {
@@ -55,8 +63,11 @@ class RangeDownloader extends Downloader {
         }
         return true
     }
-
     getPartialRange = (): Array<number> => {
+        const _1MB: number = 1024 * 1024
+        const _10Percent: number = Math.floor((this.task.size - this.task.progress) / 10)
+        const RangeLength: number = _1MB < _10Percent ? _1MB : _10Percent
+        
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>
         if (ranges[0][1] - ranges[0][0] <= RangeLength) {
             return ranges.splice(0, 1)[0]
@@ -66,27 +77,35 @@ class RangeDownloader extends Downloader {
             return [left, ranges[0][0] - 1]
         }
     }
-
     postPartialRange = (range: Array<number>): void => {
+        if (range[0] > range[1]) {
+            return
+        }
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>
         ranges.splice(0, 0, range)
     }
 
+    // Main downlaod process.
     downloadRange = async (uuid: string): Promise<void> => {
         const handleEnd = (): void => {
+            if (this.destroyed) return
+            if (range[0] !== range[1] + 1) {
+                Log.errorLog('range not fit: range[0]' + range[0] + ' range[1] ' + range[1])
+                this.postPartialRange(range)
+            }
             this.rangeMap.delete(uuid)
             this.responseStreamMap.delete(uuid)
         }
         const handleError = (error: Error): void => {
-            // If download is to be finished, let finsih process handle the rest of work. 
-            if (this.finished) return
+            // If download is to be destroyed, let finsih process handle the rest of work. 
+            if (this.destroyed) return
             Log.errorLog(error)
             this.postPartialRange(range)
             this.rangeMap.delete(uuid)
             this.responseStreamMap.delete(uuid)
         } 
         const handleTimeout = (response: http.IncomingMessage): void => {
-            if (this.finished) return 
+            if (this.destroyed) return 
             response.destroy()
             this.postPartialRange(range)
             this.rangeMap.delete(uuid)
@@ -95,7 +114,7 @@ class RangeDownloader extends Downloader {
         const handleResponseStream = (stream: stream.Readable, range: Array<number>): void => {
             this.responseStreamMap.set(uuid, stream)
             stream.on(StreamEvent.Data, (chunk: any) => {
-                if (this.finished) return
+                if (this.destroyed) return
                 const written: number = fs.writeSync(this.fd, chunk, 0, chunk.length, range[0])
                 if (written !== chunk.length) {
                     // Let error handler handle it altogether
@@ -120,8 +139,11 @@ class RangeDownloader extends Downloader {
         ;(requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`
         const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
             await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (error) { // 'connect ETIMEDOUT' error while being finishing or after being finished.
+        if (error) { // 'connect ETIMEDOUT' error while being finishing or after being destroyed.
             handleError(error)
+        }
+        if (response.statusCode !== 206) { // 302, 403
+            this.reparse()
         }
         const encoding: string = response.headers[Header.ContentEncoding] as string
         if (encoding) {
@@ -143,23 +165,34 @@ class RangeDownloader extends Downloader {
         })
     }
 
-    clearResource(): void {
-        super.clearResource()
+    // Entrance for Scheduler to pause and delete the downloader, for Range Downloader only.
+    destroy = (): void => {
+        this.destroyed = true
+        for (const [_uuid, stream] of this.responseStreamMap) {
+            stream.destroy() // Calling this will cause remaining data in the response to be dropped and the socket to be destroyed.
+        }
+        for (const [_uuid, range] of this.rangeMap) {
+            this.postPartialRange(range)
+        }
+        this.clear()
+    }
+
+    reparse = (): void => {
+        this.emit(DownloaderEvent.Reparse)
+    }
+
+    // Override from Downloader.
+    clear(): void {
+        super.clear()
         clearInterval(this.downloadTimer)
         this.rangeMap.clear()
         this.responseStreamMap.clear()
     }
 
-    finish = (): void => {
-        this.finished = true
-        for (const [_uuid, stream] of this.responseStreamMap) {
-            stream.destroy() // Calling this will cause remaining data in the response to be dropped and the socket to be destroyed.
-        } 
-        for (const [_uuid, range] of this.rangeMap) {
-            this.postPartialRange(range)
-        }
-        this.clearResource()
-    }
+    // Inherit from Downloader.
+    declare generateDownloadOption: () => Promise<http.RequestOptions>
+    declare done: () => void
+    declare fail: () => void
 }
 
 export { RangeDownloader }

@@ -3,28 +3,25 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as EventEmitter from 'events'
 import taskQueue from '../queue'
-import { Log } from '../../share/utils'
+import { Log, handlePromise } from '../../share/utils'
 import parserModule from '../../share/parsers'
 import { TaskModel } from '../persistence/model_type'
 import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Parser } from '../../share/parsers/parser'
+import { handleRedirectRequest } from 'src/share/http/request'
 
 enum DownloaderEvent {
     Done = 'Done',
-    Fail = 'Fail'
+    Fail = 'Fail',
+    Reparse = 'Reparse' // For range downloader only. 
 }
 
 class Downloader extends EventEmitter {
     taskNo: number
     task: TaskModel
-    // parentTask: TaskSet
-
-    // protocol: string
     fd: number
     filePath: string
-    // requestModule: any
-    // requestOptions: http.RequestOptions
-    
+
     constructor(taskNo: number) {
         super()
         this.taskNo = taskNo
@@ -32,18 +29,7 @@ class Downloader extends EventEmitter {
         this.filePath = path.join(this.task.location, this.task.name)
     }
 
-    async generateDownloadOption(): Promise<http.RequestOptions> {
-        const option: http.RequestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
-        const parser: Parser= parserModule.getParser(this.task.parserNo)
-        if (parser.requestHeaders) {
-            option.headers = {
-                ...option.headers,
-                ...parser.requestHeaders
-            }
-        }
-        return option
-    }
-
+    // Entrance of download process for Scheduler
     async download(): Promise<void> {
         const parentPath: string = path.dirname(this.filePath)
         if (!fs.existsSync(parentPath)) {
@@ -56,18 +42,30 @@ class Downloader extends EventEmitter {
         }
     }
 
-    clearResource(): void {
+    // Generate download option based on parser headers.
+    async generateDownloadOption(): Promise<http.RequestOptions> {
+        const parser: Parser = parserModule.getParser(this.task.parserNo)
+        const requestHeaders: http.OutgoingHttpHeaders | undefined = parser.requestHeaders
+        return await generateRequestOption(this.task.downloadUrl, getDownloadHeaders, requestHeaders)
+    }
+
+    // Clear Download instance resource.
+    clear(): void {
         fs.closeSync(this.fd)
     }
 
+    // Task downloads succeed.
+    // Clear the download resource and notice the Schedular.
     done = (): void => {
-        this.clearResource()
+        this.clear()
         this.emit(DownloaderEvent.Done)
         Log.infoLog(`Task ${this.task.name} downloads succeed.`)
     }
 
+    // Task downloads failed.
+    // Clear the download resource and notice the Schedular.
     fail = (): void => {
-        this.clearResource()
+        this.clear()
         this.emit(DownloaderEvent.Fail)
         Log.infoLog(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
     }

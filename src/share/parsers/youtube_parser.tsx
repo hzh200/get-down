@@ -11,11 +11,10 @@ import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../communication'
 import { httpRequest, getHttpRequestTextContent } from '../http/request'
 import { generateRequestOption, getPreflightHeaders } from '../http/options'
-import { PreflightInfo, preflight } from '../http/preflight'
+import { PreflightInfo, preflight } from './preflight'
 import { Header, FILE_EXTENSION_DOT } from '../http/constants'
 import taskQueue from '../../main/queue'
 import { TaskModel, TaskSetModel } from '../../main/persistence/model_type'
-import { video } from 'src/renderer/components/TaskList/svgs'
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\/title>')
 const FORMATS_RE = new RegExp('\"formats\".+?\]')
@@ -32,8 +31,12 @@ class YoutubeParsedInfo extends ParsedInfo {
     // selectedVideos: Array<boolean>
     // selectedFormats: Array<string>
     selectedMixtureQuality: string
-    selectedVideoFormat: SelectedFormat
-    selectedAudioFormat: SelectedFormat
+    selectedVideoFormat: FormatInfo
+    selectedAudioFormat: FormatInfo
+    // selectedVideoQuality: string
+    // selectedAudioQuality: string
+    // selectedVideoCodecs: string
+    // selectedAudioCodecs: string
     preflightInfos: Array<PreflightInfo>
 }
 
@@ -139,13 +142,13 @@ class YoutubeParser implements Parser {
             if (regexRes) {
                 format.type = regexRes[1]
                 format.subType = regexRes[2]
-                if (regexRes[3] === 'vp9') {
+                if (regexRes[3].startsWith('vp9')) {
                     format.codecs = 'vp9'
                 } else if (regexRes[3].startsWith('av01')) {
                     format.codecs = 'av1'
                 } else if (regexRes[3].startsWith('avc')) {
                     format.codecs = 'avc'
-                } else if (regexRes[3] === 'opus') {
+                } else if (regexRes[3].startsWith('opus')) {
                     format.codecs = 'opus'
                 } else if (regexRes[3].startsWith('mp4a')) {
                     format.codecs = 'mp4a'
@@ -169,56 +172,101 @@ class YoutubeParser implements Parser {
         }
 
         const sortFormats = () => {
-            videoInfo.mixtureFormats = videoInfo.mixtureFormats.sort((a: FormatInfo, b: FormatInfo) => {
-                if (a.quality.length > b.quality.length) {
-                    return -1
-                } else if (a.quality.length < b.quality.length) {
+            const sortVideoQuality = (qualityA: string, qualityB: string): number => {
+                const resolutionA: number = parseInt(qualityA.slice(0, qualityA.indexOf('p')))
+                const resolutionB: number = parseInt(qualityB.slice(0, qualityB.indexOf('p')))
+                if (resolutionA > resolutionB) {
                     return 1
+                } else if (resolutionA < resolutionB) {
+                    return -1
                 }
-                return a.quality > b.quality ? -1 : 1
-            })
-            videoInfo.videoFormats = videoInfo.videoFormats.sort((a: FormatInfo, b: FormatInfo) => {
-                if (a.quality.length > b.quality.length) {
-                    return -1
-                } else if (a.quality.length < b.quality.length) {
+                if (qualityA.length > qualityB.length) {
                     return 1
+                } else if (qualityA.length < qualityB.length) {
+                    return -1
                 }
-                if (a.quality > b.quality) {
-                    return -1
-                } else if (a.quality < b.quality) {
-                    return 1
-                } else {
-                    const sortInfo: Array<[FormatInfo, number]> = [[a, -1], [b, -1]]
-                    for (let i = 0; i < 2; i++) {
-                        if (sortInfo[i][0].mimeType.includes('av01')) {
-                            sortInfo[i][1] = 2
-                        } else if (sortInfo[i][0].mimeType.includes('vp9')) {
-                            sortInfo[i][1] = 1
-                        } else if (sortInfo[i][0].mimeType.includes('avc')) {
-                            sortInfo[i][1] = 0
+                if (!qualityA.endsWith('p')) { // b is the same
+                    try {
+                        const frameA: number = parseInt(qualityA.slice(qualityA.indexOf('p')))
+                        const frameB: number = parseInt(qualityB.slice(qualityB.indexOf('p')))
+                        if (frameA > frameB) {
+                            return 1
+                        } else {
+                            return -1
                         }
+                    } catch (error: any) { // Not frame, 'HDR' maybe.
+                        return 0
                     }
-                    if (sortInfo[0][1] > sortInfo[1][1]) {
-                        return -1
-                    } else {
-                        return 1
-                    }
-                }
-            })
-            videoInfo.audioFormats = videoInfo.audioFormats.sort((a: FormatInfo, b: FormatInfo) => {
-                const sortInfo: Array<[FormatInfo, number]> = [[a, -1], [b, -1]]
+                } 
+                return 0
+            }
+            const sortVideoCodecs = (codecsA: string, codecsB: string): number => {
+                const sortInfo: Array<[string, number]> = [[codecsA, -1], [codecsB, -1]]
                 for (let i = 0; i < 2; i++) {
-                    if (sortInfo[i][0].mimeType.includes('opus')) {
+                    if (sortInfo[i][0].includes('vp9')) {
+                        sortInfo[i][1] = 2
+                    } else if (sortInfo[i][0].includes('av01')) {
                         sortInfo[i][1] = 1
-                    } else if (sortInfo[i][0].mimeType.includes('mp4a')) {
+                    } else if (sortInfo[i][0].includes('avc')) {
                         sortInfo[i][1] = 0
                     }
                 }
                 if (sortInfo[0][1] > sortInfo[1][1]) {
-                    return -1
-                } else {
                     return 1
+                } else if (sortInfo[0][1] < sortInfo[1][1]) {
+                    return -1
                 }
+                return 0
+            }
+            const sortAudioQuality = (qualityA: string, qualityB: string): number => {
+                const sortInfo: Array<[string, number]> = [[qualityA, -1], [qualityB, -1]]
+                for (let i = 0; i < 2; i++) {
+                    if (sortInfo[i][0].includes('HIGH')) {
+                        sortInfo[i][1] = 2
+                    } else if (sortInfo[i][0].includes('MEDIUM')) {
+                        sortInfo[i][1] = 1
+                    } else if (sortInfo[i][0].includes('LOW')) {
+                        sortInfo[i][1] = 0
+                    }
+                }
+                if (sortInfo[0][1] > sortInfo[1][1]) {
+                    return 1
+                } else if (sortInfo[0][1] < sortInfo[1][1]) {
+                    return -1
+                }
+                return 0
+            }
+            const sortAudioCodecs = (codecsA: string, codecsB: string): number => {
+                const sortInfo: Array<[string, number]> = [[codecsA, -1], [codecsB, -1]]
+                for (let i = 0; i < 2; i++) {
+                    if (sortInfo[i][0].includes('opus')) {
+                        sortInfo[i][1] = 1
+                    } else if (sortInfo[i][0].includes('mp4a')) {
+                        sortInfo[i][1] = 0
+                    }
+                }
+                if (sortInfo[0][1] > sortInfo[1][1]) {
+                    return 1
+                } else {
+                    return -1
+                }
+            }
+            videoInfo.mixtureFormats = videoInfo.mixtureFormats.sort((a: FormatInfo, b: FormatInfo) => {
+                return -sortVideoQuality(a.quality, b.quality)
+            })
+            videoInfo.videoFormats = videoInfo.videoFormats.sort((a: FormatInfo, b: FormatInfo) => {
+                const relation: number = sortVideoQuality(a.quality, b.quality)
+                if (relation !== 0) {
+                    return -relation
+                }
+                return -sortVideoCodecs(a.codecs, b.codecs)
+            })
+            videoInfo.audioFormats = videoInfo.audioFormats.sort((a: FormatInfo, b: FormatInfo) => {
+                const relation: number = sortAudioQuality(a.quality, b.quality)
+                if (relation !== 0) {
+                    return -relation
+                }
+                return -sortAudioCodecs(a.codecs, b.codecs)
             })
         }
         sortFormats()
@@ -385,7 +433,6 @@ class YoutubeParser implements Parser {
             if (err) {
                 throw err
             }
-            console.log(preflightParsedInfo)
             const videoTask = new Task()
             videoTask.name = parsedInfo.name + '_video' + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             videoTask.size = preflightParsedInfo.size

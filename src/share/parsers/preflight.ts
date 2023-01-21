@@ -1,14 +1,10 @@
 import * as http from 'node:http'
 import { handlePromise } from '../utils'
 import { DownloadType } from '../models'
-import { httpRequest, getHttpRequestTextContent } from './request'
-import { ResponseStatusCode, Header, URL_REGEX, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 
+import { handleRedirectRequest } from '../http/request'
+import { ResponseStatusCode, Header, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 
     URL_ROUTER_SPLITER, URL_PROTOCOL_SPLITER, URL_PARAMETER_SPLITER, FILE_EXTENSION_DOT, 
-    ASSIGNMENT_SPLITER, Protocol} from './constants'
-import { generateRequestOption, getHeaders, getPreflightHeaders } from './options'
-import { combineRelativePath } from './util'
-
-const REDIRECT_LIMIT = 3
+    ASSIGNMENT_SPLITER} from '../http/constants'
 
 class PreflightInfo {
     name: string
@@ -22,61 +18,9 @@ class PreflightInfo {
     downloadType: DownloadType
 }
 
-const checkRedirectStatus = (statusCode: number | undefined): boolean => {
-    if (!statusCode) {
-        return false
-    }
-    if (statusCode === ResponseStatusCode.MovedPermanently || statusCode === ResponseStatusCode.Found 
-        || statusCode === ResponseStatusCode.TemporaryRedirect || statusCode === ResponseStatusCode.PermanentRedirect) {
-        return true
-    }
-    return false
-}
-
 const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<PreflightInfo> => {
-    const handleRedirectRequest = async (): Promise<[http.IncomingMessage, string]> => {
-        const fetchRedirect = async (request: http.ClientRequest, response: http.IncomingMessage): Promise<string> => {
-            let redirect: string
-            const data = await getHttpRequestTextContent(request, response)
-            if (response.headers[Header.Location]) {
-                redirect = response.headers[Header.Location] as string
-            } else if (URL_REGEX.exec(data)) {
-                redirect = (URL_REGEX.exec(data) as RegExpExecArray)[1]
-            } else {
-                throw new Error('no redirect url parsed out')
-            }
-            if (!redirect.startsWith(Protocol.HTTPProtocol) && !redirect.startsWith(Protocol.HTTPSProtocol)) {
-                redirect = combineRelativePath(url, redirect)
-            }
-            return redirect
-        }
-    
-        let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
-        let [err, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (err) {
-            throw err
-        }
-        let retryCount = 0
-        while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
-            ;[err, url] = await handlePromise<string>(fetchRedirect(request, response))
-            if (err) {
-                throw err
-            }
-            requestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
-            ;[err, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-            if (err) {
-                throw err
-            }
-        }
-        if (checkRedirectStatus(response.statusCode)) {
-            throw new Error('too much redirections')
-        }
-        return [response, url]
-    }
-
     const [err, [res, redirectUrl]]: [Error | undefined, [http.IncomingMessage, string]] = 
-        await handlePromise<[http.IncomingMessage, string]>(handleRedirectRequest())
+        await handlePromise<[http.IncomingMessage, string]>(handleRedirectRequest(url, additionHeaders))
     if (err) {
         throw err
     }

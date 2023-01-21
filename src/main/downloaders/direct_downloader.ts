@@ -9,18 +9,25 @@ import { Downloader } from "./downloader"
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 // import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Header, StreamEvent } from '../../share/http/constants'
+import { TaskModel } from '../persistence/model_type'
 
 class DirectDownloader extends Downloader {
+    declare taskNo: number
+    declare task: TaskModel
+    declare fd: number
+    declare filePath: string
+
     constructor(taskNo: number) {
         super(taskNo)
     }
 
     async download(): Promise<void> {
         await super.download()
-        this.downloadWhole()
+        this.downloadDirect()
     }
 
-    downloadWhole = async () => {
+    // Main downlaod process.
+    downloadDirect = async () => {
         const handleEnd = (): void => {
             this.done()
         }
@@ -65,6 +72,12 @@ class DirectDownloader extends Downloader {
             handleError(error)
         })
     }
+
+    // Inherit from Downloader.
+    declare clear: () => void
+    declare generateDownloadOption: () => Promise<http.RequestOptions>
+    declare done: () => void
+    declare fail: () => void
 }
 
 export { DirectDownloader }

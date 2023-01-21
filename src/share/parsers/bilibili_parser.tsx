@@ -9,7 +9,7 @@ import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../communication'
 import { httpRequest, getHttpRequestTextContent } from '../http/request'
 import { generateRequestOption, getPreflightHeaders } from '../http/options'
-import { PreflightInfo, preflight } from '../http/preflight'
+import { PreflightInfo, preflight } from './preflight'
 import { Header, FILE_EXTENSION_DOT } from '../http/constants'
 
 const BV_RE = new RegExp('BV[a-zA-Z0-9]+')
