@@ -75,6 +75,11 @@ function MainPage() {
                 })
             }
         })
+        return () => {
+            ipcRenderer.removeAllListeners(CommunicateAPIName.NewTaskItem)
+            ipcRenderer.removeAllListeners(CommunicateAPIName.UpdateTaskItem)
+            ipcRenderer.removeAllListeners(CommunicateAPIName.DeleteTaskItem)
+        }
     }, [])
 
     // Popup visibility control.
