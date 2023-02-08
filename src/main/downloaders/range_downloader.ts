@@ -66,7 +66,7 @@ class RangeDownloader extends Downloader {
     getPartialRange = (): Array<number> => {
         const _1MB: number = 1024 * 1024
         const _10Percent: number = Math.floor((this.task.size - this.task.progress) / 10)
-        const RangeLength: number = _1MB < _10Percent ? _1MB : _10Percent
+        const RangeLength: number = _1MB > _10Percent ? _1MB : _10Percent
         
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>
         if (ranges[0][1] - ranges[0][0] <= RangeLength) {
@@ -85,19 +85,25 @@ class RangeDownloader extends Downloader {
         ranges.splice(0, 0, range)
     }
 
-    // Main downlaod process.
+    // Main downlaod procedure.
     downloadRange = async (uuid: string): Promise<void> => {
+        const range: Array<number> = this.rangeMap.get(uuid) as Array<number>
+        const requestOptions: http.RequestOptions = await this.generateDownloadOption()
+        ;(requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`
+        const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
+            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
+
         const handleEnd = (): void => {
             if (this.destroyed) return
             if (range[0] !== range[1] + 1) {
-                Log.errorLog('range not fit: range[0]' + range[0] + ' range[1] ' + range[1])
+                Log.errorLog('range not fit:' + range + ' ' + response.statusCode + ' ' + JSON.stringify(response.headers))              
                 this.postPartialRange(range)
             }
             this.rangeMap.delete(uuid)
             this.responseStreamMap.delete(uuid)
         }
         const handleError = (error: Error): void => {
-            // If download is to be destroyed, let finsih process handle the rest of work. 
+            // If download is to be destroyed, let finsih procedure handle the rest of the work. 
             if (this.destroyed) return
             Log.errorLog(error)
             this.postPartialRange(range)
@@ -133,12 +139,6 @@ class RangeDownloader extends Downloader {
             })
         }
 
-        const range: Array<number> = this.rangeMap.get(uuid) as Array<number>
-        const requestOptions = await this.generateDownloadOption()
-        // const requestOptions = await generateRequestOption(this.task.downloadUrl, getDownloadHeaders)
-        ;(requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`
-        const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
         if (error) { // 'connect ETIMEDOUT' error while being finishing or after being destroyed.
             handleError(error)
         }

@@ -29,7 +29,7 @@ class Downloader extends EventEmitter {
         this.filePath = path.join(this.task.location, this.task.name)
     }
 
-    // Entrance of download process for Scheduler
+    // Entrance of download procedure for Scheduler
     async download(): Promise<void> {
         const parentPath: string = path.dirname(this.filePath)
         if (!fs.existsSync(parentPath)) {

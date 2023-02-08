@@ -26,7 +26,7 @@ class DirectDownloader extends Downloader {
         this.downloadDirect()
     }
 
-    // Main downlaod process.
+    // Main downlaod procedure.
     downloadDirect = async () => {
         const handleEnd = (): void => {
             this.done()
