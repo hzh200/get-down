@@ -6,10 +6,13 @@ import { handlePromise } from '../../../share/utils'
 import { ParsedInfo } from '../../../share/parsers/parser'
 import { validateUrl } from '../../../share/http/util'
 
+import './parser_page.css'
+
 function ParserPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([])
     const [url, setUrl] = React.useState<string>('')
-    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.defaultParser.parseTarget)
+    // Every time ParserPage is closed and reopened, states are reset, choosenParserName should be initialized from choosenParser of parserModule.
+    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.parseTarget) 
     const [status, setStatus] = React.useState<ParserStatus>(ParserStatus.static)
     const [optionsInfo, setOptionsInfo] = React.useState<ParsedInfo>(new ParsedInfo())
     const [errorMessage, setErrorMessage] = React.useState<string>('')
@@ -24,7 +27,7 @@ function ParserPage() {
             if (parser.parseTarget === (event.target as HTMLSelectElement).value) {
                 parserModule.choose(parser)
                 setStatus(ParserStatus.static)
-                setChoosenParserName(parser.parseTarget)
+                setChoosenParserName((_parserName: string) => parser.parseTarget)
             }
         }
     }
@@ -42,7 +45,7 @@ function ParserPage() {
         if (error) {
             setStatus(ParserStatus.failed)
             // setOptionsInfo(new DefaultParsedInfo())
-            setErrorMessage(error.toString())
+            setErrorMessage(error.name + ':' + error.message)
             return
         }
         setOptionsInfo(parsedInfo)
@@ -89,12 +92,15 @@ function ParserPage() {
     }
     const download: React.MouseEventHandler<HTMLButtonElement> = async () => {
         if (optionsInfo) {
-            setFeedbackMessage('adding tasks')
+            setFeedbackMessage('adding task/tasks')
+            setErrorMessage('')
             try {
                 await parserModule.addTask(optionsInfo)
-                setFeedbackMessage('add tasks succeed')
+                setFeedbackMessage('add task/tasks succeed')
+                setErrorMessage('')
             } catch (error: any) {
-                setFeedbackMessage(error.name + ':' + error.message)
+                setFeedbackMessage('')
+                setErrorMessage(error.name + ':' + error.message)
             }
         }
     }

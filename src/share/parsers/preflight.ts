@@ -100,11 +100,17 @@ const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders
             const parts: Array<string> = headerContentRange.split(MEDIA_TYPE_SPLITER)
             try {
                 preflightInfo.size = parseInt(parts[1])
-            } catch (error: any) {
-                preflightInfo.size = undefined
+            } catch (error: any) {  
+                // Stop the parsing procedure if server returns a * or any other non-number characters as the size of the file server serves.
+                // It usually means the file is not ready, as in sometimes YouTube returns Content-Range headers like 'left-right/*', 
+                // especially from urls which indicate to low resolution and advanced codecs videos, these urls can be parsed out, but the resource is not there yet, 
+                // YouTube sometimes also returns 503 response code alternatively.
+                throw new Error(`Can't parse the url to a range download task: ${error}.`)
+                // preflightInfo.size = undefined
             }
         } else {
-            preflightInfo.size = undefined
+            throw new Error(`Can't parse the url to a range download task: Content-Range header doesn't exist.`)
+            // preflightInfo.size = undefined
         }
     }
     // file's createdAt time
@@ -113,7 +119,7 @@ const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders
         preflightInfo.createdAt = new Date(headerLastModified).toISOString()
     }
     // downloadType
-    if (responseStatusCode === ResponseStatusCode.PartialContent) {
+    if (responseStatusCode === ResponseStatusCode.PartialContent && preflightInfo.size) {
         preflightInfo.downloadType = DownloadType.Range
     } else {
         if (preflightInfo.type === 'application' && 

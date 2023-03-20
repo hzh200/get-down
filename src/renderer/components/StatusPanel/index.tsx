@@ -21,6 +21,9 @@ function StatusPanel({ status, optionsInfo, handleInfoPanelChange, errorMessage,
                 <div className="feedback">
                     {feedbackMessage}
                 </div>
+                <div className="error-message">
+                    {errorMessage}
+                </div>
                 <div className='download-button-row'>
                     <button className="download-button" onClick={downloadUrl}>Download</button>
                 </div>
