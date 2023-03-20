@@ -5,6 +5,7 @@ import parserModule from '../../../share/parsers'
 import { handlePromise } from '../../../share/utils'
 import { ParsedInfo } from '../../../share/parsers/parser'
 import { validateUrl } from '../../../share/http/util'
+import { getTranslatedFilename } from '../../../share/utils'
 
 import './parser_page.css'
 
@@ -48,6 +49,7 @@ function ParserPage() {
             setErrorMessage(error.name + ':' + error.message)
             return
         }
+        parsedInfo.name = getTranslatedFilename(parsedInfo.name)
         setOptionsInfo(parsedInfo)
         setStatus(ParserStatus.succeed)
         setErrorMessage('')

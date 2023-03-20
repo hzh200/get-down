@@ -1,6 +1,6 @@
 import * as Icon from './svgs'
 
-const TYPE_CLASS = new Map([
+const TYPE_CLASSIFICATION = new Map([
     ['mp4', 'video'],
     ['mkv', 'video'],
     ['flv', 'video'],
@@ -47,8 +47,8 @@ const ICON_TYPE = new Map([
 ])
 
 const getTaskIconPath = (type: string): string => {
-    if (TYPE_CLASS.has(type)) {
-        return ICON_TYPE.get(TYPE_CLASS.get(type) as string)
+    if (TYPE_CLASSIFICATION.has(type)) {
+        return ICON_TYPE.get(TYPE_CLASSIFICATION.get(type) as string)
     } else {
         return Icon.file
     }

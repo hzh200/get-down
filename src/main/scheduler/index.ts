@@ -9,6 +9,7 @@ import { createTaskModel, createTaskSetModel, updateTaskModel, updateTaskModelSt
 import { Log, handlePromise } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/communication'
 import parserModule from '../../share/parsers'
+import { getValidFilename } from '../../share/utils/string'
 
 const maxDownloadLimit: number = 3
 
@@ -99,6 +100,7 @@ class Scheduler {
             if (taskInfo.downloadType === DownloadType.Range) {
                 taskInfo.downloadRanges = [[0, taskInfo.size as number - 1]]
             }
+            taskInfo.name = getValidFilename(taskInfo.name)
             const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo))
             if (error) {
                 Log.errorLog(error)
@@ -110,6 +112,7 @@ class Scheduler {
             taskSetInfo.status = TaskStatus.Waiting
             taskSetInfo.progress = 0
             taskSetInfo.children = []
+            taskSetInfo.name = getValidFilename(taskSetInfo.name)
             const [taskSetError, taskSet]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(createTaskSetModel(taskSetInfo))
             if (taskSetError) {
                 Log.errorLog(taskSetError)
@@ -122,6 +125,7 @@ class Scheduler {
                 if (taskInfo.downloadType === DownloadType.Range) {
                     taskInfo.downloadRanges = [[0, taskInfo.size as number - 1]]
                 }
+                taskInfo.name = getValidFilename(taskInfo.name)
                 const [taskError, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo))
                 if (taskError) {
                     Log.errorLog(taskError)

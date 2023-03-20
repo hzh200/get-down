@@ -1,7 +1,5 @@
-import { ProxyChooses, Setting, ProxyConfig, readSetting, writeSetting } from './setting'
-import { Log } from './log'
-import { handlePromise } from './promise'
-import { getLocaleDateString } from './date'
-import { findMaxOverlap } from './string'
-
-export { Log, ProxyChooses, Setting, ProxyConfig, readSetting, writeSetting, handlePromise, getLocaleDateString, findMaxOverlap }
+export { ProxyChooses, Setting, ProxyConfig, readSetting, writeSetting } from './setting'
+export { Log } from './log'
+export { handlePromise } from './promise'
+export { getLocaleDateString } from './date'
+export { findMaxOverlap, getTranslatedFilename, getValidFilename } from './string'

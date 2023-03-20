@@ -20,3 +20,4 @@ const findMaxOverlap = (str1: string, str2: string): string => {
 }
 
 export { findMaxOverlap }
+export { getTranslatedFilename, getValidFilename } from './file_naming'
