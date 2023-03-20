@@ -1,4 +1,4 @@
-const CHARACTER_REFERENCE_WORD = new Map([
+const HTML_Escape_Character_NAME = new Map([
     ['&quot;','\"'],
     ['&amp;','\&'],
     ['&lt;','\<'],
@@ -71,7 +71,7 @@ const CHARACTER_REFERENCE_WORD = new Map([
     ['&euro;','\?']
 ])
 
-const CHARACTER_REFERENCE_NUMBER = new Map([
+const HTML_Escape_Character_CODE = new Map([
     ['&#00;- &#08;','\ '],
     ['&#09;','\ '],
     ['&#10;','\ '],
@@ -242,15 +242,18 @@ const CHARACTER_REFERENCE_NUMBER = new Map([
     ['&#8364;','\?']
 ])
 
-const WINDOWS_INVALID_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<', '>', '\|']
+const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<', '>', '\|']
 
 const getTranslatedFilename = (filename: string): string => {
     // HTML Encoding Escape Characters Replacement
-    for (const [key, val] of CHARACTER_REFERENCE_WORD) {
+    for (const [key, val] of HTML_Escape_Character_NAME) {
         filename = filename.replaceAll(key, val)
     }
-    for (const [key, val] of CHARACTER_REFERENCE_NUMBER) {
+    for (const [key, val] of HTML_Escape_Character_CODE) {
         filename = filename.replaceAll(key, val)
+    }
+    while (filename.includes('  ')) {
+        filename = filename.replaceAll('  ', ' ')
     }
     return filename
 }
@@ -258,7 +261,7 @@ const getTranslatedFilename = (filename: string): string => {
 const getValidFilename = (filename: string): string => {
     filename = getTranslatedFilename(filename)
     // Windows Invalid Charaters Replacement
-    for (const val of WINDOWS_INVALID_CHARACTERS) {
+    for (const val of WINDOWS_INVALID_NAMEING_CHARACTERS) {
         filename = filename.replaceAll(val, '')
     }
     while (filename.includes('  ')) {
