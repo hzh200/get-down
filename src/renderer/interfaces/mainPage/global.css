@@ -16,3 +16,40 @@ label::after, label::before {
 img { /* display is inline by default */
     vertical-align: middle;
 }
+
+body {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+/*
+    scroll bar
+*/
+.scroll {
+    overflow-y: scroll;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+    border-radius: 20px;
+}
+
+.scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* tracking area */
+.scroll::-webkit-scrollbar-track {
+    background: rgb(249, 249, 249);   
+}
+      
+/* scroll thumb */    
+.scroll::-webkit-scrollbar-thumb {
+    background-color: rgb(249, 249, 249); 
+}
+
+/* blend thumb in tracking area with using the same color */
+.scroll:hover::-webkit-scrollbar-thumb, 
+.scroll:active::-webkit-scrollbar-thumb, 
+.scroll:focus::-webkit-scrollbar-thumb {
+    background-color: rgb(233, 233, 233); 
+}

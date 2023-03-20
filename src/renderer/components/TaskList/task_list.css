@@ -9,6 +9,10 @@
     /* margin-bottom: 5px; */
 }
 
+.task-list > .task-list-body {
+    height: calc(100vh - 100px);
+}
+
 .task-list > .task-list-body > table {
     table-layout: fixed; /* Fix the table layout, and make td to be ellipsisable. */
 }

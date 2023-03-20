@@ -32,7 +32,7 @@ function TaskListBody({ taskItems, selectedRows, selectRow, onContextMenu, selec
     { taskItems: Array<TaskItem>, selectedRows: Array<[number, TaskType]>, selectRow: Function, onContextMenu: Function,
         selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> }) {
     return (
-        <div className="task-list-body">
+        <div className="task-list-body scroll">
             <table width="100%">
                 <TaskListTableThead namedHead={false} />
                 <TaskListTableBody taskItems={taskItems} selectedRows={selectedRows} onContextMenu={onContextMenu} 
