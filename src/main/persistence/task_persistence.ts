@@ -83,7 +83,7 @@ const updateTaskModelParent = async (task: TaskModel): Promise<void> => {
 
 const deleteTaskModel = async (task: TaskModel): Promise<void> => {
     const trans: Transaction = await sequelize.transaction()
-    const [taskError]: [Error | undefined, void] = await handlePromise<void>(task.destroy({ transaction: trans }))
+    let [taskError, _]: [Error | undefined, void] = await handlePromise<void>(task.destroy({ transaction: trans }))
     if (taskError) {
         await trans.rollback()
         throw taskError
@@ -94,7 +94,7 @@ const deleteTaskModel = async (task: TaskModel): Promise<void> => {
         await trans.rollback()
         throw sequenceError
     }
-    ;[sequenceError] = await handlePromise<void>(deleteSequenceModel(sequence, trans))
+    ;[sequenceError, _] = await handlePromise<void>(deleteSequenceModel(sequence, trans))
     if (sequenceError) {
         await trans.rollback()
         throw sequenceError

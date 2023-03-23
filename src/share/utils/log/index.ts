@@ -27,24 +27,21 @@ class Log {
     }
 
     static errorLog = (error: Error | string) => {
-        if (!error) {
-            return
-        }
         if (!(error instanceof Error)) {
             Log.log('[Error] ' + error)
             return
         }
+        let message = '[Error]'
+        if (error.message) {
+            message += error.message
+        }  
         if (error.stack) {
-            Log.log('[Error] ' + error.stack)
-        } else if (error.message) {
-            Log.log('[Error] ' + error.message)
-        }      
+            message += ' ' + error.stack
+        }  
+        Log.log(message)  
     }
 
     static fatalLog = (error: Error) => {
-        if (!error) {
-            return
-        }
         if (!(error instanceof Error)) {
             Log.log('[Fatal] ' + error)
             return
