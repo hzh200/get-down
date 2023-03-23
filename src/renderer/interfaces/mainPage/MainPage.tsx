@@ -15,7 +15,6 @@ import './global.css'
 
 function MainPage() {
     const [taskItems, setTaskItems] = React.useState<Array<TaskItem>>([])
-    const [downloadInfos, setDownloadInfos] = React.useState<Map<string, DownloadInfo>>(new Map())
     const [selectedRows, setSelectedRows] = React.useState<Array<[number, TaskType]>>([])
     const [showParserWindow, setShowParserWindow] = React.useState<boolean>(false)
     const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false)
@@ -35,24 +34,6 @@ function MainPage() {
                 }
                 return newTaskItems
             })
-            if (!downloadInfos.has(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`) 
-                    && updateTaskItem.status === TaskStatus.Downloading) {
-                setDownloadInfos(downloadInfos => {
-                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
-                    const downloadInfo: DownloadInfo = new DownloadInfo()
-                    downloadInfo.taskNo = updateTaskItem.taskNo
-                    downloadInfo.taskType = updateTaskItem.taskType
-                    downloadInfo.speed = ''
-                    newDownloadInfos.set(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`, downloadInfo) 
-                    return newDownloadInfos
-                })
-            } else if (!downloadInfos.has(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`)) {
-                setDownloadInfos(downloadInfos => {
-                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
-                    newDownloadInfos.delete(`${updateTaskItem.taskType}${updateTaskItem.taskNo}`)
-                    return newDownloadInfos
-                })
-            }
         })
         ipcRenderer.on(CommunicateAPIName.DeleteTaskItem, (_event: IpcRendererEvent, deletedTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => {
@@ -67,13 +48,7 @@ function MainPage() {
                 newTaskItems.splice(deletedTaskItemIndex, 1)
                 return newTaskItems
             })
-            if (downloadInfos.has(`${deletedTaskItem.taskType}${deletedTaskItem.taskNo}`)) {
-                setDownloadInfos(downloadInfos => {
-                    const newDownloadInfos: Map<string, DownloadInfo> = new Map(downloadInfos.entries())
-                    newDownloadInfos.delete(`${deletedTaskItem.taskType}${deletedTaskItem.taskNo}`)
-                    return newDownloadInfos
-                })
-            }
+
         })
         return () => {
             ipcRenderer.removeAllListeners(CommunicateAPIName.NewTaskItem)
