@@ -23,7 +23,12 @@ const createTaskModel = async (taskInfo: Task): Promise<TaskModel> => {
         trans.rollback()
         throw sequenceError
     } 
-    await trans.commit()
+    try {
+        await trans.commit()
+    } catch (error: any) {
+        trans.rollback()
+        throw error
+    }
     return task
 }
 
@@ -80,20 +85,26 @@ const deleteTaskModel = async (task: TaskModel): Promise<void> => {
     const trans: Transaction = await sequelize.transaction()
     const [taskError]: [Error | undefined, void] = await handlePromise<void>(task.destroy({ transaction: trans }))
     if (taskError) {
-        trans.rollback()
+        await trans.rollback()
         throw taskError
     }
     let [sequenceError, sequence]: [Error | undefined, SequenceModel] = 
-        await handlePromise<SequenceModel>(getSequenceModel(task.taskNo, TaskType.Task))
+        await handlePromise<SequenceModel>(getSequenceModel(task.taskNo, TaskType.Task, trans))
     if (sequenceError) {
-        trans.rollback()
+        await trans.rollback()
         throw sequenceError
     }
     ;[sequenceError] = await handlePromise<void>(deleteSequenceModel(sequence, trans))
     if (sequenceError) {
-        trans.rollback()
+        await trans.rollback()
         throw sequenceError
     } 
+    try {
+        await trans.commit()
+    } catch (error: any) {
+        await trans.rollback()
+        throw error
+    }
 }
 
 const getAllTaskModels = async (): Promise<Array<TaskModel>> => {

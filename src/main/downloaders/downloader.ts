@@ -51,6 +51,9 @@ class Downloader extends EventEmitter {
 
     // Clear Download instance resource.
     clear(): void {
+        if (!this.fd) {
+            return
+        }
         fs.closeSync(this.fd)
     }
 

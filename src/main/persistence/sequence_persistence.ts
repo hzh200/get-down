@@ -20,9 +20,9 @@ const deleteSequenceModel = async (sequence: SequenceModel, trans: Transaction):
     }
 }
 
-const getSequenceModel = async (taskNo: number, taskType: TaskType): Promise<SequenceModel> => {
+const getSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<SequenceModel> => {
     const [error, sequence]: [Error | undefined, SequenceModel | null] = 
-        await handlePromise<SequenceModel | null>(SequenceModel.findOne({ where: { taskNo: taskNo, taskType: taskType } }))
+        await handlePromise<SequenceModel | null>(SequenceModel.findOne({ where: { taskNo: taskNo, taskType: taskType }, transaction: trans }))
     if (error) {
         throw error
     }

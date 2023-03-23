@@ -11,7 +11,7 @@ const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> =
         ...taskSetInfo
     }, { transaction: trans }))
     if (taskSetError) {
-        trans.rollback()
+        await trans.rollback()
         throw taskSetError
     }
     const sequenceInfo = new Sequence()
@@ -20,10 +20,15 @@ const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> =
     const [sequenceError, _]: [Error | undefined, SequenceModel] = await handlePromise<SequenceModel>(
         createSequenceModel(sequenceInfo, trans))
     if (sequenceError) {
-        trans.rollback()
+        await trans.rollback()
         throw sequenceError
     } 
-    await trans.commit()
+    try {
+        await trans.commit()
+    } catch (error: any) {
+        await trans.rollback()
+        throw error
+    }
     return taskSet
 }
 
@@ -67,7 +72,7 @@ const deleteTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
         throw taskSetError
     }
     let [sequenceError, sequence]: [Error | undefined, SequenceModel] = 
-        await handlePromise<SequenceModel>(getSequenceModel(taskSet.taskNo, TaskType.TaskSet))
+        await handlePromise<SequenceModel>(getSequenceModel(taskSet.taskNo, TaskType.TaskSet, trans))
     if (sequenceError) {
         trans.rollback()
         throw sequenceError
@@ -77,6 +82,12 @@ const deleteTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
         trans.rollback()
         throw sequenceError
     } 
+    try {
+        await trans.commit()
+    } catch (error: any) {
+        trans.rollback()
+        throw error
+    }
 }
 
 const getAllTaskSetModels = async (): Promise<Array<TaskSetModel>> => {

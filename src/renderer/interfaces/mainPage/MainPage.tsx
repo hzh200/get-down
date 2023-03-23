@@ -93,34 +93,33 @@ function MainPage() {
         setShowSettingWindow(true)
     }
     // Workflow control.
-    const play: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+    const play: Function = (): void => {
         ipcRenderer.send(CommunicateAPIName.ResumeTasks, selectedRows)
     }
-    const pause: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+    const pause: Function = (): void => {
         ipcRenderer.send(CommunicateAPIName.PauseTasks, selectedRows)
     }
-    const trash: React.MouseEventHandler<HTMLDivElement> = (_event: React.MouseEvent<HTMLDivElement>): void => {
+    const trash: Function = (): void => {
         ipcRenderer.send(CommunicateAPIName.DeleteTasks, selectedRows)
     }
-    // React.MouseEventHandler<HTMLTableSectionElement>
-    const onContextMenu: Function = (_event: React.MouseEvent<HTMLTableSectionElement>, taskNo: number, taskType: TaskType): void => {
+    const onContextMenu: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number, taskType: TaskType): void => {
         const taskItem: TaskItem = taskItems.filter((taskItem: TaskItem, _index: number, _array: Array<TaskItem>) => {
-            return taskItem.taskNo === taskNo
+            return taskItem.taskNo === taskNo && taskItem.taskType === taskType
         })[0]
         // Cannot use 'task instanceof Task', class type information is already lost during inter-process communication
-        selectRow(_event, taskNo)
+        selectRow(event, taskNo, taskType)
         let menu = new Menu()
         menu.append(new MenuItem({ 
             label: 'pause', 
-            click: () => pause(_event)
+            click: () => pause()
         }))
         menu.append(new MenuItem({ 
             label: 'resume', 
-            click: () => play(_event)
+            click: () => play()
         }))
         menu.append(new MenuItem({ 
             label: 'delete', 
-            click: () => trash(_event)
+            click: () => trash()
         }))
         menu.append(new MenuItem({ type: 'separator' }))
         menu.append(new MenuItem({ 
@@ -158,7 +157,7 @@ function MainPage() {
         }))
         menu.popup()
     }
-    // React.MouseEventHandler<HTMLTableRowElement>
+
     const selectRow: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number, taskType: TaskType): void => {
         event.preventDefault()
         // const target: HTMLTableRowElement = event.target as HTMLTableRowElement
@@ -182,9 +181,7 @@ function MainPage() {
         } else {
             newSelectedRows = [[taskNo, taskType]]
         }
-        setSelectedRows((_selectedRows: Array<[number, TaskType]>) => {
-            return newSelectedRows
-        })
+        setSelectedRows((_selectedRows: Array<[number, TaskType]>) => newSelectedRows)
     }
     const selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
         event.preventDefault()
