@@ -6,7 +6,7 @@ import taskQueue from '../queue'
 import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
 import { createTaskModel, createTaskSetModel, updateTaskModel, updateTaskModelStatus, updateTaskModelParent, deleteTaskModel, getAllTaskModels, 
     updateTaskSetModel, updateTaskSetModelStatus, updateTaskSetModelChildren, deleteTaskSetModel, getAllTaskSetModels, getAllSequenceModels } from '../persistence'
-import { Log, handlePromise } from '../../share/utils'
+import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/communication'
 import parserModule from '../../share/parsers'
 import { getValidFilename } from '../../share/utils/string'
@@ -33,7 +33,7 @@ class Scheduler {
         })
 
         // Check out every once in a while if some waiting tasks can be started.
-        setInterval(async () => {
+        setInterval(handleAsyncCallback(async (): Promise<void> => {
             if (this.taskProcesserMap.size < maxDownloadLimit) {
                 const taskNo: number | null = taskQueue.getWaitingTaskNo()
                 if (!taskNo) {
@@ -47,7 +47,7 @@ class Scheduler {
                     this.downloadTaskSet(parentTaskSetNo)
                 }
 
-                downloader.on(DownloaderEvent.Done, async () => {
+                downloader.on(DownloaderEvent.Done, handleAsyncCallback(async (): Promise<void> => {
                     const taskCallback = parserModule.getParser(task.parserNo).taskCallback
                     const taskSetCallback = parserModule.getParser(task.parserNo).taskSetCallback
                     if (taskCallback) {
@@ -76,9 +76,9 @@ class Scheduler {
                         }
                         await this.finishDownloadTaskSet(parentTaskSetNo)
                     }
-                })
+                }))
 
-                downloader.on(DownloaderEvent.Fail, async () => {
+                downloader.on(DownloaderEvent.Fail, handleAsyncCallback(async (): Promise<void> => {
                     await this.finishDownloadTask(taskNo, TaskStatus.Failed)
                     if (parentTaskSetNo) {
                         const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
@@ -87,15 +87,15 @@ class Scheduler {
                         }
                         await this.finishDownloadTaskSet(parentTaskSetNo)
                     }
-                })
+                }))
 
                 downloader.download().catch((error: Error) => {
                     Log.errorLog(error)
                 })
             }
-        }, 100)
+        }), 100)
 
-        ipcMain.on(CommunicateAPIName.AddTask, async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
+        ipcMain.on(CommunicateAPIName.AddTask, handleAsyncCallback(async (_event: IpcMainEvent, taskInfo: Task): Promise<void> => {
             taskInfo.status = TaskStatus.Waiting
             taskInfo.progress = 0
             if (taskInfo.downloadType === DownloadType.Range) {
@@ -108,8 +108,8 @@ class Scheduler {
             }
             taskQueue.addTask(task.taskNo, task)
             this.addTaskItemToRenderer(task, TaskType.Task)
-        })
-        ipcMain.on(CommunicateAPIName.AddTaskSet, async (_event: IpcMainEvent, [taskSetInfo, taskInfos]: [TaskSet, Array<Task>]): Promise<void> => {
+        }))
+        ipcMain.on(CommunicateAPIName.AddTaskSet, handleAsyncCallback(async (_event: IpcMainEvent, [taskSetInfo, taskInfos]: [TaskSet, Array<Task>]): Promise<void> => {
             taskSetInfo.status = TaskStatus.Waiting
             taskSetInfo.progress = 0
             taskSetInfo.children = []
@@ -138,8 +138,8 @@ class Scheduler {
                 this.addTaskItemToRenderer(task, TaskType.Task)
             }
             await updateTaskSetModelChildren(taskSet)
-        })
-        ipcMain.on(CommunicateAPIName.PauseTasks, async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
+        }))
+        ipcMain.on(CommunicateAPIName.PauseTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
             const pauseTask = async (task: TaskModel) => {
                 if (task.downloadType === DownloadType.Range) { 
@@ -171,8 +171,8 @@ class Scheduler {
                     await this.pauseDownloadTaskSet(taskNo)
                 }
             }
-        })
-        ipcMain.on(CommunicateAPIName.ResumeTasks, async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
+        }))
+        ipcMain.on(CommunicateAPIName.ResumeTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
             const resumeTask = async (task: TaskModel) => {
                 if (task.downloadType === DownloadType.Range && 
@@ -200,8 +200,8 @@ class Scheduler {
                     }
                 }
             }
-        })
-        ipcMain.on(CommunicateAPIName.DeleteTasks, async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
+        }))
+        ipcMain.on(CommunicateAPIName.DeleteTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
             const deleteTask = async (task: TaskModel) => {
                 if (task.downloadType === DownloadType.Direct) {
@@ -239,17 +239,17 @@ class Scheduler {
                     await deleteTaskSet(taskQueue.getTaskSet(taskNo) as TaskSetModel)
                 }
             }
-        })
+        }))
     }
 
     // Start downloading a waiting task and alloc processer resource binding with it's taskNo.
     downloadTask = async (taskNo: number): Promise<Downloader> => {
         const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
         const downloader: Downloader = getDownloader(taskNo)
-        const taskTimer: NodeJS.Timer = setInterval(async () => {
+        const taskTimer: NodeJS.Timer = setInterval(handleAsyncCallback(async () => {
             await updateTaskModel(task)
             this.updateTaskItemToRenderer(task, TaskType.Task)
-        }, 200)
+        }), 200)
         this.taskProcesserMap.set(taskNo, [downloader, taskTimer])
         task.status = TaskStatus.Downloading
         await updateTaskModelStatus(task)
@@ -261,7 +261,7 @@ class Scheduler {
         if (this.taskSetProcesserMap.has(taskNo)) {
             return
         }
-        const taskSetTimer: NodeJS.Timer = setInterval(async () => {
+        const taskSetTimer: NodeJS.Timer = setInterval(handleAsyncCallback(async () => {
             const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo as number) as TaskSetModel
             if (taskSet.status !== TaskStatus.Processing) {
                 this.calculateTaskSetStatus(taskSet)
@@ -269,7 +269,7 @@ class Scheduler {
             this.calculateTaskSetProgress(taskSet)
             await updateTaskSetModel(taskSet)
             this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet)
-        }, 200)
+        }), 200)
         this.taskSetProcesserMap.set(taskNo, taskSetTimer)
     }
 
