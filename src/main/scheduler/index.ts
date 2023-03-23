@@ -161,7 +161,7 @@ class Scheduler {
                 if (taskType === TaskType.Task) {
                     await pauseTask(taskQueue.getTask(taskNo) as TaskModel)
                 } else { // TaskSet
-                    for (const childTaskNo of (taskQueue.getTaskSet(taskNo) as TaskSetModel).children.reverse()) {
+                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo)
                         if (!child) {
                             continue
@@ -229,7 +229,7 @@ class Scheduler {
                 if (taskType === TaskType.Task) {
                     await deleteTask(taskQueue.getTask(taskNo) as TaskModel)
                 } else { // TaskSet
-                    for (const childTaskNo of (taskQueue.getTaskSet(taskNo) as TaskSetModel).children.reverse()) {
+                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo)
                         if (!child) {
                             continue
@@ -388,6 +388,34 @@ class Scheduler {
             res.push([taskNo, taskType])
         }
         return res
+    }
+
+    getSortedChildren = (taskNo: number): Array<number> | null => {
+        if (!taskQueue.getTaskSet(taskNo)) {
+            return null
+        }
+        if (!(taskQueue.getTaskSet(taskNo) as TaskSetModel).children) {
+            return null
+        }
+        const children: Array<number> = [...(taskQueue.getTaskSet(taskNo) as TaskSetModel).children]
+        children.sort((a: number, b: number): number => {
+            if (a > b) {
+                return 1
+            } else if (a < b) {
+                return -1
+            } else {
+                return 0
+            }
+        })
+        return children
+    }
+
+    getReversedChildren = (taskNo: number): Array<number> | null => {
+        const children: Array<number> | null = this.getSortedChildren(taskNo)
+        if (!children) {
+            return null
+        }
+        return children.reverse()
     }
 
     //
