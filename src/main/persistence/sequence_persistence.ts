@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize'
+import { Transaction, Op } from 'sequelize'
 import { Sequence, TaskType } from '../../share/models'
 import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from '../persistence/model_type'
 import { handlePromise } from '../../share/utils' 
@@ -11,13 +11,6 @@ const createSequenceModel = async (sequence: Sequence, trans: Transaction): Prom
         throw error
     }
     return task
-}
-
-const deleteSequenceModel = async (sequence: SequenceModel, trans: Transaction): Promise<void> => {
-    const [error, _]: [Error | undefined, void] = await handlePromise<void>(sequence.destroy({ transaction: trans }))
-    if (error) {
-        throw error
-    }
 }
 
 const getSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<SequenceModel> => {
@@ -40,4 +33,44 @@ const getAllSequenceModels = async (): Promise<Array<SequenceModel>> => {
     return sequences
 }
 
-export { createSequenceModel, deleteSequenceModel, getSequenceModel, getAllSequenceModels }
+const deleteSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<void> => {
+    const deleted: number = await SequenceModel.destroy({
+        where: {
+            taskNo: {
+                [Op.eq]: taskNo,
+            },
+            taskType: {
+                [Op.eq]: taskType
+            }
+        },
+        transaction: trans
+    })
+    if (deleted !== 1) {
+        throw new Error(`given tasks count: 1, deleted tasks count: ${deleted}`)
+    }
+}
+
+const deleteSequenceModels = async (taskNos: Array<number>, taskType: TaskType, trans: Transaction): Promise<void> => {
+    const deleted: number = await SequenceModel.destroy({
+        where: {
+            taskNo: {
+                [Op.in]: taskNos,
+            },
+            taskType: {
+                [Op.eq]: taskType
+            }
+        },
+        transaction: trans
+    })
+    if (taskNos.length !== deleted) {
+        throw new Error(`given tasks count: ${taskNos.length}, deleted tasks count: ${deleted}`)
+    }
+}
+
+export { 
+    createSequenceModel,
+    getSequenceModel, 
+    getAllSequenceModels,  
+    deleteSequenceModel, 
+    deleteSequenceModels
+}

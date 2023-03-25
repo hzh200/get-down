@@ -4,8 +4,26 @@ import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_type'
 import { mainWindow } from '../main'
 import taskQueue from '../queue'
 import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
-import { createTaskModel, createTaskSetModel, updateTaskModel, updateTaskModelStatus, updateTaskModelParent, deleteTaskModel, getAllTaskModels, 
-    updateTaskSetModel, updateTaskSetModelStatus, updateTaskSetModelChildren, deleteTaskSetModel, getAllTaskSetModels, getAllSequenceModels } from '../persistence'
+import { 
+    createTaskModel,
+    // getAllTaskModels,
+    updateTaskModel,
+    // updateTaskModelStatus,
+    updateTaskModelParent,
+    deleteTaskModel,
+    deleteTaskModels,
+    createTaskSetModel,
+    // getAllTaskSetModels,
+    updateTaskSetModel,
+    // updateTaskSetModelStatus,
+    updateTaskSetModelChildren,
+    deleteTaskSetModel,
+    deleteTaskSetModels,
+    // getAllSequenceModels,
+    getSequencedRecords,
+    updateTaskStatus,
+    updateTaskSetStatus
+} from '../persistence'
 import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/communication'
 import parserModule from '../../share/parsers'
@@ -18,18 +36,18 @@ class Scheduler {
     taskSetProcesserMap: Map<number, NodeJS.Timer> = new Map()
     constructor () {
         // Read from the database for all existing tasks and taskSets, send them to the newly created task list in renderer process interface.
-        Promise.all([getAllTaskModels(), getAllTaskSetModels(), getAllSequenceModels()]).then(([tasks, taskSets, sequences]) => {
-            for (const sequence of sequences) {
-                if (sequence.taskType === TaskType.Task) {
-                    const task: TaskModel = tasks.shift() as TaskModel
-                    taskQueue.addTask(sequence.taskNo, task)
-                    this.addTaskItemToRenderer(task, TaskType.Task)
-                } else { // TaskSet
-                    const taskSet: TaskSetModel = taskSets.shift() as TaskSetModel
-                    taskQueue.addTaskSet(sequence.taskNo, taskSet)
-                    this.addTaskItemToRenderer(taskSet, TaskType.TaskSet)
+        getSequencedRecords().then((records: Array<TaskModel | TaskSetModel>) => {
+            for (const record of records) {
+                if (record instanceof TaskModel) {
+                    taskQueue.addTask(record.taskNo, record)
+                    this.addTaskItemToRenderer(record, TaskType.Task)
+                } else { // TaskSetModel
+                    taskQueue.addTaskSet(record.taskNo, record)
+                    this.addTaskItemToRenderer(record, TaskType.TaskSet)
                 }
             }
+        }).catch((error: Error) => {
+            Log.fatalLog(error)
         })
 
         // Check out every once in a while if some waiting tasks can be started.
@@ -51,41 +69,39 @@ class Scheduler {
                     const taskCallback = parserModule.getParser(task.parserNo).taskCallback
                     const taskSetCallback = parserModule.getParser(task.parserNo).taskSetCallback
                     if (taskCallback) {
-                        try {
-                            await taskCallback(taskNo)
-                            await this.finishDownloadTask(taskNo, TaskStatus.Done)
-                        } catch (error: any) {
-                            await this.finishDownloadTask(taskNo, TaskStatus.Failed)
+                        const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(taskNo))
+                        if (error) {
+                            await this.finishTask(taskNo, TaskStatus.Failed)
+                            return
                         }
-                    } else {
-                        await this.finishDownloadTask(taskNo, TaskStatus.Done)
                     }
+                    await this.finishTask(taskNo, TaskStatus.Done)
+                    
                     if (parentTaskSetNo) {
-                        const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
-                        for (const childTaskNo of taskSet.children) {
+                        for (const childTaskNo of this.getSortedChildren(parentTaskSetNo) as Array<number>) {
                             if (this.taskProcesserMap.has(childTaskNo)) return
                         }
                         if (taskSetCallback) {
-                            taskSet.status = TaskStatus.Processing
-                            await updateTaskSetModel(taskSet)
-                            try {
-                                await taskSetCallback(parentTaskSetNo)
-                            } catch (error: any) {
-                                Log.errorLog(error)
+                            const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
+                            await updateTaskSetStatus(taskSet, TaskStatus.Processing)
+                            const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(parentTaskSetNo))
+                            if (error) {
+                                await updateTaskSetStatus(taskSet, TaskStatus.Failed)
+                                return
                             }
                         }
-                        await this.finishDownloadTaskSet(parentTaskSetNo)
+                        await this.finishTaskSet(parentTaskSetNo)
                     }
                 }))
 
                 downloader.on(DownloaderEvent.Fail, handleAsyncCallback(async (): Promise<void> => {
-                    await this.finishDownloadTask(taskNo, TaskStatus.Failed)
+                    await this.finishTask(taskNo, TaskStatus.Failed)
                     if (parentTaskSetNo) {
                         const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
                         for (const childTaskNo of taskSet.children) {
                             if (this.taskProcesserMap.has(childTaskNo)) return
                         }
-                        await this.finishDownloadTaskSet(parentTaskSetNo)
+                        await this.finishTaskSet(parentTaskSetNo)
                     }
                 }))
 
@@ -141,102 +157,75 @@ class Scheduler {
         }))
         ipcMain.on(CommunicateAPIName.PauseTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
-            const pauseTask = async (task: TaskModel) => {
-                if (task.downloadType === DownloadType.Range) { 
-                    if (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting) {
-                        await this.pauseDownloadTask(task.taskNo)
-                        const parentNo: number | null = this.getParentTaskNo(task.taskNo)
-                        if (!parentNo) {
-                            return
-                        }
-                        const parent = taskQueue.getTaskSet(parentNo) as TaskSetModel
-                        this.calculateTaskSetStatus(parent)
-                        if (parent.status !== TaskStatus.Downloading) {
-                            await this.pauseDownloadTaskSet(parentNo)
-                        }
-                    }
-                } else if (task.downloadType === DownloadType.Blob) {}
-            }
-            for (const [taskNo, taskType] of selectedTaskNos.reverse()) {
+            for (const [taskNo, taskType] of selectedTaskNos) {
                 if (taskType === TaskType.Task) {
-                    await pauseTask(taskQueue.getTask(taskNo) as TaskModel)
+                    const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
+                    if (task.downloadType === DownloadType.Range && 
+                        (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
+                        await this.finishTask(task.taskNo, TaskStatus.Paused)
+                    }
                 } else { // TaskSet
                     for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo)
                         if (!child) {
                             continue
                         }
-                        await pauseTask(child)
+                        if (child.downloadType === DownloadType.Range && 
+                            (child.get(`${ModelField.status}`) === TaskStatus.Downloading || child.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
+                            await this.finishTask(child.taskNo, TaskStatus.Paused)
+                        }
                     }
-                    await this.pauseDownloadTaskSet(taskNo)
                 }
             }
         }))
         ipcMain.on(CommunicateAPIName.ResumeTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
-            const resumeTask = async (task: TaskModel) => {
-                if (task.downloadType === DownloadType.Range && 
-                    (task.get(`${ModelField.status}`) === TaskStatus.Failed || task.get(`${ModelField.status}`) === TaskStatus.Paused)) {
-                    // const downloader: Downloader | undefined = this.downloaderMap.get(taskNo)
-                    // if (!downloader) {
-                    //     continue
-                    // }
-                    // downloader.resume()
-                    task.status = TaskStatus.Waiting
-                    await updateTaskModelStatus(task)
-                    this.updateTaskItemToRenderer(task, TaskType.Task)
-                }
-            }
             for (const [taskNo, taskType] of selectedTaskNos) {
                 if (taskType === TaskType.Task) {
-                    await resumeTask(taskQueue.getTask(taskNo) as TaskModel)
+                    const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
+                    if (task.downloadType === DownloadType.Range && 
+                        (task.get(`${ModelField.status}`) === TaskStatus.Failed || task.get(`${ModelField.status}`) === TaskStatus.Paused)) {
+                        await updateTaskStatus(task, TaskStatus.Waiting)
+                        this.updateTaskItemToRenderer(task, TaskType.Task)
+                    }
                 } else { // TaskSet
                     for (const childTaskNo of (taskQueue.getTaskSet(taskNo) as TaskSetModel).children) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo)
                         if (!child) {
                             continue
                         }
-                        await resumeTask(child)
+                        await updateTaskStatus(child, TaskStatus.Waiting)
+                        this.updateTaskItemToRenderer(child, TaskType.Task)
                     }
                 }
             }
         }))
         ipcMain.on(CommunicateAPIName.DeleteTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>): Promise<void> => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos)
-            const deleteTask = async (task: TaskModel) => {
-                if (task.downloadType === DownloadType.Direct) {
-                    
-                } else if (task.downloadType === DownloadType.Range) {
-                    if (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting) {
-                        await this.pauseDownloadTask(task.taskNo)
-                    }
-                    const [deleteError, __]: [Error | undefined, void] = await handlePromise<void>(deleteTaskModel(task))
-                    if (deleteError) {
-                        throw deleteError
-                    }
-                    this.deleteTaskItemToRenderer(task, TaskType.Task)
-                }
-            }
-            const deleteTaskSet = async (taskSet: TaskSetModel) => {
-                await this.pauseDownloadTaskSet(taskSet.taskNo)
-                const [deleteError, __]: [Error | undefined, void] = await handlePromise<void>(deleteTaskSetModel(taskSet))
-                if (deleteError) {
-                    throw deleteError
-                }
-                this.deleteTaskItemToRenderer(taskSet, TaskType.TaskSet)
-            }
-            for (const [taskNo, taskType] of selectedTaskNos.reverse()) {
+            for (const [taskNo, taskType] of selectedTaskNos) {
                 if (taskType === TaskType.Task) {
-                    await deleteTask(taskQueue.getTask(taskNo) as TaskModel)
+                    const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
+                    if (task.downloadType === DownloadType.Range && 
+                        (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
+                        await this.finishTask(task.taskNo, TaskStatus.Paused)
+                        await deleteTaskModel(task.taskNo)
+                        this.deleteTaskItemToRenderer(task, TaskType.Task)
+                    }
                 } else { // TaskSet
+                    const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel
                     for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo)
-                        if (!child) {
-                            continue
-                        }
-                        await deleteTask(child)
+                        if (!child) continue
+                        await this.finishTask(child.taskNo, TaskStatus.Paused)
                     }
-                    await deleteTaskSet(taskQueue.getTaskSet(taskNo) as TaskSetModel)
+                    await deleteTaskModels(this.getSortedChildren(taskSet.taskNo) as Array<number>)
+                    await deleteTaskSetModel(taskSet.taskNo)
+                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
+                        const child: TaskModel | null = taskQueue.getTask(childTaskNo)
+                        if (!child) continue
+                        this.deleteTaskItemToRenderer(child, TaskType.Task)
+                    }
+                    this.deleteTaskItemToRenderer(taskSet, TaskType.TaskSet)
                 }
             }
         }))
@@ -251,12 +240,11 @@ class Scheduler {
             this.updateTaskItemToRenderer(task, TaskType.Task)
         }), 200)
         this.taskProcesserMap.set(taskNo, [downloader, taskTimer])
-        task.status = TaskStatus.Downloading
-        await updateTaskModelStatus(task)
+        await updateTaskStatus(task, TaskStatus.Downloading)
         this.updateTaskItemToRenderer(task, TaskType.Task)
         return downloader
     }
-
+    // Start downloading a waiting taskSet and alloc processer resource binding with it's taskNo.
     downloadTaskSet = (taskNo: number): void => {
         if (this.taskSetProcesserMap.has(taskNo)) {
             return
@@ -269,50 +257,32 @@ class Scheduler {
             this.calculateTaskSetProgress(taskSet)
             await updateTaskSetModel(taskSet)
             this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet)
+
+            // Self clearing when no child task is active.
+            if (taskSet.status !== TaskStatus.Downloading) {
+                clearInterval(this.taskSetProcesserMap.get(taskNo))
+                this.taskSetProcesserMap.delete(taskNo)
+            }
         }), 200)
         this.taskSetProcesserMap.set(taskNo, taskSetTimer)
     }
 
-    // Pause a downloading or waiting task and clean up the processer resource if it's downloading.
-    pauseDownloadTask = async (taskNo: number): Promise<void> => {
+    // Finish an activiting task, whether it's done or failed.
+    finishTask = async (taskNo: number, status: TaskStatus): Promise<void> => {
+        const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
         if (this.taskProcesserMap.has(taskNo)) {
             const [downloader, downloadTimer]: [Downloader, NodeJS.Timer] = this.taskProcesserMap.get(taskNo) as [Downloader, NodeJS.Timer]
-            ;(downloader as RangeDownloader).destroy()
+            if (task.downloadType === DownloadType.Range && status === TaskStatus.Paused) {
+                ;(downloader as RangeDownloader).destroy()
+            }
             clearInterval(downloadTimer)
             this.taskProcesserMap.delete(taskNo)
         }
-        const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
-        task.status = TaskStatus.Paused
-        await updateTaskModel(task)
+        await updateTaskStatus(task, status)
         this.updateTaskItemToRenderer(task, TaskType.Task)
     }
-
-    // Pause a taskSet and clean up the processer resource if it has a related processer.
-    pauseDownloadTaskSet = async (taskNo: number): Promise<void> => {
-        if (this.taskSetProcesserMap.has(taskNo)) {
-            const downloadTimer: NodeJS.Timer = this.taskSetProcesserMap.get(taskNo) as NodeJS.Timer
-            clearInterval(downloadTimer)
-            this.taskSetProcesserMap.delete(taskNo)
-        }
-        const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel
-        this.calculateTaskSetStatus(taskSet)
-        this.calculateTaskSetProgress(taskSet)
-        await updateTaskSetModel(taskSet)
-        this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet)
-    }
-
-    // Finish an activiting task, whether it's done or failed.
-    finishDownloadTask = async (taskNo: number, status: TaskStatus): Promise<void> => {
-        clearInterval((this.taskProcesserMap.get(taskNo) as [Downloader, NodeJS.Timer])[1])
-        this.taskProcesserMap.delete(taskNo)
-        const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel
-        task.status = status
-        await updateTaskModel(task)
-        this.updateTaskItemToRenderer(task, TaskType.Task)
-    }
-
     // Finish an activiting taskSet.
-    finishDownloadTaskSet = async (taskNo: number): Promise<void> => {
+    finishTaskSet = async (taskNo: number): Promise<void> => {
         clearInterval(this.taskSetProcesserMap.get(taskNo) as NodeJS.Timer)
         this.taskSetProcesserMap.delete(taskNo)
         const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel
@@ -355,17 +325,6 @@ class Scheduler {
         }
     }
 
-    // Get the parent taskNo of a task, if there is a parent.
-    getParentTaskNo = (taskNo: number): number | null => {
-        if (!taskQueue.getTask(taskNo)) {
-            return null
-        }
-        if (!(taskQueue.getTask(taskNo) as TaskModel).parent) {
-            return null
-        }
-        return (taskQueue.getTask(taskNo) as TaskModel).parent as number
-    }
-
     // Get tasks which don't have parent and task_sets taskNos.
     getDistinctTaskNos = (taskNos: Array<[number, TaskType]>): Array<[number, TaskType]> => {
         const res: Array<[number, TaskType]> = []
@@ -389,7 +348,17 @@ class Scheduler {
         }
         return res
     }
-
+    // Get the parent taskNo of a task, if there is a parent.
+    getParentTaskNo = (taskNo: number): number | null => {
+        if (!taskQueue.getTask(taskNo)) {
+            return null
+        }
+        if (!(taskQueue.getTask(taskNo) as TaskModel).parent) {
+            return null
+        }
+        return (taskQueue.getTask(taskNo) as TaskModel).parent as number
+    }
+    // Get children of a taskSet in ascending order of number value.
     getSortedChildren = (taskNo: number): Array<number> | null => {
         if (!taskQueue.getTaskSet(taskNo)) {
             return null
@@ -409,7 +378,7 @@ class Scheduler {
         })
         return children
     }
-
+    // Get children of a taskSet in descending order of number value.
     getReversedChildren = (taskNo: number): Array<number> | null => {
         const children: Array<number> | null = this.getSortedChildren(taskNo)
         if (!children) {
@@ -429,7 +398,6 @@ class Scheduler {
         taskItemInfo.taskType = taskType
         mainWindow.webContents.send(CommunicateAPIName.NewTaskItem, taskItemInfo)
     }
-
     updateTaskItemToRenderer = (taskItem: TaskModel | TaskSetModel, taskType: TaskType): void => {
         if (!taskItem) {
             return
@@ -438,7 +406,6 @@ class Scheduler {
         taskItemInfo.taskType = taskType
         mainWindow.webContents.send(CommunicateAPIName.UpdateTaskItem, taskItemInfo)
     }
-
     deleteTaskItemToRenderer = (taskItem: TaskModel | TaskSetModel, taskType: TaskType): void => {
         if (!taskItem) {
             return

@@ -7,18 +7,18 @@ import { isDev } from '../../share/global'
 // Must be named by sequelize, because of Model.init function behavior.
 const sequelize: Sequelize = new Sequelize({ 
     dialect: 'sqlite',
-    pool: {
-        max: 5,
-        min: 2,
-        acquire: 30000,
-        idle: 10000
-    },
     storage: DBPath,
-    logging: isDev ? true : false,
+    logging: isDev ? console.log : false,
     isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
-    retry: {
-        max: 10
-    }
+    // pool: {
+    //     max: 1,
+    //     min: 0,
+    //     acquire: 30000,
+    //     idle: 10000
+    // },
+    // retry: {
+    //     max: 10
+    // }
 })
 
 const initPersistence = async (): Promise<void> => {
@@ -26,7 +26,7 @@ const initPersistence = async (): Promise<void> => {
         TaskModel.init(taskType, {
             sequelize,
             tableName: 'tasks', 
-            underscored: true
+            underscored: true,
         })
         TaskSetModel.init(taskSetType, {
             sequelize,

@@ -1,9 +1,9 @@
-import { Transaction } from 'sequelize'
+import { Transaction, Op } from 'sequelize'
 import { Task, TaskSet, TaskItem, TaskStatus, Sequence, TaskType } from '../../share/models'
 import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from '../persistence/model_type'
 import { handlePromise } from '../../share/utils' 
 import { sequelize } from './init'
-import { createSequenceModel, deleteSequenceModel, getSequenceModel, getAllSequenceModels } from './sequence_persistence'
+import { createSequenceModel, deleteSequenceModel, getSequenceModel, deleteSequenceModels, getAllSequenceModels } from './sequence_persistence'
 
 const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> => {
     const trans: Transaction = await sequelize.transaction()
@@ -32,64 +32,6 @@ const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> =
     return taskSet
 }
 
-const updateTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.status}`, true)
-    taskSet.changed(`${ModelField.progress}`, true)
-    const [error, _]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(taskSet.save())
-    if (error) {
-        throw error
-    }
-}
-
-const updateTaskSetModelPart = async (taskSet: TaskSetModel, taskPart: any, partName: ModelField): Promise<void> => {
-    const [error, _]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(taskSet.update({ [partName]: taskPart }))
-    if (error) {
-        throw error
-    }
-}
-
-const updateTaskSetModelStatus = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.status}`, true)
-    const [error, _]: [Error | undefined, void] = await handlePromise<void>(updateTaskSetModelPart(taskSet, taskSet.status, ModelField.status))
-    if (error) {
-        throw error
-    }
-}
-
-const updateTaskSetModelChildren = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.children}`, true)
-    const [error, _]: [Error | undefined, void] = await handlePromise<void>(updateTaskSetModelPart(taskSet, taskSet.children, ModelField.parent))
-    if (error) {
-        throw error
-    }
-}
-
-const deleteTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
-    const trans: Transaction = await sequelize.transaction()
-    const [taskSetError]: [Error | undefined, void] = await handlePromise<void>(taskSet.destroy({ transaction: trans }))
-    if (taskSetError) {
-        trans.rollback()
-        throw taskSetError
-    }
-    let [sequenceError, sequence]: [Error | undefined, SequenceModel] = 
-        await handlePromise<SequenceModel>(getSequenceModel(taskSet.taskNo, TaskType.TaskSet, trans))
-    if (sequenceError) {
-        trans.rollback()
-        throw sequenceError
-    }
-    ;[sequenceError] = await handlePromise<void>(deleteSequenceModel(sequence, trans))
-    if (sequenceError) {
-        trans.rollback()
-        throw sequenceError
-    } 
-    try {
-        await trans.commit()
-    } catch (error: any) {
-        trans.rollback()
-        throw error
-    }
-}
-
 const getAllTaskSetModels = async (): Promise<Array<TaskSetModel>> => {
     const [error, tasks]: [Error | undefined, Array<TaskSetModel>] = await handlePromise<Array<TaskSetModel>>(TaskSetModel.findAll())
     if (error) {
@@ -98,11 +40,80 @@ const getAllTaskSetModels = async (): Promise<Array<TaskSetModel>> => {
     return tasks
 }
 
+const updateTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
+    taskSet.changed(`${ModelField.status}`, true)
+    taskSet.changed(`${ModelField.progress}`, true)
+    await taskSet.save()
+}
+
+// Internal method.
+const updateTaskSetModelPart = async (taskSet: TaskSetModel, taskPart: any, partName: ModelField): Promise<void> => {
+    await taskSet.update({ [partName]: taskPart })
+}
+
+const updateTaskSetModelStatus = async (taskSet: TaskSetModel): Promise<void> => {
+    taskSet.changed(`${ModelField.status}`, true)
+    await updateTaskSetModelPart(taskSet, taskSet.status, ModelField.status)
+}
+
+const updateTaskSetModelChildren = async (taskSet: TaskSetModel): Promise<void> => {
+    taskSet.changed(`${ModelField.children}`, true)
+    await updateTaskSetModelPart(taskSet, taskSet.children, ModelField.parent)
+}
+
+const deleteTaskSetModel = async (taskNo: number): Promise<void> => {
+    const trans: Transaction = await sequelize.transaction()
+    try {
+        // await taskSet.destroy({ transaction: trans })
+        // const sequence: SequenceModel = await getSequenceModel(taskSet.taskNo, TaskType.TaskSet, trans)
+        // await deleteSequenceModel(sequence, trans)
+        const deleted: number = await TaskSetModel.destroy({
+            where: {
+                taskNo: {
+                    [Op.eq]: taskNo
+                }
+            },
+            transaction: trans
+        })
+        if (deleted !== 1) {
+            throw new Error(`given tasks count: 1, deleted tasks count: ${deleted}`)
+        }
+        await deleteSequenceModel(taskNo, TaskType.TaskSet, trans)
+        await trans.commit()
+    } catch (error: any) {
+        await trans.rollback()
+        throw error
+    }
+}
+
+const deleteTaskSetModels = async (taskNos: Array<number>): Promise<void> => {
+    const trans: Transaction = await sequelize.transaction()
+    try {
+        const deleted: number = await TaskSetModel.destroy({
+            where: {
+                taskNo: {
+                    [Op.in]: taskNos
+                }
+            },
+            transaction: trans
+        })
+        if (taskNos.length !== deleted) {
+            throw new Error(`given tasks count: ${taskNos.length}, deleted tasks count: ${deleted}`)
+        }
+        await deleteSequenceModels(taskNos, TaskType.TaskSet, trans)
+        await trans.commit()
+    } catch (error: any) {
+        await trans.rollback()
+        throw error
+    }
+}
+
 export {
     createTaskSetModel,
+    getAllTaskSetModels,
     updateTaskSetModel,
     updateTaskSetModelStatus,
     updateTaskSetModelChildren,
     deleteTaskSetModel,
-    getAllTaskSetModels
+    deleteTaskSetModels
 }
