@@ -1,7 +1,7 @@
 import * as http from 'node:http'
 import { ProxySetting } from 'get-proxy-settings'
 import { ProxyChooses } from '../../utils'
-import { globalSetting } from '../../global'
+import { globalSetting } from '../../global/setting'
 import { Protocol, Header } from '../constants'
 import { getHeaders, getPreflightHeaders, getDownloadHeaders } from './header'
 import { fetchSystemProxySetting } from './proxy'

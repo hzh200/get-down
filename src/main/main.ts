@@ -4,8 +4,8 @@ import * as path from 'node:path'
 import { Scheduler } from './scheduler'
 import { initPersistence } from './persistence'
 import { Log } from '../share/utils'
-import { SrcPath } from '../../configs/path'
-import { isDev } from '../share/global'
+import { DIST_PATH } from '../share/global/paths'
+import { isDev } from '../share/global/runtime_mode'
 
 initialize()
 let mainWindow: BrowserWindow
@@ -24,7 +24,8 @@ const createMainWindow = (): Promise<void> => {
             }
         })
         enable(mainWindow.webContents)
-        mainWindow.loadFile(path.resolve(SrcPath, 'app.html'))
+        mainWindow.loadFile(path.resolve(DIST_PATH, 'app.html'))
+        // mainWindow.loadURL(path.resolve(DIST_PATH, 'app.html'))
         mainWindow.on('ready-to-show', () => {
             mainWindow.show()
             if (isDev) {

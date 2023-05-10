@@ -5,10 +5,10 @@ module.exports = {
     target: 'electron-renderer',
     mode: 'none',
     entry: {
-        app: './src/renderer/interfaces/mainPage/MainPage.tsx',
+        app: './src/renderer/App.tsx',
     },
     output: {
-        path: path.resolve(__dirname, 'bundle'),
+        path: path.resolve(__dirname, 'dist', 'renderer'),
         filename: '[name].bundle.js',
     },
     module: {
@@ -39,6 +39,9 @@ module.exports = {
                 exclude: /node_modules/
             }
         ]
+    },
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js'],
     },
     // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore', {
     //     'sequelize': require('sequelize'), 

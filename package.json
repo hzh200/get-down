@@ -2,7 +2,7 @@
   "name": "http-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "src/main/main.js",
+  "main": "dist/main/main.js",
   "build": {
     "appId": "io.github.hzh200.downloader",
     "win": {
@@ -25,10 +25,17 @@
     ]
   },
   "scripts": {
-    "start": "tsc --build && electron . && tsc --build --clean",
-    "devStart": "tsc --build && webpack --mode development && cross-env NODE_ENV=development npm run start && tsc --build --clean"
+    "start": "electron .",
+    "copy-files": "copyfiles -u 1 src/app.html dist/",
+    "build": "npx tsc --build tsconfig.main.json",
+    "clean": "tsc --build --clean tsconfig.main.json",
+    "pack-dev": "webpack --mode development && npm run copy-files",
+    "pack-prod": "webpack --mode production && npm run copy-files",
+    "dev-mode": "npm run build && npm run pack-dev && cross-env NODE_ENV=development npm run start",
+    "gui-mode": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start",
+    "service-mode": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start"
   },
-  "author": "",
+  "author": "hzh",
   "license": "ISC",
   "dependencies": {
     "get-proxy-settings": "^0.1.13",
@@ -47,6 +54,7 @@
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "babel-loader": "^8.2.5",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
     "electron": "^19.0.8",

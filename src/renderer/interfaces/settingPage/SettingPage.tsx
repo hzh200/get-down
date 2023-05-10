@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { ProxyChooses, Setting, readSetting, writeSetting } from '../../../share/utils'
-import { globalSetting } from '../../../share/global'
+import { globalSetting } from '../../../share/global/setting'
 import './setting_page.css'
 import { Log } from '../../../share/utils'
 

@@ -8,7 +8,6 @@ import parserModule from '../../share/parsers'
 import { TaskModel } from '../persistence/model_type'
 import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Parser } from '../../share/parsers/parser'
-import { handleRedirectRequest } from 'src/share/http/request'
 
 enum DownloaderEvent {
     Done = 'Done',

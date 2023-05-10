@@ -1,13 +1,13 @@
 import { Model, Sequelize, Transaction } from 'sequelize'
 import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_type'
-import { DBPath } from '../../../configs/path'
+import { DB_PATH } from '../../share/global/paths' 
 import { handlePromise } from '../../share/utils' 
-import { isDev } from '../../share/global'
+import { isDev } from '../../share/global/runtime_mode'
 
 // Must be named by sequelize, because of Model.init function behavior.
 const sequelize: Sequelize = new Sequelize({ 
     dialect: 'sqlite',
-    storage: DBPath,
+    storage: DB_PATH,
     logging: isDev ? console.log : false,
     isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
     // pool: {

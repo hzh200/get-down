@@ -1,7 +1,6 @@
 import { ipcRenderer, IpcRendererEvent, clipboard, shell } from 'electron'
 import { Menu, MenuItem } from '@electron/remote'
 import * as React from 'react'
-import * as ReactDOM from 'react-dom/client'
 import OperationBar from '../../components/OperationBar'
 import TaskList from '../../components/TaskList'
 import ParserPage from '../parserPage/ParserPage'
@@ -186,5 +185,4 @@ function MainPage() {
     )
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-root.render(<MainPage />);
+export default MainPage

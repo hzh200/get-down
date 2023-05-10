@@ -2,8 +2,10 @@
   "compilerOptions": {
     "module": "CommonJS",
     "target": "ESNext",
-    "baseUrl": ".",
+    "rootDir": "src/",
+    "outDir": "dist/",
     "noImplicitAny": true,
+    "strictNullChecks": true,
     "removeComments": true,
     "strict": true,
     "strictPropertyInitialization": false,
@@ -12,6 +14,7 @@
     "allowJs": false,
     "noEmitOnError": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "src/main/main.ts"]
+  // "include": ["**/*.ts", "**/*.tsx", "src/main/main.ts"]
   // "include": ["./images.d.ts", "src/main/*.ts", "src//*.ts"]
+  "include": ["src/"]
 }

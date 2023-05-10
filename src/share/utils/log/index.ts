@@ -1,13 +1,13 @@
-import { LogPath } from '../../../../configs/path'
-import { isDev } from '../../../share/global'
+import { LOG_PATH } from '../../global/paths'
+import { isDev } from '../../../share/global/runtime_mode'
 import * as fs from 'fs'
 
 // let fd: number
 // const initLog = () => {
-//     if (!fs.existsSync(LogPath)) {
-//         fd = fs.openSync(LogPath, 'w')
+//     if (!fs.existsSync(LOG_PATH)) {
+//         fd = fs.openSync(LOG_PATH, 'w')
 //     } else {
-//         fd = fs.openSync(LogPath, 'r+')
+//         fd = fs.openSync(LOG_PATH, 'r+')
 //     }
 // }
 
@@ -18,7 +18,7 @@ class Log {
         if (isDev) {
             process.stdout.write(logMessage)
         } else {
-            fs.appendFileSync(LogPath, logMessage)
+            fs.appendFileSync(LOG_PATH, logMessage)
         }
     }
 
