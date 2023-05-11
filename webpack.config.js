@@ -49,11 +49,11 @@ module.exports = {
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
     },
-    // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore', {
-    //     'sequelize': require('sequelize'), 
-    // }],
     devtool: 'source-map',
     // devtool: false,
     // plugins: [new webpack.SourceMapDevToolPlugin({})],
-    externals: [nodeExternals()]
+    // externals: [nodeExternals()]
+    // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore', {
+    //     'sequelize': require('sequelize'), 
+    // }],
 }

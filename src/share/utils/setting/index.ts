@@ -24,7 +24,7 @@ type Setting = {
 
 const getDefaultSetting = (): Setting => {
     const proxy: ProxyConfig = {
-        proxyChoosen: ProxyChooses.NoProxy,
+        proxyChoosen: ProxyChooses.UseSystemProxy,
         protocol: 'http',
         host: null,
         port: null,
