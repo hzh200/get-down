@@ -2,8 +2,9 @@
   "compilerOptions": {
     "module": "CommonJS",
     "target": "ESNext",
-    "rootDir": "src/",
+    "rootDir": "src/", // outDir structure depends on rootDir.
     "outDir": "dist/",
+    "sourceMap": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "removeComments": true,

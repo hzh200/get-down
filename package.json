@@ -27,7 +27,7 @@
   "scripts": {
     "start": "electron .",
     "copy-files": "copyfiles -u 1 src/app.html dist/",
-    "build": "npx tsc --build tsconfig.main.json",
+    "build": "tsc --build tsconfig.main.json",
     "clean": "tsc --build --clean tsconfig.main.json",
     "pack-dev": "webpack --mode development && npm run copy-files",
     "pack-prod": "webpack --mode production && npm run copy-files",
