@@ -7,7 +7,7 @@ import { PreflightInfo, preflight } from './preflight'
 import { Task, DownloadType } from '../../share/models'
 import { Setting, readSetting, handlePromise } from '../utils'
 import { ipcRenderer } from 'electron'
-import { CommunicateAPIName } from '../communication'
+import { CommunicateAPIName } from '../global/communication'
 
 class DefaultParsedInfo extends ParsedInfo {
     declare name: string

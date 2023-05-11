@@ -25,7 +25,7 @@ import {
     updateTaskSetStatus
 } from '../persistence'
 import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
-import { CommunicateAPIName } from '../../share/communication'
+import { CommunicateAPIName } from '../../share/global/communication'
 import parserModule from '../../share/parsers'
 import { getValidFilename } from '../../share/utils/string'
 
