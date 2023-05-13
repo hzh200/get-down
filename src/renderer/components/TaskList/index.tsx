@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Task, TaskSet, TaskType } from '../../../share/models'
 import { TaskItem, TaskStatus } from '../../../share/models'
-import { getLocaleDateString } from '../../../share/utils'
+import { convertDateTimeToDate } from '../../../share/utils'
 import { getTaskIconPath, getTaskSetIconPath } from './icon'
 import { convertBytesToHumanReadable, calculateTransferSpeed } from './size'
 import './task_list.css'
@@ -132,7 +132,7 @@ function TaskListTableBodyRow({ taskItem, selected, selectRow, onContextMenu, se
                 // if (taskItem.status == TaskStatus.Waiting)
                 return convertBytesToHumanReadable(lastProgress) + '/' + convertBytesToHumanReadable(taskItem.size)
             })()}</td>
-            <td>{getLocaleDateString(taskItem.createdAt)}</td>
+            <td>{convertDateTimeToDate(taskItem.createdAt)}</td>
         </tr>
     )
 }

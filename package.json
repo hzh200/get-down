@@ -43,7 +43,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sequelize": "^6.21.3",
-    "sqlite3": "^5.1.4"
+    "sqlite3": "^5.1.4",
+    "utimes": "^5.1.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.18.6",

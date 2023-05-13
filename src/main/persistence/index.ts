@@ -20,7 +20,7 @@ import {
 import { getAllSequenceModels } from './sequence_persistence'
 
 import { TaskStatus, TaskType } from '../../share/models'
-import { TaskModel, TaskSetModel } from './model_type'
+import { TaskModel, TaskSetModel } from './model_types'
 
 const getSequencedRecords = async (): Promise<Array<TaskModel | TaskSetModel>> => {
     const records: Array<TaskModel | TaskSetModel> = []

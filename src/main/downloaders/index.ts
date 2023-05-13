@@ -3,7 +3,7 @@ import { DownloadType } from '../../share/models'
 import { Downloader, DownloaderEvent } from './downloader'
 import { RangeDownloader } from './range_downloader'
 import { DirectDownloader } from './direct_downloader'
-import { TaskModel } from '../persistence/model_type'
+import { TaskModel } from '../persistence/model_types'
 
 const getDownloader = (taskNo: number): Downloader => {
     const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel

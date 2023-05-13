@@ -8,7 +8,7 @@ import parserModule from '../../share/parsers'
 import { Downloader } from './downloader'
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 import { Header, StreamEvent } from '../../share/http/constants'
-import { TaskModel } from '../persistence/model_type'
+import { TaskModel } from '../persistence/model_types'
 import { DownloaderEvent } from './downloader'
 const { v4: uuidv4 } = require('uuid')
 
@@ -32,7 +32,7 @@ class RangeDownloader extends Downloader {
         await super.download()
         this.downloadTimer = setInterval(() => {
             if (this.destroyed) return
-            if ((this.task.downloadRanges as Array<Array<number>>).length === 0 && this.rangeMap.size === 0 && this.task.progress >= this.task.size) {
+            if ((this.task.downloadRanges as Array<Array<number>>).length === 0 && this.rangeMap.size === 0 && this.task.progress >= (this.task.size as number)) {
                 this.done()
             }
             for (let i = 0; this.isRangeLeft() && i < (RangeLimit - this.rangeMap.size); i++) {
@@ -65,7 +65,7 @@ class RangeDownloader extends Downloader {
     }
     getPartialRange = (): Array<number> => {
         const _1MB: number = 1024 * 1024
-        const _10Percent: number = Math.floor((this.task.size - this.task.progress) / 10)
+        const _10Percent: number = Math.floor(((this.task.size as number) - this.task.progress) / 10)
         const RangeLength: number = _1MB > _10Percent ? _1MB : _10Percent
         
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>

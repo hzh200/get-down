@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import { Parser, ParsedInfo } from './parser'
 import InfoRow from './InfoRow'
 import { Task, DownloadType, TaskSet } from '../../share/models'
-import { Setting, readSetting, handlePromise } from '../utils'
+import { Setting, readSetting, handlePromise, convertDateTimeToUnixTime } from '../utils'
 import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../global/communication'
 import { httpRequest, getHttpRequestTextContent } from '../http/request'
@@ -31,6 +31,7 @@ class ListInfo {
     bvid: string
     aid: string
     title: string
+    publishedTimestamp: string
     videos: Array<VideoInfo> = []
 }
 
@@ -76,17 +77,18 @@ class BiliBiliParser implements Parser {
             throw getContentErr
         }
         const parsedData = JSON.parse(rawData)
-        if (parsedData['code'] !== 0) {
+        if (parsedData.code !== 0) {
             throw new Error('parsedData[\'code\'] = 0')
         }
-        const data = parsedData['data']
-        videolist.aid = data['aid']
-        videolist.title = data['title']
-        const pages = data['pages']
+        const data = parsedData.data
+        videolist.aid = data.aid
+        videolist.title = data.title
+        videolist.publishedTimestamp = data.pubdate
+        const pages = data.pages
         for (const page of pages) {
             const video = new VideoInfo()
-            video.cid = page['cid']
-            video.title = page['part']
+            video.cid = page.cid
+            video.title = page.part
             video.formats = await this.getFormatInfos(videolist.aid, video.cid)
             videolist.videos.push(video)
         }
@@ -105,15 +107,15 @@ class BiliBiliParser implements Parser {
             throw getContentErr
         }
         const parsedData = JSON.parse(rawData)
-        const data = parsedData['data']
-        const supportFormats = data['support_formats']
+        const data = parsedData.data
+        const supportFormats = data.support_formats
         const formats: Array<FormatInfo> = []
         for (const val of supportFormats) {
             const format = new FormatInfo()
-            format.quality = val['quality']
-            format.format = val['format']
-            format.description = val['new_description']
-            format.display = val['display_desc']
+            format.quality = val.quality
+            format.format = val.format
+            format.description = val.new_description
+            format.display = val.display_desc
             format.urls = await this.getVideoURLs(aid, cid, format.quality)
             formats.push(format)
         }
@@ -132,12 +134,12 @@ class BiliBiliParser implements Parser {
             throw getContentErr
         }
         const parsedData = JSON.parse(rawData)
-        const data = parsedData['data']
-        const durl = data['durl']
+        const data = parsedData.data
+        const durl = data.durl
         
         const urls: Array<FormatInfoUrl> = []
         for (const url of durl) {
-            urls.push(url['url'])
+            urls.push(url.url)
         }
         return urls
     }
@@ -237,7 +239,7 @@ class BiliBiliParser implements Parser {
             task.type = preflightParsedInfo.type
             task.url = parsedInfo.url
             task.downloadUrl = preflightParsedInfo.downloadUrl
-            task.createdAt = preflightParsedInfo.createdAt
+            task.publishedTimestamp = parsedInfo.listInfo.publishedTimestamp.toString()
             task.subType = preflightParsedInfo.subType
             task.charset = preflightParsedInfo.charset
             task.location = parsedInfo.location
@@ -263,7 +265,7 @@ class BiliBiliParser implements Parser {
                         task.type = preflightParsedInfo.type
                         task.url = preflightParsedInfo.url
                         task.downloadUrl = preflightParsedInfo.downloadUrl
-                        task.createdAt = preflightParsedInfo.createdAt
+                        task.publishedTimestamp = parsedInfo.listInfo.publishedTimestamp.toString()
                         task.subType = preflightParsedInfo.subType
                         task.charset = preflightParsedInfo.charset
                         task.location = path.join(parsedInfo.location, parsedInfo.name)
@@ -286,7 +288,6 @@ class BiliBiliParser implements Parser {
             }
             taskSet.type = 'folder'
             taskSet.url = parsedInfo.url
-            // taskSet.createdAt = tasks[0].createdAt
             taskSet.location = parsedInfo.location
             taskSet.parserNo = this.parserNo
     

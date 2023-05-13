@@ -16,6 +16,7 @@ class Task extends TaskItem {
     declare taskType: TaskType
 
     downloadUrl: string
+    publishedTimestamp: string
     subType: string
     charset: string | undefined
     downloadType: DownloadType

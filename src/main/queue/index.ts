@@ -1,5 +1,5 @@
 import { Task, TaskItem, TaskStatus, TaskType } from '../../share/models'
-import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_type'
+import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_types'
 
 const instances: Array<TaskModel | TaskSetModel> = []
 const taskMap: Map<number, TaskModel> = new Map()

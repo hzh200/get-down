@@ -1,5 +1,5 @@
 import * as http from 'node:http'
-import { handlePromise } from '../utils'
+import { handlePromise, convertDateTimeToUnixTime } from '../utils'
 import { DownloadType } from '../models'
 import { handleRedirectRequest } from '../http/request'
 import { ResponseStatusCode, Header, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 
@@ -11,7 +11,7 @@ class PreflightInfo {
     size: number | undefined
     type: string
     url: string
-    createdAt: string
+    publishedTimestamp: string
     downloadUrl: string
     subType: string
     charset: string | undefined
@@ -113,10 +113,12 @@ const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders
             // preflightInfo.size = undefined
         }
     }
-    // file's createdAt time
+    // file's published date
     const headerLastModified: string = reponseHeaders[Header.LastModified] as string
     if (headerLastModified) {
-        preflightInfo.createdAt = new Date(headerLastModified).toISOString()
+        preflightInfo.publishedTimestamp = convertDateTimeToUnixTime(headerLastModified)
+    } else {
+        preflightInfo.publishedTimestamp = new Date().getTime().toString()
     }
     // downloadType
     if (responseStatusCode === ResponseStatusCode.PartialContent && preflightInfo.size) {

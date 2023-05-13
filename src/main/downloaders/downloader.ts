@@ -4,8 +4,9 @@ import * as path from 'node:path'
 import * as EventEmitter from 'events'
 import taskQueue from '../queue'
 import { Log, handlePromise } from '../../share/utils'
+import { changeFileTimestamp } from '../fileTime'
 import parserModule from '../../share/parsers'
-import { TaskModel } from '../persistence/model_type'
+import { TaskModel } from '../persistence/model_types'
 import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Parser } from '../../share/parsers/parser'
 
@@ -32,7 +33,7 @@ class Downloader extends EventEmitter {
     async download(): Promise<void> {
         const parentPath: string = path.dirname(this.filePath)
         if (!fs.existsSync(parentPath)) {
-            fs.mkdirSync(parentPath, { recursive: true });
+            fs.mkdirSync(parentPath, { recursive: true })
         }
         if (!fs.existsSync(this.filePath)) {
             this.fd = fs.openSync(this.filePath, 'w')
@@ -51,6 +52,9 @@ class Downloader extends EventEmitter {
     // Clear Download instance resource.
     clear(): void {
         fs.closeSync(this.fd)
+        changeFileTimestamp(this.filePath, this.task.publishedTimestamp)
+        const parentPath: string = path.dirname(this.filePath)
+        changeFileTimestamp(parentPath, this.task.publishedTimestamp)
     }
 
     // Task downloads succeed.

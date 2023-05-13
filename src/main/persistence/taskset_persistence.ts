@@ -1,6 +1,6 @@
 import { Transaction, Op } from 'sequelize'
 import { Task, TaskSet, TaskItem, TaskStatus, Sequence, TaskType } from '../../share/models'
-import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from '../persistence/model_type'
+import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_types'
 import { handlePromise } from '../../share/utils' 
 import { sequelize } from './init'
 import { createSequenceModel, deleteSequenceModel, getSequenceModel, deleteSequenceModels, getAllSequenceModels } from './sequence_persistence'

@@ -1,8 +1,9 @@
 import { ipcMain, IpcMainEvent, IpcRendererEvent } from 'electron'
 import { Task, TaskSet, TaskItem, TaskStatus, DownloadType, TaskType } from '../../share/models'
-import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_type'
+import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_types'
 import { mainWindow } from '../main'
 import taskQueue from '../queue'
+import { changeFileTimestamp } from '../fileTime'
 import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
 import { 
     createTaskModel,
@@ -28,6 +29,7 @@ import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/global/communication'
 import parserModule from '../../share/parsers'
 import { getValidFilename } from '../../share/utils/string'
+import { EventEmitter } from 'node:stream'
 
 const maxDownloadLimit: number = 3
 
@@ -66,10 +68,15 @@ class Scheduler {
                 }
 
                 downloader.on(DownloaderEvent.Done, handleAsyncCallback(async (): Promise<void> => {
+                    const mainEventEmitter: EventEmitter = new EventEmitter()
+                    mainEventEmitter.on(CommunicateAPIName.AddFile, (filePath: string, publishedTimestamp: string) => {
+                        changeFileTimestamp(filePath, publishedTimestamp)
+                    })
+                    
                     const taskCallback = parserModule.getParser(task.parserNo).taskCallback
                     const taskSetCallback = parserModule.getParser(task.parserNo).taskSetCallback
                     if (taskCallback) {
-                        const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(taskNo))
+                        const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(mainEventEmitter, taskNo))
                         if (error) {
                             await this.finishTask(taskNo, TaskStatus.Failed)
                             return
@@ -84,7 +91,7 @@ class Scheduler {
                         if (taskSetCallback) {
                             const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
                             await updateTaskSetStatus(taskSet, TaskStatus.Processing)
-                            const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(parentTaskSetNo))
+                            const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(mainEventEmitter, parentTaskSetNo))
                             if (error) {
                                 await updateTaskSetStatus(taskSet, TaskStatus.Failed)
                                 return
@@ -105,9 +112,14 @@ class Scheduler {
                     }
                 }))
 
-                downloader.download().catch((error: Error) => {
-                    Log.errorLog(error)
-                })
+                // downloader.download().catch((error: Error) => {
+                //     Log.errorLog(error)
+                // })
+
+                // [Error]Cannot read properties of undefined (reading 'filePath') TypeError: Cannot read properties of undefined (reading 'filePath')
+                // await handleAsyncCallback(downloader.download)() 
+
+                await downloader.download()
             }
         }), 100)
 

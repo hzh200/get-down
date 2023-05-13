@@ -13,7 +13,7 @@ class TaskItem {
     createdAt: string // timestamp added automatically by Sequelize.
     updatedAt: string // timestamp added automatically by Sequelize.
 
-    taskType: TaskType // Differ from database fields.
+    taskType: TaskType // Not exist in table fields, only for type checking.
 }
 
 export { TaskItem }

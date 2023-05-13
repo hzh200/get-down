@@ -1,6 +1,6 @@
 import { Transaction, Op } from 'sequelize'
 import { Sequence, TaskType } from '../../share/models'
-import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from '../persistence/model_type'
+import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_types'
 import { handlePromise } from '../../share/utils' 
 
 const createSequenceModel = async (sequence: Sequence, trans: Transaction): Promise<SequenceModel> => {

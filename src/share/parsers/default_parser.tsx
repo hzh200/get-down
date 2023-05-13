@@ -14,7 +14,7 @@ class DefaultParsedInfo extends ParsedInfo {
     size: number | undefined
     type: string
     url: string
-    createdAt: string
+    publishedTimestamp: string
     downloadUrl: string
     subType: string
     charset: string | undefined
@@ -42,7 +42,7 @@ class DefaultParser implements Parser {
         parsedInfo.size = preflightParsedInfo.size
         parsedInfo.type = preflightParsedInfo.type
         parsedInfo.url = preflightParsedInfo.url
-        parsedInfo.createdAt = preflightParsedInfo.createdAt
+        parsedInfo.publishedTimestamp = preflightParsedInfo.publishedTimestamp
         parsedInfo.downloadUrl = preflightParsedInfo.downloadUrl
         parsedInfo.subType = preflightParsedInfo.subType
         parsedInfo.charset = preflightParsedInfo.charset
@@ -80,7 +80,7 @@ class DefaultParser implements Parser {
         task.type = parsedInfo.type
         task.url = parsedInfo.url
         task.downloadUrl = parsedInfo.downloadUrl
-        task.createdAt = parsedInfo.createdAt
+        task.publishedTimestamp = parsedInfo.publishedTimestamp
         task.subType = parsedInfo.subType
         task.charset = parsedInfo.charset
         task.location = parsedInfo.location

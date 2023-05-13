@@ -1,5 +1,5 @@
 import { Model, Sequelize, Transaction } from 'sequelize'
-import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_type'
+import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_types'
 import { DB_PATH } from '../../share/global/paths' 
 import { handlePromise } from '../../share/utils' 
 import { isDev } from '../../share/global/runtime_mode'

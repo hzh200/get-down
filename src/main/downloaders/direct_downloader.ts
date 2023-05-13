@@ -9,7 +9,7 @@ import { Downloader } from "./downloader"
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 // import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
 import { Header, StreamEvent } from '../../share/http/constants'
-import { TaskModel } from '../persistence/model_type'
+import { TaskModel } from '../persistence/model_types'
 
 class DirectDownloader extends Downloader {
     declare taskNo: number

@@ -2,7 +2,8 @@ import * as React from 'react'
 import * as http from 'node:http'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { exec, ExecException, ChildProcess } from 'child_process'
+import * as EventEmitter from 'node:stream'
+import { exec, ExecException, ChildProcess } from 'node:child_process'
 import { Parser, ParsedInfo } from './parser'
 import InfoRow from './InfoRow'
 import { Task, DownloadType, TaskSet } from '../../share/models'
@@ -14,7 +15,7 @@ import { generateRequestOption, getPreflightHeaders } from '../http/options'
 import { PreflightInfo, preflight } from './preflight'
 import { Header, FILE_EXTENSION_DOT } from '../http/constants'
 import taskQueue from '../../main/queue'
-import { TaskModel, TaskSetModel } from '../../main/persistence/model_type'
+import { TaskModel, TaskSetModel } from '../../main/persistence/model_types'
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\/title>')
 const FORMATS_RE = new RegExp('\"formats\".+?\]')
@@ -40,11 +41,6 @@ class YoutubeParsedInfo extends ParsedInfo {
     preflightInfos: Array<PreflightInfo>
 }
 
-class SelectedFormat {
-    quality: string
-    codecs: string
-}
-
 class VideoInfo {
     title: string
     mixtureFormats: Array<FormatInfo> = []
@@ -60,6 +56,7 @@ class FormatInfo {
     type: string
     subType: string
     codecs: string
+    publishedTimestamp: string
 }
 
 class YoutubeParser implements Parser {
@@ -92,7 +89,6 @@ class YoutubeParser implements Parser {
         if (rawLine === '') {
             throw new Error('no streamingData found')
         } 
-
         let execResult: RegExpExecArray | null = TITLE_RE.exec(rawData)
         if (!execResult) {
             throw new Error("no title exec result")
@@ -122,6 +118,7 @@ class YoutubeParser implements Parser {
                 // format.codecs = regexRes[3] // useless
             }
             format.quality = data.qualityLabel
+            format.publishedTimestamp = data.lastModified
             videoInfo.mixtureFormats.push(format)
         }    
         
@@ -154,6 +151,7 @@ class YoutubeParser implements Parser {
                     format.codecs = 'mp4a'
                 }
             }
+            format.publishedTimestamp = data.lastModified
             if (format.type === 'video') {
                 format.quality = data.qualityLabel
                 const lastFormat: FormatInfo | undefined = videoInfo.videoFormats.pop()
@@ -412,7 +410,7 @@ class YoutubeParser implements Parser {
             videoTask.type = preflightParsedInfo.type
             videoTask.url = parsedInfo.url
             videoTask.downloadUrl = preflightParsedInfo.downloadUrl
-            videoTask.createdAt = preflightParsedInfo.createdAt
+            videoTask.publishedTimestamp = videoFormat.publishedTimestamp
             videoTask.subType = preflightParsedInfo.subType
             videoTask.charset = preflightParsedInfo.charset
             videoTask.location = parsedInfo.location
@@ -439,7 +437,7 @@ class YoutubeParser implements Parser {
             videoTask.type = preflightParsedInfo.type
             videoTask.url = parsedInfo.url
             videoTask.downloadUrl = preflightParsedInfo.downloadUrl
-            videoTask.createdAt = preflightParsedInfo.createdAt
+            videoTask.publishedTimestamp = videoFormat.publishedTimestamp
             videoTask.subType = preflightParsedInfo.subType
             videoTask.charset = preflightParsedInfo.charset
             videoTask.location = parsedInfo.location
@@ -457,7 +455,7 @@ class YoutubeParser implements Parser {
             audioTask.type = preflightParsedInfo.type
             audioTask.url = parsedInfo.url
             audioTask.downloadUrl = preflightParsedInfo.downloadUrl
-            audioTask.createdAt = preflightParsedInfo.createdAt
+            audioTask.publishedTimestamp = audioFormat.publishedTimestamp
             audioTask.subType = preflightParsedInfo.subType
             audioTask.charset = preflightParsedInfo.charset
             audioTask.location = parsedInfo.location
@@ -473,7 +471,6 @@ class YoutubeParser implements Parser {
             }
             taskSet.type = 'folder'
             taskSet.url = parsedInfo.url
-            // taskSet.createdAt = tasks[0].createdAt
             taskSet.location = parsedInfo.location
             taskSet.parserNo = this.parserNo
     
@@ -481,7 +478,7 @@ class YoutubeParser implements Parser {
         }
     }
 
-    taskSetCallback(taskNo: number): Promise<void> {
+    taskSetCallback(mainEventEmitter: EventEmitter, taskNo: number): Promise<void> {
         return new Promise((resolve, reject) => {
             const taskSet: TaskSetModel | null = taskQueue.getTaskSet(taskNo)
             if (!taskSet || !taskSet.children || taskSet.children.length !== 2) {
@@ -528,7 +525,9 @@ class YoutubeParser implements Parser {
                     try {
                         fs.unlinkSync(videoTaskPath)
                         fs.unlinkSync(audioTaskPath)
-                        fs.renameSync(mergePath, mergePath.replace('merge_', ''))
+                        const newMergePath = mergePath.replace('merge_', '')
+                        fs.renameSync(mergePath, newMergePath)
+                        mainEventEmitter.emit(CommunicateAPIName.AddFile, newMergePath, videoTask.publishedTimestamp)
                     } catch (error: any) {
                         reject(error)
                     }

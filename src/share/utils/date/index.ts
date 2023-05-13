@@ -1,6 +1,11 @@
-const getLocaleDateString = (datetimeString: string): string => {
-    const date = new Date(datetimeString)
+const convertDateTimeToUnixTime = (datetime: string): string => {
+    const date = new Date(datetime)
+    return date.getTime().toString()
+}
+
+const convertDateTimeToDate = (datetime: string): string => {
+    const date = new Date(datetime)
     return date.toLocaleDateString()
 }
 
-export { getLocaleDateString }
+export { convertDateTimeToUnixTime, convertDateTimeToDate }
