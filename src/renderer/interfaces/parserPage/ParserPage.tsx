@@ -2,7 +2,7 @@ import * as React from 'react'
 import UrlBar from '../../components/UrlBar'
 import StatusPanel, { ParserStatus } from '../../components/StatusPanel'
 import parserModule from '../../../share/parsers'
-import { handlePromise } from '../../../share/utils'
+import { Log, handlePromise } from '../../../share/utils'
 import { ParsedInfo } from '../../../share/parsers/parser'
 import { validateUrl } from '../../../share/http/util'
 import { getTranslatedFilename } from '../../../share/utils'
@@ -47,6 +47,9 @@ function ParserPage() {
             setStatus(ParserStatus.failed)
             // setOptionsInfo(new DefaultParsedInfo())
             setErrorMessage(error.name + ':' + error.message)
+            if (error.stack) {
+                Log.errorLog(error.stack)
+            }
             return
         }
         parsedInfo.name = getTranslatedFilename(parsedInfo.name)

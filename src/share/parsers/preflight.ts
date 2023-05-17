@@ -124,12 +124,12 @@ const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders
     if (responseStatusCode === ResponseStatusCode.PartialContent && preflightInfo.size) {
         preflightInfo.downloadType = DownloadType.Range
     } else {
-        if (preflightInfo.type === 'application' && 
-            (preflightInfo.subType === 'x-mpegURL' || preflightInfo.subType === 'vnd.apple.mpegURL')) {
-            preflightInfo.downloadType = DownloadType.Blob
-        } else {
+        // if (preflightInfo.type === 'application' && 
+            // (preflightInfo.subType === 'x-mpegURL' || preflightInfo.subType === 'vnd.apple.mpegURL')) {
+            // preflightInfo.downloadType = DownloadType.Blob
+        // } else {
             preflightInfo.downloadType = DownloadType.Direct
-        }
+        // }
     }
     return preflightInfo
 }

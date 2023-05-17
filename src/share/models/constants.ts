@@ -14,8 +14,7 @@ enum TaskStatus {
 
 enum DownloadType {
     Direct,
-    Range,
-    Blob, // m3u8
+    Range
 }
 
 export { TaskType, TaskStatus, DownloadType }
