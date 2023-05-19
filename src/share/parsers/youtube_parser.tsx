@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import * as fs from 'node:fs'
 import * as EventEmitter from 'node:stream'
 import { exec, ExecException, ChildProcess } from 'node:child_process'
-import { Parser, ParsedInfo } from './parser'
+import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
 import InfoRow from './InfoRow'
 import { Task, DownloadType, TaskSet } from '../../share/models'
 import { Setting, readSetting, handlePromise, Log } from '../utils'
@@ -18,35 +18,22 @@ import taskQueue from '../../main/queue'
 import { TaskModel, TaskSetModel } from '../../main/persistence/model_types'
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\/title>')
-const FORMATS_RE = new RegExp('\"formats\".+?\]')
-const ADAPTIVE_FORMATS_RE = new RegExp('\"adaptiveFormats\".+?\]')
+const FORMATS_RE = new RegExp('\"formats\".+?]', 'g')
+const ADAPTIVE_FORMATS_RE = new RegExp('\"adaptiveFormats\".+?]')
 const MIMETYPE_RE = new RegExp('(video|audio)/(.+)\; codecs=\"(.+)\"')
 
 class YoutubeParsedInfo extends ParsedInfo {
     url: string
-    videoInfo: VideoInfo
-    // listInfo: ListInfo
-    // listCount: number
     declare name: string
     declare location: string
-    // selectedVideos: Array<boolean>
-    // selectedFormats: Array<string>
-    selectedMixtureQuality: string
-    selectedVideoFormat: FormatInfo
-    selectedAudioFormat: FormatInfo
-    // selectedVideoQuality: string
-    // selectedAudioQuality: string
-    // selectedVideoCodecs: string
-    // selectedAudioCodecs: string
-    preflightInfos: Array<PreflightInfo>
-}
 
-class VideoInfo {
-    title: string
+    hasMixture: boolean
     mixtureFormats: Array<FormatInfo> = []
     hasAdaptive: boolean
-    videoFormats: Array<FormatInfo> = [] // adaptive
-    audioFormats: Array<FormatInfo> = [] // adaptive
+    videoFormats: Array<FormatInfo> = []
+    audioFormats: Array<FormatInfo> = []
+
+    selection: Selection
 }
 
 class FormatInfo {
@@ -59,6 +46,12 @@ class FormatInfo {
     publishedTimestamp: string
 }
 
+class Selection {
+    selectedMixtureFormat: FormatInfo | undefined
+    selectedVideoFormat: FormatInfo | undefined
+    selectedAudioFormat: FormatInfo | undefined
+}
+
 class YoutubeParser implements Parser {
     parserNo: number = 2
     parseTarget: string = 'YouTube'
@@ -67,73 +60,69 @@ class YoutubeParser implements Parser {
         [Header.Referer]: 'https://www.youtube.com'
     }
 
-    getVideoInfo = async (url: string): Promise<VideoInfo> => {
-        const videoInfo = new VideoInfo()
-        let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders)
-        let [httpRequestErr, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (httpRequestErr) {
-            throw httpRequestErr
-        }
-        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
-        if (getContentErr) {
-            throw getContentErr
-        }
-        let rawLine = ''
-        for (const line of rawData.split('\n')) {
-            if (line.includes('streamingData')) {
-                rawLine = line
-                break
-            }
-        }
-        if (rawLine === '') {
+    parseFormatInfo = async (parsedInfo: YoutubeParsedInfo, data: string): Promise<void> => {
+        const streamingDataLine = data.split('\n').find((value: string, _index: number, _array: Array<string>) => value.includes('streamingData'))
+        if (!streamingDataLine) {
             throw new Error('no streamingData found')
-        } 
-        let execResult: RegExpExecArray | null = TITLE_RE.exec(rawData)
-        if (!execResult) {
+        }
+
+        let titleExecResult: RegExpExecArray | null = TITLE_RE.exec(data)
+        if (!titleExecResult) {
             throw new Error("no title exec result")
         }
-        videoInfo.title = execResult[1]
+        parsedInfo.name = titleExecResult[1]
 
-        // videos combined with audio already.
-        execResult = FORMATS_RE.exec(rawLine)
-        if (execResult === null) {
+        // extract mixtured video urls.
+        const mixtureFormatsExecResultArray: Array<RegExpExecArray> = []
+        let mixtureFormatsExecResult: RegExpExecArray | null
+        while ((mixtureFormatsExecResult =  FORMATS_RE.exec(streamingDataLine)) !== null) {
+            mixtureFormatsExecResultArray.push(mixtureFormatsExecResult)
+        }
+        if (mixtureFormatsExecResultArray.length === null) {
             throw new Error('no formats exec result')
         }
-        let parsedData = JSON.parse('{' + execResult[0] + '}')  
-
-        for (const data of parsedData.formats) {
+        mixtureFormatsExecResult = mixtureFormatsExecResultArray[mixtureFormatsExecResultArray.length - 1] // there are other lines containing streamingData, what we need is the last one.
+        let mixtureFormatData = JSON.parse('{' + mixtureFormatsExecResult[0] + '}')
+        parsedInfo.hasMixture = false
+        for (const data of mixtureFormatData.formats) {
             const format = new FormatInfo()
-            // music
-            if (data.url === undefined) {
-                // throw new Error('no valid video urls parsed out')
+            if (!data.url && !data.signatureCipher) {
                 continue
+            } else if (data.url) {
+                format.url = data.url
+            } else {
+                
             }
-            format.url = data.url
             format.mimeType = data.mimeType
-            const regexRes: RegExpExecArray | null = MIMETYPE_RE.exec(data.mimeType)
-            if (regexRes) {
-                format.type = regexRes[1]
-                format.subType = regexRes[2]
-                // format.codecs = regexRes[3] // useless
+            const typeExecResult: RegExpExecArray | null = MIMETYPE_RE.exec(data.mimeType)
+            if (typeExecResult) {
+                format.type = typeExecResult[1]
+                format.subType = typeExecResult[2]
+                // format.codecs = typeExecResult[3] // useless
             }
             format.quality = data.qualityLabel
             format.publishedTimestamp = data.lastModified
-            videoInfo.mixtureFormats.push(format)
+            parsedInfo.mixtureFormats.push(format)
+            parsedInfo.hasMixture = true
         }    
         
-        execResult = ADAPTIVE_FORMATS_RE.exec(rawLine)
-        if (execResult === null) {
+        // extract adaptive video and audio urls.
+        let adaptiveFormatsExecResult: RegExpExecArray | null = ADAPTIVE_FORMATS_RE.exec(streamingDataLine)
+        if (adaptiveFormatsExecResult === null) {
             throw new Error('no valid video urls parsed out')
         }
-        parsedData = JSON.parse('{' + execResult[0] + '}') 
-        for (const data of parsedData.adaptiveFormats) {
+
+        let adaptiveFormatData = JSON.parse('{' + adaptiveFormatsExecResult[0] + '}')
+        parsedInfo.hasAdaptive = false
+        for (const data of adaptiveFormatData.adaptiveFormats) {
             const format = new FormatInfo()
-            // music
-            if (data.url === undefined) {
-                throw new Error('no valid video urls parsed out')
+            if (!data.url && !data.signatureCipher) {
+                continue
+            } else if (data.url) {
+                format.url = data.url
+            } else {
+                
             }
-            format.url = data.url
             format.mimeType = data.mimeType   
             const regexRes: RegExpExecArray | null = MIMETYPE_RE.exec(data.mimeType)
             if (regexRes) {
@@ -154,21 +143,27 @@ class YoutubeParser implements Parser {
             format.publishedTimestamp = data.lastModified
             if (format.type === 'video') {
                 format.quality = data.qualityLabel
-                const lastFormat: FormatInfo | undefined = videoInfo.videoFormats.pop()
+                const lastFormat: FormatInfo | undefined = parsedInfo.videoFormats.pop()
                 if (lastFormat && (lastFormat.subType !== format.subType || lastFormat.codecs !== format.codecs || lastFormat.quality !== format.quality)) {
-                    videoInfo.videoFormats.push(lastFormat)
+                    parsedInfo.videoFormats.push(lastFormat)
                 }
-                videoInfo.videoFormats.push(format)
+                parsedInfo.videoFormats.push(format)
             } else if (format.type === 'audio') {
                 format.quality = data.audioQuality
-                const lastFormat: FormatInfo | undefined = videoInfo.audioFormats.pop()
+                const lastFormat: FormatInfo | undefined = parsedInfo.audioFormats.pop()
                 if (lastFormat && (lastFormat.subType !== format.subType || lastFormat.codecs !== format.codecs || lastFormat.quality !== format.quality)) {
-                    videoInfo.audioFormats.push(lastFormat)
+                    parsedInfo.audioFormats.push(lastFormat)
                 }
-                videoInfo.audioFormats.push(format)
+                parsedInfo.audioFormats.push(format)
             }
+            parsedInfo.hasAdaptive = true
         }
 
+        if (!parsedInfo.hasMixture && !parsedInfo.hasAdaptive) {
+            throw new Error('no formats parsed out')
+        }
+
+        // sort all kinds of formats in descending order by quality.
         const sortFormats = () => {
             const sortVideoQuality = (qualityA: string, qualityB: string): number => {
                 const resolutionA: number = parseInt(qualityA.slice(0, qualityA.indexOf('p')))
@@ -198,6 +193,7 @@ class YoutubeParser implements Parser {
                 } 
                 return 0
             }
+
             const sortVideoCodecs = (codecsA: string, codecsB: string): number => {
                 const sortInfo: Array<[string, number]> = [[codecsA, -1], [codecsB, -1]]
                 for (let i = 0; i < 2; i++) {
@@ -216,6 +212,7 @@ class YoutubeParser implements Parser {
                 }
                 return 0
             }
+
             const sortAudioQuality = (qualityA: string, qualityB: string): number => {
                 const sortInfo: Array<[string, number]> = [[qualityA, -1], [qualityB, -1]]
                 for (let i = 0; i < 2; i++) {
@@ -234,6 +231,7 @@ class YoutubeParser implements Parser {
                 }
                 return 0
             }
+
             const sortAudioCodecs = (codecsA: string, codecsB: string): number => {
                 const sortInfo: Array<[string, number]> = [[codecsA, -1], [codecsB, -1]]
                 for (let i = 0; i < 2; i++) {
@@ -249,17 +247,18 @@ class YoutubeParser implements Parser {
                     return -1
                 }
             }
-            videoInfo.mixtureFormats = videoInfo.mixtureFormats.sort((a: FormatInfo, b: FormatInfo) => {
+            
+            parsedInfo.mixtureFormats = parsedInfo.mixtureFormats.sort((a: FormatInfo, b: FormatInfo) => {
                 return -sortVideoQuality(a.quality, b.quality)
             })
-            videoInfo.videoFormats = videoInfo.videoFormats.sort((a: FormatInfo, b: FormatInfo) => {
+            parsedInfo.videoFormats = parsedInfo.videoFormats.sort((a: FormatInfo, b: FormatInfo) => {
                 const relation: number = sortVideoQuality(a.quality, b.quality)
                 if (relation !== 0) {
                     return -relation
                 }
                 return -sortVideoCodecs(a.codecs, b.codecs)
             })
-            videoInfo.audioFormats = videoInfo.audioFormats.sort((a: FormatInfo, b: FormatInfo) => {
+            parsedInfo.audioFormats = parsedInfo.audioFormats.sort((a: FormatInfo, b: FormatInfo) => {
                 const relation: number = sortAudioQuality(a.quality, b.quality)
                 if (relation !== 0) {
                     return -relation
@@ -268,133 +267,148 @@ class YoutubeParser implements Parser {
             })
         }
         sortFormats()
-        return videoInfo
     }
 
     parse = async (url: string): Promise<ParsedInfo> => {
-        const setting: Setting = readSetting()
-        const videoInfo: VideoInfo = await this.getVideoInfo(url)
+        'https://www.youtube.com/watch?v=RWMMdX6KYGM&bpctr=9999999999&has_verified=1'
+        let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders)
+        let [httpRequestErr, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
+            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
+        if (httpRequestErr) {
+            throw httpRequestErr
+        }
+        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
+        if (getContentErr) {
+            throw getContentErr
+        }
         const parsedInfo = new YoutubeParsedInfo()
         parsedInfo.url = url
-        parsedInfo.videoInfo = videoInfo
-        parsedInfo.name = videoInfo.title
+        const setting: Setting = readSetting()
         parsedInfo.location = setting.location
-        parsedInfo.selectedMixtureQuality = parsedInfo.videoInfo.mixtureFormats[0].quality
-        parsedInfo.selectedVideoFormat = {...parsedInfo.videoInfo.videoFormats[0]}
-        parsedInfo.selectedAudioFormat = {...parsedInfo.videoInfo.audioFormats[0]}
+        try {
+            await this.parseFormatInfo(parsedInfo, rawData)
+        } catch (e: any) {
+            console.log(rawData)
+            throw e
+        }
+        
+        parsedInfo.selection = new Selection()
+        if (parsedInfo.hasMixture) {
+            parsedInfo.selection.selectedMixtureFormat = parsedInfo.mixtureFormats[0]
+        }
+        if (parsedInfo.hasAdaptive) {
+            // parsedInfo.selection.selectedVideoFormat = {...parsedInfo.videoFormats[0]}
+            // parsedInfo.selection.selectedAudioFormat = {...parsedInfo.audioFormats[0]}
+            parsedInfo.selection.selectedVideoFormat = parsedInfo.videoFormats[0]
+            parsedInfo.selection.selectedAudioFormat = parsedInfo.audioFormats[0]
+        }
         return parsedInfo
     }
     
-    DownloadOptions = ({ parsedInfo, handleInfoChange } : 
+    DownloadOptions = ({ parsedInfo, handleInfoChange }: 
         { parsedInfo: YoutubeParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
         return (
             <React.Fragment>
-                <InfoRow>
-                    <label>File name</label>
-                    <input className="resource-name" type="text" value={parsedInfo.name} name='name' onChange={handleInfoChange} />
-                </InfoRow>
-                <InfoRow>
-                    <label>Location</label>
-                    <input className="download-location" type="text" value={parsedInfo.location} name='location' onChange={handleInfoChange} />
-                </InfoRow>
+                <DownloadOptionsBase parsedInfo={parsedInfo} handleInfoChange={handleInfoChange} />
                 {(() => {
-                    if (parsedInfo.videoInfo.videoFormats.length === 0) {
+                    if (parsedInfo.hasAdaptive === false) {
                         return (
                             <InfoRow>
                                 <label>Quality</label>
-                                <select className="format-selecter" value={parsedInfo.selectedMixtureQuality} name='selectedMixtureQuality' onChange={handleInfoChange}>
-                                    {parsedInfo.videoInfo.mixtureFormats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
+                                <select className="format-selecter" value={parsedInfo.selection.selectedMixtureFormat?.quality} name='selectedMixtureQuality' onChange={handleInfoChange}>
+                                    {parsedInfo.mixtureFormats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                         <option value={format.quality} key={index}>{format.quality}</option>
                                     )}
                                 </select>
                             </InfoRow>
                         )
+                    } else {
+                        return (
+                            <React.Fragment>
+                                <InfoRow>
+                                    <label>Video Quality</label>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.quality} name='selectedVideoFormat-quality' onChange={handleInfoChange}>
+                                        {(() => {
+                                            let qualities: Array<string> = []
+                                            for (const format of parsedInfo.videoFormats) {
+                                                qualities.push(format.quality)
+                                            }
+                                            qualities = Array.from(new Set(qualities))
+                                            return (
+                                                qualities.map((quality: string, index: number, _array: Array<string>) => 
+                                                    <option value={quality} key={index}>{quality}</option>
+                                                )
+                                            )
+                                        })()}
+                                    </select>
+                                    <label>Video Codecs</label>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.codecs} name='selectedVideoFormat-codecs' onChange={handleInfoChange}>
+                                        {(() => {
+                                            let codecses: Array<string> = []
+                                            for (const format of parsedInfo.videoFormats) {
+                                                if (format.quality === (parsedInfo.selection.selectedVideoFormat as FormatInfo).quality) {
+                                                    codecses.push(format.codecs)
+                                                }
+                                            }
+                                            codecses = Array.from(new Set(codecses))
+                                            return (
+                                                codecses.map((codecs: string, index: number, _array: Array<string>) => 
+                                                    <option value={codecs} key={index}>{codecs}</option>)
+                                            )
+                                        })()}
+                                    </select>
+                                </InfoRow>
+                                <InfoRow>
+                                    <label>Audio Quality</label>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedAudioFormat?.quality} name='selectedAudioFormat-quality' onChange={handleInfoChange}>
+                                        {(() => {
+                                            let qualities: Array<string> = []
+                                            for (const format of parsedInfo.audioFormats) {
+                                                qualities.push(format.quality)
+                                            }
+                                            qualities = Array.from(new Set(qualities))
+                                            return (
+                                                qualities.map((quality: string, index: number, _array: Array<string>) => 
+                                                    <option value={quality} key={index}>{
+                                                        (() => {
+                                                        const splits: string[]  = quality.split('_')
+                                                        return splits[splits.length - 1]
+                                                        })()
+                                                    }</option>
+                                                )
+                                            )
+                                        })()}
+                                    </select>
+                                    <label>Audio Codecs</label>
+                                    <select className="format-selecter" value={(parsedInfo.selection.selectedAudioFormat as FormatInfo).codecs} name='selectedAudioFormat-codecs' onChange={handleInfoChange}>
+                                        {(() => {
+                                            let codecses: Array<string> = []
+                                            for (const format of parsedInfo.audioFormats) {
+                                                if (format.quality === (parsedInfo.selection.selectedAudioFormat as FormatInfo).quality) {
+                                                    codecses.push(format.codecs)
+                                                }
+                                            }
+                                            codecses = Array.from(new Set(codecses))
+                                            return (
+                                                codecses.map((codecs: string, index: number, _array: Array<string>) => 
+                                                    <option value={codecs} key={index}>{codecs}</option>)
+                                            )
+                                        })()}
+                                    </select>
+                                </InfoRow>
+                            </React.Fragment>
+                        )
                     }
-                    return (
-                        <React.Fragment>
-                            <InfoRow>
-                                <label>Video Quality</label>
-                                <select className="format-selecter" value={parsedInfo.selectedVideoFormat.quality} name='selectedVideoFormat-quality' onChange={handleInfoChange}>
-                                    {(() => {
-                                        let qualities: Array<string> = []
-                                        for (const format of parsedInfo.videoInfo.videoFormats) {
-                                            qualities.push(format.quality)
-                                        }
-                                        qualities = Array.from(new Set(qualities))
-                                        return (
-                                            qualities.map((quality: string, index: number, _array: Array<string>) => 
-                                                <option value={quality} key={index}>{quality}</option>
-                                            )
-                                        )
-                                    })()}
-                                </select>
-                                <label>Video Codecs</label>
-                                <select className="format-selecter" value={parsedInfo.selectedVideoFormat.codecs} name='selectedVideoFormat-codecs' onChange={handleInfoChange}>
-                                    {(() => {
-                                        let codecses: Array<string> = []
-                                        for (const format of parsedInfo.videoInfo.videoFormats) {
-                                            if (format.quality === parsedInfo.selectedVideoFormat.quality) {
-                                                codecses.push(format.codecs)
-                                            }
-                                        }
-                                        codecses = Array.from(new Set(codecses))
-                                        return (
-                                            codecses.map((codecs: string, index: number, _array: Array<string>) => 
-                                                <option value={codecs} key={index}>{codecs}</option>)
-                                        )
-                                    })()}
-                                </select>
-                            </InfoRow>
-                            <InfoRow>
-                                <label>Audio Quality</label>
-                                <select className="format-selecter" value={parsedInfo.selectedAudioFormat.quality} name='selectedAudioFormat-quality' onChange={handleInfoChange}>
-                                    {(() => {
-                                        let qualities: Array<string> = []
-                                        for (const format of parsedInfo.videoInfo.audioFormats) {
-                                            qualities.push(format.quality)
-                                        }
-                                        qualities = Array.from(new Set(qualities))
-                                        return (
-                                            qualities.map((quality: string, index: number, _array: Array<string>) => 
-                                                <option value={quality} key={index}>{
-                                                    (() => {
-                                                    const splits: string[]  = quality.split('_')
-                                                    return splits[splits.length - 1]
-                                                    })()
-                                                }</option>
-                                            )
-                                        )
-                                    })()}
-                                </select>
-                                <label>Audio Codecs</label>
-                                <select className="format-selecter" value={parsedInfo.selectedAudioFormat.codecs} name='selectedAudioFormat-codecs' onChange={handleInfoChange}>
-                                    {(() => {
-                                        let codecses: Array<string> = []
-                                        for (const format of parsedInfo.videoInfo.audioFormats) {
-                                            if (format.quality === parsedInfo.selectedAudioFormat.quality) {
-                                                codecses.push(format.codecs)
-                                            }
-                                        }
-                                        codecses = Array.from(new Set(codecses))
-                                        return (
-                                            codecses.map((codecs: string, index: number, _array: Array<string>) => 
-                                                <option value={codecs} key={index}>{codecs}</option>)
-                                        )
-                                    })()}
-                                </select>
-                            </InfoRow>
-                        </React.Fragment>
-                    )
                 })()}
             </React.Fragment>
-        )     
+        )
     }
 
     addTask = async (parsedInfo: YoutubeParsedInfo): Promise<void> => {
-        if (parsedInfo.videoInfo.videoFormats.length === 0) {
-            let videoFormat: FormatInfo = parsedInfo.videoInfo.videoFormats[0]
-            for (const format of parsedInfo.videoInfo.videoFormats) {
-                if (format.quality === parsedInfo.selectedMixtureQuality) {
+        if (parsedInfo.hasAdaptive === false) {
+            let videoFormat: FormatInfo = parsedInfo.videoFormats[0]
+            for (const format of parsedInfo.videoFormats) {
+                if (format.quality === parsedInfo.selection.selectedMixtureFormat?.quality) {
                     videoFormat = format
                     break
                 }
@@ -419,9 +433,9 @@ class YoutubeParser implements Parser {
 
             ipcRenderer.send(CommunicateAPIName.AddTask, videoTask)
         } else {
-            let videoFormat: FormatInfo = parsedInfo.videoInfo.videoFormats[0]
-            for (const format of parsedInfo.videoInfo.videoFormats) {
-                if (format.quality === parsedInfo.selectedVideoFormat.quality && format.codecs === parsedInfo.selectedVideoFormat.codecs) {
+            let videoFormat: FormatInfo = parsedInfo.videoFormats[0]
+            for (const format of parsedInfo.videoFormats) {
+                if (format.quality === parsedInfo.selection.selectedVideoFormat?.quality && format.codecs === parsedInfo.selection.selectedVideoFormat?.codecs) {
                     videoFormat = format
                     break
                 }
@@ -444,7 +458,7 @@ class YoutubeParser implements Parser {
             videoTask.downloadType = preflightParsedInfo.downloadType
             videoTask.parserNo = this.parserNo
     
-            let audioFormat: FormatInfo = parsedInfo.videoInfo.audioFormats[0]
+            let audioFormat: FormatInfo = parsedInfo.audioFormats[0]
             ;[err, preflightParsedInfo] = await handlePromise<PreflightInfo>(preflight(audioFormat.url, this.requestHeaders))
             if (err) {
                 throw err

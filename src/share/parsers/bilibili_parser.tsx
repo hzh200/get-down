@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as http from 'node:http'
 import * as path from 'node:path'
-import { Parser, ParsedInfo } from './parser'
+import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
 import InfoRow from './InfoRow'
 import { Task, DownloadType, TaskSet } from '../../share/models'
 import { Setting, readSetting, handlePromise, convertDateTimeToUnixTime } from '../utils'
@@ -22,9 +22,8 @@ class BiliBiliParsedInfo extends ParsedInfo {
     listCount: number
     declare name: string
     declare location: string
-    selectedVideos: Array<boolean>
-    selectedFormats: Array<string>
-    preflightInfos: Array<PreflightInfo>
+
+    selection: Selection
 }
 
 class ListInfo {
@@ -50,6 +49,11 @@ class FormatInfo {
 }
 
 type FormatInfoUrl = string
+
+class Selection {
+    selectedVideos: Array<boolean>
+    selectedFormats: Array<string>
+}
 
 class BiliBiliParser implements Parser {
     parserNo: number = 1
@@ -154,30 +158,24 @@ class BiliBiliParser implements Parser {
         parsedInfo.listCount = videolist.videos.length
         parsedInfo.name = videolist.title
         parsedInfo.location = setting.location
-        parsedInfo.selectedVideos = Array(parsedInfo.listCount).fill(true)
-        parsedInfo.selectedFormats = Array(parsedInfo.listCount).fill('')
+        parsedInfo.selection = new Selection()
+        parsedInfo.selection.selectedVideos = Array(parsedInfo.listCount).fill(true)
+        parsedInfo.selection.selectedFormats = Array(parsedInfo.listCount).fill('')
         for (let i = 0; i < parsedInfo.listCount; i++) {
-            parsedInfo.selectedFormats[i] = parsedInfo.listInfo.videos[i].formats[0].quality
+            parsedInfo.selection.selectedFormats[i] = parsedInfo.listInfo.videos[i].formats[0].quality
         }
         return parsedInfo
     }
     
-    DownloadOptions = ({ parsedInfo, handleInfoChange } : 
+    DownloadOptions = ({ parsedInfo, handleInfoChange }: 
         { parsedInfo: BiliBiliParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
         if (parsedInfo.listCount === 1) {
             return (
                 <React.Fragment>
-                    <InfoRow>
-                        <label>File name</label>
-                        <input className="resource-name" type="text" value={parsedInfo.name} name='name' onChange={handleInfoChange} />
-                    </InfoRow>
-                    <InfoRow>
-                        <label>Location</label>
-                        <input className="download-location" type="text" value={parsedInfo.location} name='location' onChange={handleInfoChange} />
-                    </InfoRow>
+                    <DownloadOptionsBase parsedInfo={parsedInfo} handleInfoChange={handleInfoChange} />
                     <InfoRow>
                         <label>Quality</label>
-                        <select className="format-selecter" value={parsedInfo.selectedFormats[0]} name='selectedFormats-0' onChange={handleInfoChange}>
+                        <select className="format-selecter" value={parsedInfo.selection.selectedFormats[0]} name='selection.selectedFormats-0' onChange={handleInfoChange}>
                             {parsedInfo.listInfo.videos[0].formats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                 <option value={format.quality} key={index}>{format.description}</option>
                             )}
@@ -201,9 +199,9 @@ class BiliBiliParser implements Parser {
                         <div>
                             {parsedInfo.listInfo.videos.map((video: VideoInfo, index: number, _array: Array<VideoInfo>) => 
                                 <div key={index}>
-                                    <input className="video-select" type="checkbox" checked={parsedInfo.selectedVideos[index]} name={`selectedVideos-${index}`} onChange={handleInfoChange} />
+                                    <input className="video-select" type="checkbox" checked={parsedInfo.selection.selectedVideos[index]} name={`selection.selectedVideos-${index}`} onChange={handleInfoChange} />
                                     <label>{video.title}</label>
-                                    <select className="format-selecter" value={parsedInfo.selectedFormats[index]} name={`selectedFormats-${index}`} onChange={handleInfoChange}>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedFormats[index]} name={`selection.selectedFormats-${index}`} onChange={handleInfoChange}>
                                         {
                                             video.formats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                                 <option value={format.quality} key={index}>{format.description}</option>
@@ -223,7 +221,7 @@ class BiliBiliParser implements Parser {
         if (parsedInfo.listCount === 1) {
             let targetFormat: FormatInfo = parsedInfo.listInfo.videos[0].formats[0]
             for (const format of parsedInfo.listInfo.videos[0].formats) {
-                if (format.quality === parsedInfo.selectedFormats[0]) {
+                if (format.quality === parsedInfo.selection.selectedFormats[0]) {
                     targetFormat = format
                     break
                 }
@@ -249,11 +247,11 @@ class BiliBiliParser implements Parser {
         } else {
             const tasks: Array<Task> = []
             for (let i = 0; i < parsedInfo.listCount; i++) {
-                if (!parsedInfo.selectedVideos[i]) {
+                if (!parsedInfo.selection.selectedVideos[i]) {
                     continue
                 }
                 for (const format of parsedInfo.listInfo.videos[i].formats) {
-                    if (format.quality === parsedInfo.selectedFormats[i]) {
+                    if (format.quality === parsedInfo.selection.selectedFormats[i]) {
                         const [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = 
                             await handlePromise<PreflightInfo>(preflight(format.urls[0], this.requestHeaders))
                         if (err) {

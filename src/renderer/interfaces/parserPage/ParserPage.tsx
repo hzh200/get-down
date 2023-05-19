@@ -106,6 +106,7 @@ function ParserPage() {
             } catch (error: any) {
                 setFeedbackMessage('')
                 setErrorMessage(error.name + ':' + error.message)
+                Log.errorLog(error.stack)
             }
         }
     }

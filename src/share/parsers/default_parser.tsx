@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as http from 'http'
-import { Parser, ParsedInfo } from './parser'
+import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
 import InfoRow from './InfoRow'
 import { PreflightInfo, preflight } from './preflight'
 
@@ -52,23 +52,14 @@ class DefaultParser implements Parser {
         return parsedInfo
     }
 
-    DownloadOptions = ({ parsedInfo, handleInfoChange } : 
-        { parsedInfo: DefaultParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLInputElement> }): React.ReactElement => {
+    DownloadOptions = ({ parsedInfo, handleInfoChange }: 
+        { parsedInfo: DefaultParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
         return (
             <React.Fragment>
+                <DownloadOptionsBase parsedInfo={parsedInfo} handleInfoChange={handleInfoChange} />
                 <InfoRow>
-                    <label>File name:</label>
-                    <input className="resource-name" type="text" value={parsedInfo.name} name='name' onChange={handleInfoChange} />
-                </InfoRow>
-                <InfoRow>
-                    <label>Location:</label>
-                    <input className="download-location" type="text" value={parsedInfo.location} name='location' onChange={handleInfoChange} />
                     <label>{parsedInfo.size ? parsedInfo.size : ''}</label>
                 </InfoRow>
-                {/* <InfoRow>
-                    <label>Use proxy? </label>
-                    <input className="use-proxy" type="checkbox" checked={parsedInfo.useProxy} name='useProxy' onChange={handleInfoChange} />
-                </InfoRow> */}
             </React.Fragment>
         )
     }
