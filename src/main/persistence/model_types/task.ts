@@ -36,7 +36,7 @@ const taskType: ModelAttributes = {
         type: DataTypes.STRING,
         allowNull: false
     },
-    [ModelField.parserNo]: {
+    [ModelField.extractorNo]: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -79,7 +79,7 @@ class TaskModel extends Model {
     declare status: TaskStatus
     declare progress: number
     declare location: string
-    declare parserNo: number
+    declare extractorNo: number
     declare createdAt: string
     declare updatedAt: string
     declare downloadUrl: string

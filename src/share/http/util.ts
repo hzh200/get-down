@@ -1,10 +1,7 @@
 import { URL_REGEX, URL_ROUTER_SPLITER, URL_PROTOCOL_SPLITER, URL_PARAMETER_SPLITER } from './constants'
 
 const validateUrl = (url: string): boolean => {
-    if (URL_REGEX.exec(url)) {
-        return true
-    }
-    return false
+    return URL_REGEX.exec(url) ? true : false
 }
 
 const combineRelativePath = (url: string, relativePath: string): string => {

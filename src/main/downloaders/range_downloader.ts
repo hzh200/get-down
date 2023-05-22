@@ -1,13 +1,11 @@
 import * as fs from 'node:fs'
 import * as http from 'node:http'
 import * as stream from 'node:stream'
-import * as https from 'node:https'
 import { handlePromise } from '../../share/utils'
 import { Log } from '../../share/utils'
-import parserModule from '../../share/parsers'
 import { Downloader } from './downloader'
 import { httpRequest, getDecodingStream } from '../../share/http/request'
-import { Header, StreamEvent } from '../../share/http/constants'
+import { Header, StreamEvent, ResponseStatusCode } from '../../share/http/constants'
 import { TaskModel } from '../persistence/model_types'
 import { DownloaderEvent } from './downloader'
 const { v4: uuidv4 } = require('uuid')
@@ -142,7 +140,7 @@ class RangeDownloader extends Downloader {
         if (error) { // 'connect ETIMEDOUT' error while being finishing or after being destroyed.
             handleError(error)
         }
-        if (response.statusCode !== 206) { // 302, 403
+        if (response.statusCode !== ResponseStatusCode.PartialContent) { // 302, 403
             this.reparse()
         }
         const encoding: string = response.headers[Header.ContentEncoding] as string

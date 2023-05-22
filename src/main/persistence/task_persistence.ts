@@ -33,11 +33,7 @@ const createTaskModel = async (taskInfo: Task): Promise<TaskModel> => {
 }
 
 const getAllTaskModels = async (): Promise<Array<TaskModel>> => {
-    const [error, tasks]: [Error | undefined, Array<TaskModel>] = await handlePromise<Array<TaskModel>>(TaskModel.findAll())
-    if (error) {
-        throw error
-    }
-    return tasks
+    return await TaskModel.findAll()
 }
 
 const updateTaskModel = async (task: TaskModel): Promise<void> => {

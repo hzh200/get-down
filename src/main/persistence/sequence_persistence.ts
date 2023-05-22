@@ -4,13 +4,9 @@ import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceM
 import { handlePromise } from '../../share/utils' 
 
 const createSequenceModel = async (sequence: Sequence, trans: Transaction): Promise<SequenceModel> => {
-    const [error, task]: [Error | undefined, SequenceModel] = await handlePromise<SequenceModel>(SequenceModel.create({
+    return await SequenceModel.create({
         ...sequence
-    }, { transaction: trans }))
-    if (error) {
-        throw error
-    }
-    return task
+    }, { transaction: trans })
 }
 
 const getSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<SequenceModel> => {
@@ -26,11 +22,7 @@ const getSequenceModel = async (taskNo: number, taskType: TaskType, trans: Trans
 }
 
 const getAllSequenceModels = async (): Promise<Array<SequenceModel>> => {
-    const [error, sequences]: [Error | undefined, Array<SequenceModel>] = await handlePromise<Array<SequenceModel>>(SequenceModel.findAll())
-    if (error) {
-        throw error
-    }
-    return sequences
+    return await SequenceModel.findAll()
 }
 
 const deleteSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<void> => {

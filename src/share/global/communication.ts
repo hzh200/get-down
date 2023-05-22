@@ -7,8 +7,6 @@ enum CommunicateAPIName {
     NewTaskItem = 'new-task-item',
     UpdateTaskItem = 'update-task-item',
     DeleteTaskItem = 'delete-task-item',
-    // for communicating inside main process using mainEventEmitter. 
-    AddFile = 'add-file'
 }
 
 export { CommunicateAPIName }

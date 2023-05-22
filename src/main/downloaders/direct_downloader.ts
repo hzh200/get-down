@@ -4,7 +4,6 @@ import * as stream from 'node:stream'
 import * as https from 'node:https'
 import { handlePromise } from '../../share/utils'
 import { Log } from '../../share/utils'
-import parserModule from '../../share/parsers'
 import { Downloader } from "./downloader"
 import { httpRequest, getDecodingStream } from '../../share/http/request'
 // import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'

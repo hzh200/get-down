@@ -8,7 +8,7 @@ enum ModelField {
     status = 'status',
     progress = 'progress',
     location = 'location',
-    parserNo = 'parserNo',
+    extractorNo = 'extractorNo',
     createdAt = 'createdAt',
     updatedAt = 'updatedAt',
     // Task

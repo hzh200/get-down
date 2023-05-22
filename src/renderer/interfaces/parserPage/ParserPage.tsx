@@ -1,9 +1,8 @@
 import * as React from 'react'
 import UrlBar from '../../components/UrlBar'
 import StatusPanel, { ParserStatus } from '../../components/StatusPanel'
-import parserModule from '../../../share/parsers'
+import parserModule, { ParsedInfo } from '../../../share/extractors/parsers'
 import { Log, handlePromise } from '../../../share/utils'
-import { ParsedInfo } from '../../../share/parsers/parser'
 import { validateUrl } from '../../../share/http/util'
 import { getTranslatedFilename } from '../../../share/utils'
 
@@ -13,22 +12,22 @@ function ParserPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([])
     const [url, setUrl] = React.useState<string>('')
     // Every time ParserPage is closed and reopened, states are reset, choosenParserName should be initialized from choosenParser of parserModule.
-    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.parseTarget) 
+    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.extractTarget) 
     const [status, setStatus] = React.useState<ParserStatus>(ParserStatus.static)
     const [optionsInfo, setOptionsInfo] = React.useState<ParsedInfo>(new ParsedInfo())
     const [errorMessage, setErrorMessage] = React.useState<string>('')
     const [feedbackMessage, setFeedbackMessage] = React.useState<string>('')
     React.useEffect(() => {
         for (const parser of parserModule.parsers) {
-            setParserNames((parsers) => [...parsers, parser.parseTarget])
+            setParserNames((parsers) => [...parsers, parser.extractTarget])
         }
     }, [])
     const handleParserChange: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         for (const parser of parserModule.parsers) {
-            if (parser.parseTarget === (event.target as HTMLSelectElement).value) {
+            if (parser.extractTarget === (event.target as HTMLSelectElement).value) {
                 parserModule.choose(parser)
                 setStatus(ParserStatus.static)
-                setChoosenParserName((_parserName: string) => parser.parseTarget)
+                setChoosenParserName((_parserName: string) => parser.extractTarget)
             }
         }
     }

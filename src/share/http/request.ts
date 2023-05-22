@@ -2,8 +2,7 @@ import * as http from 'node:http'
 import * as https from 'node:https'
 import * as zlib from 'node:zlib'
 import * as stream from 'node:stream'
-import { handlePromise } from '../utils'
-import { generateRequestOption, getHeaders, getPreflightHeaders } from './options'
+import { generateRequestOption, getHeaders } from './options'
 import { combineRelativePath } from './util'
 import { Protocol, StreamEvent, Decoding, ResponseStatusCode, Header, URL_REGEX} from './constants'
 
@@ -60,7 +59,7 @@ const getDecodingStream = (encoding: string): stream.Transform => {
 
 const REDIRECT_LIMIT = 3
 
-const handleRedirectRequest = async (url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<[http.IncomingMessage, string]> => {
+const handleRedirectRequest = async (url: string, getHeaders: getHeaders, additionHeaders?: http.OutgoingHttpHeaders): Promise<[[http.ClientRequest, http.IncomingMessage], string]> => {
     const checkRedirectStatus = (statusCode: number | undefined): boolean => {
         if (!statusCode) {
             return false
@@ -88,28 +87,19 @@ const handleRedirectRequest = async (url: string, additionHeaders?: http.Outgoin
         return redirect
     }
 
-    let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
-    let [err, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-        await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-    if (err) {
-        throw err
-    }
+    let requestOptions: http.RequestOptions = await generateRequestOption(url, getHeaders, additionHeaders)
+    let [request, response]: [http.ClientRequest, http.IncomingMessage] = await httpRequest(requestOptions)
+
     let retryCount = 0
     while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
-        ;[err, url] = await handlePromise<string>(fetchRedirect(request, response))
-        if (err) {
-            throw err
-        }
-        requestOptions = await generateRequestOption(url, getPreflightHeaders, additionHeaders)
-        ;[err, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (err) {
-            throw err
-        }
+        url = await fetchRedirect(request, response)
+        requestOptions = await generateRequestOption(url, getHeaders, additionHeaders)
+        ;[request, response] = await httpRequest(requestOptions)
     }
     if (checkRedirectStatus(response.statusCode)) {
         throw new Error('too much redirections')
     }
-    return [response, url]
+    return [[request, response], url]
 }
 
 export { httpRequest, getHttpRequestTextContent, getDecodingStream, handleRedirectRequest }

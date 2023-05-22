@@ -3,7 +3,6 @@ import { Task, TaskSet, TaskItem, TaskStatus, DownloadType, TaskType } from '../
 import { TaskModel, TaskSetModel, ModelField } from '../persistence/model_types'
 import { mainWindow } from '../main'
 import taskQueue from '../queue'
-import { changeFileTimestamp } from '../fileTime'
 import { getDownloader, Downloader, RangeDownloader, DownloaderEvent } from '../downloaders'
 import { 
     createTaskModel,
@@ -27,9 +26,8 @@ import {
 } from '../persistence'
 import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/global/communication'
-import parserModule from '../../share/parsers'
+import callbackModule, { Callback } from '../../share/extractors/callbacks'
 import { getValidFilename } from '../../share/utils/string'
-import { EventEmitter } from 'node:stream'
 
 const maxDownloadLimit: number = 3
 
@@ -67,16 +65,12 @@ class Scheduler {
                     this.downloadTaskSet(parentTaskSetNo)
                 }
 
-                downloader.on(DownloaderEvent.Done, handleAsyncCallback(async (): Promise<void> => {
-                    const mainEventEmitter: EventEmitter = new EventEmitter()
-                    mainEventEmitter.on(CommunicateAPIName.AddFile, (filePath: string, publishedTimestamp: string) => {
-                        changeFileTimestamp(filePath, publishedTimestamp)
-                    })
-                    
-                    const taskCallback = parserModule.getParser(task.parserNo).taskCallback
-                    const taskSetCallback = parserModule.getParser(task.parserNo).taskSetCallback
+                downloader.on(DownloaderEvent.Done, handleAsyncCallback(async (): Promise<void> => {        
+                    const callback: Callback = callbackModule.getCallback(task.extractorNo)      
+                    const taskCallback = callback.taskCallback
+                    const taskSetCallback = callbackModule.getCallback(task.extractorNo).taskSetCallback
                     if (taskCallback) {
-                        const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(mainEventEmitter, taskNo))
+                        const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(taskNo))
                         if (error) {
                             await this.finishTask(taskNo, TaskStatus.Failed)
                             return
@@ -91,7 +85,7 @@ class Scheduler {
                         if (taskSetCallback) {
                             const taskSet: TaskSetModel = taskQueue.getTaskSet(parentTaskSetNo) as TaskSetModel
                             await updateTaskSetStatus(taskSet, TaskStatus.Processing)
-                            const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(mainEventEmitter, parentTaskSetNo))
+                            const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(parentTaskSetNo))
                             if (error) {
                                 await updateTaskSetStatus(taskSet, TaskStatus.Failed)
                                 return

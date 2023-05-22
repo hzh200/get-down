@@ -1,13 +1,14 @@
 import * as React from 'react'
 import * as http from 'http'
-import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
-import InfoRow from './InfoRow'
-import { PreflightInfo, preflight } from './preflight'
+import { Parser, ParsedInfo, DownloadOptionsBase } from '../interfaces/parser'
+import InfoRow from '../InfoRow'
+import { PreflightInfo, preflight } from '../../http/functions'
 
-import { Task, DownloadType } from '../../share/models'
-import { Setting, readSetting, handlePromise } from '../utils'
+import { Task, DownloadType } from '../../models'
+import { Setting, readSetting } from '../../utils'
 import { ipcRenderer } from 'electron'
-import { CommunicateAPIName } from '../global/communication'
+import { CommunicateAPIName } from '../../global/communication'
+import Default from './default'
 
 class DefaultParsedInfo extends ParsedInfo {
     declare name: string
@@ -27,16 +28,10 @@ class DefaultParsedInfo extends ParsedInfo {
     parent: number | undefined
 }
 
-class DefaultParser implements Parser {
-    parserNo: number = 0
-    parseTarget: string = 'Default'
-
+class DefaultParser extends Default implements Parser {
     parse = async (url: string): Promise<ParsedInfo> => {
         const setting: Setting = readSetting()
-        const [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = await handlePromise<PreflightInfo>(preflight(url))
-        if (err) {
-            throw err
-        }
+        const preflightParsedInfo: PreflightInfo = await preflight(url)
         const parsedInfo = new DefaultParsedInfo()
         parsedInfo.name = preflightParsedInfo.name
         parsedInfo.size = preflightParsedInfo.size
@@ -76,7 +71,7 @@ class DefaultParser implements Parser {
         task.charset = parsedInfo.charset
         task.location = parsedInfo.location
         task.downloadType = parsedInfo.downloadType
-        task.parserNo = this.parserNo
+        task.extractorNo = this.extractorNo
         ipcRenderer.send(CommunicateAPIName.AddTask, task)
     }
 }

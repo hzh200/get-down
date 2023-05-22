@@ -10,7 +10,7 @@ class TaskSet extends TaskItem {
     declare status: TaskStatus
     declare progress: number
     declare location: string
-    declare parserNo: number
+    declare extractorNo: number
     declare createdAt: string
     declare updatedAt: string
     declare taskType: TaskType

@@ -9,7 +9,7 @@ class TaskItem {
     status: TaskStatus
     progress: number
     location: string
-    parserNo: number
+    extractorNo: number
     createdAt: string // timestamp added automatically by Sequelize.
     updatedAt: string // timestamp added automatically by Sequelize.
 

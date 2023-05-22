@@ -3,12 +3,11 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as EventEmitter from 'events'
 import taskQueue from '../queue'
-import { Log, handlePromise } from '../../share/utils'
-import { changeFileTimestamp } from '../fileTime'
-import parserModule from '../../share/parsers'
+import { Log } from '../../share/utils'
+import { changeFileTimestamp } from '../../share/utils/fileTime'
+import callbackModules, { Callback } from '../../share/extractors/callbacks'
 import { TaskModel } from '../persistence/model_types'
 import { generateRequestOption, getDownloadHeaders } from '../../share/http/options'
-import { Parser } from '../../share/parsers/parser'
 
 enum DownloaderEvent {
     Done = 'Done',
@@ -44,8 +43,8 @@ class Downloader extends EventEmitter {
 
     // Generate download option based on parser headers.
     async generateDownloadOption(): Promise<http.RequestOptions> {
-        const parser: Parser = parserModule.getParser(this.task.parserNo)
-        const requestHeaders: http.OutgoingHttpHeaders | undefined = parser.requestHeaders
+        const callback: Callback = callbackModules.getCallback(this.task.extractorNo)
+        const requestHeaders: http.OutgoingHttpHeaders | undefined = callback.requestHeaders
         return await generateRequestOption(this.task.downloadUrl, getDownloadHeaders, requestHeaders)
     }
 

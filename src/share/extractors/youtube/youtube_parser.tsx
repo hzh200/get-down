@@ -1,34 +1,28 @@
 import * as React from 'react'
-import * as http from 'node:http'
-import * as path from 'node:path'
-import * as fs from 'node:fs'
-import * as EventEmitter from 'node:stream'
-import { exec, ExecException, ChildProcess } from 'node:child_process'
-import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
-import InfoRow from './InfoRow'
-import { Task, DownloadType, TaskSet } from '../../share/models'
-import { Setting, readSetting, handlePromise, Log } from '../utils'
+import { Parser, ParsedInfo, DownloadOptionsBase } from '../interfaces/parser'
+import InfoRow from '../InfoRow'
+import { Task, DownloadType, TaskSet } from '../../models'
+import { Setting, readSetting, Log, matchOne, matchAll } from '../../utils'
 import { ipcRenderer } from 'electron'
-import { CommunicateAPIName } from '../global/communication'
-import { httpRequest, getHttpRequestTextContent } from '../http/request'
-import { generateRequestOption, getPreflightHeaders } from '../http/options'
-import { PreflightInfo, preflight } from './preflight'
-import { Header, FILE_EXTENSION_DOT } from '../http/constants'
-import taskQueue from '../../main/queue'
-import { TaskModel, TaskSetModel } from '../../main/persistence/model_types'
+import { CommunicateAPIName } from '../../global/communication'
+import { requestPage, PreflightInfo, preflight } from '../../http/functions'
+import { Header, FILE_EXTENSION_DOT } from '../../http/constants'
+import YouTube from './youtube'
+import decipherSignature from './decipher'
 
-const TITLE_RE = new RegExp('<title>(.*) - YouTube<\/title>')
-const FORMATS_RE = new RegExp('\"formats\".+?]', 'g')
-const ADAPTIVE_FORMATS_RE = new RegExp('\"adaptiveFormats\".+?]')
-const MIMETYPE_RE = new RegExp('(video|audio)/(.+)\; codecs=\"(.+)\"')
+const TITLE_RE = new RegExp('<title>(.*) - YouTube<\\/title>')
+const FORMATS_RE = new RegExp('\\"formats\\".+?\]', 'g')
+const ADAPTIVE_FORMATS_RE = new RegExp('\\"adaptiveFormats\\".+?\]')
+const MIMETYPE_RE = new RegExp('\(video\|audio\)\\/(.+); codecs=\\"(.+)\\"')
+const HTML5PLAYER_RE = new RegExp('\\"(\\/s\\/player.+?)\\"')
 
-class YoutubeParsedInfo extends ParsedInfo {
+class YouTubeParsedInfo extends ParsedInfo {
     url: string
     declare name: string
     declare location: string
 
-    hasMixture: boolean
-    mixtureFormats: Array<FormatInfo> = []
+    hasMultiplexed: boolean
+    multiplexedFormats: Array<FormatInfo> = []
     hasAdaptive: boolean
     videoFormats: Array<FormatInfo> = []
     audioFormats: Array<FormatInfo> = []
@@ -47,98 +41,65 @@ class FormatInfo {
 }
 
 class Selection {
-    selectedMixtureFormat: FormatInfo | undefined
+    selectedMultiplexedFormat: FormatInfo | undefined
     selectedVideoFormat: FormatInfo | undefined
     selectedAudioFormat: FormatInfo | undefined
 }
 
-class YoutubeParser implements Parser {
-    parserNo: number = 2
-    parseTarget: string = 'YouTube'
-
-    requestHeaders: http.OutgoingHttpHeaders = {
-        [Header.Referer]: 'https://www.youtube.com'
-    }
-
-    parseFormatInfo = async (parsedInfo: YoutubeParsedInfo, data: string): Promise<void> => {
+class YouTubeParser extends YouTube implements Parser {
+    parseFormatInfo = async (parsedInfo: YouTubeParsedInfo, data: string, html5player: string): Promise<void> => {
         const streamingDataLine = data.split('\n').find((value: string, _index: number, _array: Array<string>) => value.includes('streamingData'))
-        if (!streamingDataLine) {
-            throw new Error('no streamingData found')
-        }
+        if (!streamingDataLine) throw new Error('no streamingData found')
 
-        let titleExecResult: RegExpExecArray | null = TITLE_RE.exec(data)
-        if (!titleExecResult) {
-            throw new Error("no title exec result")
-        }
-        parsedInfo.name = titleExecResult[1]
+        parsedInfo.name = matchOne(TITLE_RE, data, 'no title found')[1]
 
-        // extract mixtured video urls.
-        const mixtureFormatsExecResultArray: Array<RegExpExecArray> = []
-        let mixtureFormatsExecResult: RegExpExecArray | null
-        while ((mixtureFormatsExecResult =  FORMATS_RE.exec(streamingDataLine)) !== null) {
-            mixtureFormatsExecResultArray.push(mixtureFormatsExecResult)
-        }
-        if (mixtureFormatsExecResultArray.length === null) {
-            throw new Error('no formats exec result')
-        }
-        mixtureFormatsExecResult = mixtureFormatsExecResultArray[mixtureFormatsExecResultArray.length - 1] // there are other lines containing streamingData, what we need is the last one.
-        let mixtureFormatData = JSON.parse('{' + mixtureFormatsExecResult[0] + '}')
-        parsedInfo.hasMixture = false
-        for (const data of mixtureFormatData.formats) {
-            const format = new FormatInfo()
-            if (!data.url && !data.signatureCipher) {
+        // extract multiplexed video urls.
+        const multiplexedFormatsExecResultArray: Array<RegExpExecArray> = matchAll(FORMATS_RE, streamingDataLine, 'no formats found')
+        const multiplexedFormatsExecResult: RegExpExecArray = multiplexedFormatsExecResultArray[multiplexedFormatsExecResultArray.length - 1] // there are other lines containing streamingData, what we need is the last one.
+        const multiplexedFormatData = JSON.parse('{' + multiplexedFormatsExecResult[0] + '}')
+        parsedInfo.hasMultiplexed = false
+        for (const data of multiplexedFormatData.formats) {
+            if (!data.url && !data.signatureCipher)
                 continue
-            } else if (data.url) {
-                format.url = data.url
-            } else {
-                
-            }
+            const format = new FormatInfo()
+            format.url = data.url ? data.url : decipherSignature(html5player, data.signatureCipher)
             format.mimeType = data.mimeType
-            const typeExecResult: RegExpExecArray | null = MIMETYPE_RE.exec(data.mimeType)
-            if (typeExecResult) {
-                format.type = typeExecResult[1]
-                format.subType = typeExecResult[2]
-                // format.codecs = typeExecResult[3] // useless
-            }
+
+            const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType)
+            format.type = typeExecResult[1]
+            format.subType = typeExecResult[2]
+            // format.codecs = typeExecResult[3] // useless
+
             format.quality = data.qualityLabel
             format.publishedTimestamp = data.lastModified
-            parsedInfo.mixtureFormats.push(format)
-            parsedInfo.hasMixture = true
+            parsedInfo.multiplexedFormats.push(format)
+            parsedInfo.hasMultiplexed = true
         }    
         
         // extract adaptive video and audio urls.
-        let adaptiveFormatsExecResult: RegExpExecArray | null = ADAPTIVE_FORMATS_RE.exec(streamingDataLine)
-        if (adaptiveFormatsExecResult === null) {
-            throw new Error('no valid video urls parsed out')
-        }
-
-        let adaptiveFormatData = JSON.parse('{' + adaptiveFormatsExecResult[0] + '}')
+        const adaptiveFormatsExecResult: RegExpExecArray = matchOne(ADAPTIVE_FORMATS_RE, streamingDataLine, 'no valid video urls parsed out')
+        const adaptiveFormatData = JSON.parse('{' + adaptiveFormatsExecResult[0] + '}')
         parsedInfo.hasAdaptive = false
         for (const data of adaptiveFormatData.adaptiveFormats) {
-            const format = new FormatInfo()
-            if (!data.url && !data.signatureCipher) {
+            if (!data.url && !data.signatureCipher)
                 continue
-            } else if (data.url) {
-                format.url = data.url
-            } else {
-                
-            }
+            const format = new FormatInfo()
+            format.url = data.url ? data.url : decipherSignature(html5player, data.signatureCipher)
             format.mimeType = data.mimeType   
-            const regexRes: RegExpExecArray | null = MIMETYPE_RE.exec(data.mimeType)
-            if (regexRes) {
-                format.type = regexRes[1]
-                format.subType = regexRes[2]
-                if (regexRes[3].startsWith('vp9')) {
-                    format.codecs = 'vp9'
-                } else if (regexRes[3].startsWith('av01')) {
-                    format.codecs = 'av1'
-                } else if (regexRes[3].startsWith('avc')) {
-                    format.codecs = 'avc'
-                } else if (regexRes[3].startsWith('opus')) {
-                    format.codecs = 'opus'
-                } else if (regexRes[3].startsWith('mp4a')) {
-                    format.codecs = 'mp4a'
-                }
+
+            const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType)
+            format.type = typeExecResult[1]
+            format.subType = typeExecResult[2]
+            if (typeExecResult[3].startsWith('vp9')) {
+                format.codecs = 'vp9'
+            } else if (typeExecResult[3].startsWith('av01')) {
+                format.codecs = 'av1'
+            } else if (typeExecResult[3].startsWith('avc')) {
+                format.codecs = 'avc'
+            } else if (typeExecResult[3].startsWith('opus')) {
+                format.codecs = 'opus'
+            } else if (typeExecResult[3].startsWith('mp4a')) {
+                format.codecs = 'mp4a'
             }
             format.publishedTimestamp = data.lastModified
             if (format.type === 'video') {
@@ -159,7 +120,7 @@ class YoutubeParser implements Parser {
             parsedInfo.hasAdaptive = true
         }
 
-        if (!parsedInfo.hasMixture && !parsedInfo.hasAdaptive) {
+        if (!parsedInfo.hasMultiplexed && !parsedInfo.hasAdaptive) {
             throw new Error('no formats parsed out')
         }
 
@@ -248,7 +209,7 @@ class YoutubeParser implements Parser {
                 }
             }
             
-            parsedInfo.mixtureFormats = parsedInfo.mixtureFormats.sort((a: FormatInfo, b: FormatInfo) => {
+            parsedInfo.multiplexedFormats = parsedInfo.multiplexedFormats.sort((a: FormatInfo, b: FormatInfo) => {
                 return -sortVideoQuality(a.quality, b.quality)
             })
             parsedInfo.videoFormats = parsedInfo.videoFormats.sort((a: FormatInfo, b: FormatInfo) => {
@@ -270,35 +231,33 @@ class YoutubeParser implements Parser {
     }
 
     parse = async (url: string): Promise<ParsedInfo> => {
-        'https://www.youtube.com/watch?v=RWMMdX6KYGM&bpctr=9999999999&has_verified=1'
-        let requestOptions: http.RequestOptions = await generateRequestOption(url, getPreflightHeaders)
-        let [httpRequestErr, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (httpRequestErr) {
-            throw httpRequestErr
-        }
-        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
-        if (getContentErr) {
-            throw getContentErr
-        }
-        const parsedInfo = new YoutubeParsedInfo()
+        const urlComponents = new URL(decodeURIComponent(url))
+        urlComponents.searchParams.set('bpctr', '9999999999')
+        urlComponents.searchParams.set('has_verified', '1')
+        url = urlComponents.toString()     
+        
+        const rawData: string = await requestPage(url)
+
+        const html5playerUrl = this.host + matchOne(HTML5PLAYER_RE, rawData, 'no html5 player found')[1]
+        const html5player: string = await requestPage(html5playerUrl)
+
+        const parsedInfo = new YouTubeParsedInfo()
         parsedInfo.url = url
         const setting: Setting = readSetting()
         parsedInfo.location = setting.location
+
         try {
-            await this.parseFormatInfo(parsedInfo, rawData)
+            await this.parseFormatInfo(parsedInfo, rawData, html5player)
         } catch (e: any) {
             console.log(rawData)
             throw e
         }
         
         parsedInfo.selection = new Selection()
-        if (parsedInfo.hasMixture) {
-            parsedInfo.selection.selectedMixtureFormat = parsedInfo.mixtureFormats[0]
+        if (parsedInfo.hasMultiplexed) {
+            parsedInfo.selection.selectedMultiplexedFormat = parsedInfo.multiplexedFormats[0]
         }
         if (parsedInfo.hasAdaptive) {
-            // parsedInfo.selection.selectedVideoFormat = {...parsedInfo.videoFormats[0]}
-            // parsedInfo.selection.selectedAudioFormat = {...parsedInfo.audioFormats[0]}
             parsedInfo.selection.selectedVideoFormat = parsedInfo.videoFormats[0]
             parsedInfo.selection.selectedAudioFormat = parsedInfo.audioFormats[0]
         }
@@ -306,7 +265,7 @@ class YoutubeParser implements Parser {
     }
     
     DownloadOptions = ({ parsedInfo, handleInfoChange }: 
-        { parsedInfo: YoutubeParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
+        { parsedInfo: YouTubeParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
         return (
             <React.Fragment>
                 <DownloadOptionsBase parsedInfo={parsedInfo} handleInfoChange={handleInfoChange} />
@@ -315,8 +274,8 @@ class YoutubeParser implements Parser {
                         return (
                             <InfoRow>
                                 <label>Quality</label>
-                                <select className="format-selecter" value={parsedInfo.selection.selectedMixtureFormat?.quality} name='selectedMixtureQuality' onChange={handleInfoChange}>
-                                    {parsedInfo.mixtureFormats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
+                                <select className="format-selecter" value={parsedInfo.selection.selectedMultiplexedFormat?.quality} name='selectedMultiplexedQuality' onChange={handleInfoChange}>
+                                    {parsedInfo.multiplexedFormats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                         <option value={format.quality} key={index}>{format.quality}</option>
                                     )}
                                 </select>
@@ -404,20 +363,17 @@ class YoutubeParser implements Parser {
         )
     }
 
-    addTask = async (parsedInfo: YoutubeParsedInfo): Promise<void> => {
+    addTask = async (parsedInfo: YouTubeParsedInfo): Promise<void> => {
         if (parsedInfo.hasAdaptive === false) {
             let videoFormat: FormatInfo = parsedInfo.videoFormats[0]
             for (const format of parsedInfo.videoFormats) {
-                if (format.quality === parsedInfo.selection.selectedMixtureFormat?.quality) {
+                if (format.quality === parsedInfo.selection.selectedMultiplexedFormat?.quality) {
                     videoFormat = format
                     break
                 }
             }
-            let [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = 
-                await handlePromise<PreflightInfo>(preflight(videoFormat.url, this.requestHeaders))
-            if (err) {
-                throw err
-            }
+            const preflightParsedInfo: PreflightInfo = await preflight(videoFormat.url, this.requestHeaders)
+
             const videoTask = new Task()
             videoTask.name = parsedInfo.name + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             videoTask.size = preflightParsedInfo.size
@@ -429,7 +385,7 @@ class YoutubeParser implements Parser {
             videoTask.charset = preflightParsedInfo.charset
             videoTask.location = parsedInfo.location
             videoTask.downloadType = preflightParsedInfo.downloadType
-            videoTask.parserNo = this.parserNo
+            videoTask.extractorNo = this.extractorNo
 
             ipcRenderer.send(CommunicateAPIName.AddTask, videoTask)
         } else {
@@ -440,11 +396,8 @@ class YoutubeParser implements Parser {
                     break
                 }
             }
-            let [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = 
-                await handlePromise<PreflightInfo>(preflight(videoFormat.url, this.requestHeaders))
-            if (err) {
-                throw err
-            }
+            let preflightParsedInfo: PreflightInfo = await preflight(videoFormat.url, this.requestHeaders)
+
             const videoTask = new Task()
             videoTask.name = parsedInfo.name + '_video' + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             videoTask.size = preflightParsedInfo.size
@@ -456,13 +409,18 @@ class YoutubeParser implements Parser {
             videoTask.charset = preflightParsedInfo.charset
             videoTask.location = parsedInfo.location
             videoTask.downloadType = preflightParsedInfo.downloadType
-            videoTask.parserNo = this.parserNo
+            videoTask.extractorNo = this.extractorNo
     
             let audioFormat: FormatInfo = parsedInfo.audioFormats[0]
-            ;[err, preflightParsedInfo] = await handlePromise<PreflightInfo>(preflight(audioFormat.url, this.requestHeaders))
-            if (err) {
-                throw err
+            for (const format of parsedInfo.audioFormats) {
+                if (format.quality === parsedInfo.selection.selectedAudioFormat?.quality && format.codecs === parsedInfo.selection.selectedAudioFormat?.codecs) {
+                    audioFormat = format
+                    break
+                }
             }
+
+            preflightParsedInfo = await preflight(audioFormat.url, this.requestHeaders)
+
             const audioTask = new Task()
             audioTask.name = parsedInfo.name + '_audio' + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             audioTask.size = preflightParsedInfo.size
@@ -474,7 +432,7 @@ class YoutubeParser implements Parser {
             audioTask.charset = preflightParsedInfo.charset
             audioTask.location = parsedInfo.location
             audioTask.downloadType = preflightParsedInfo.downloadType
-            audioTask.parserNo = this.parserNo
+            audioTask.extractorNo = this.extractorNo
     
             const taskSet = new TaskSet()
             taskSet.name = parsedInfo.name
@@ -486,79 +444,12 @@ class YoutubeParser implements Parser {
             taskSet.type = 'folder'
             taskSet.url = parsedInfo.url
             taskSet.location = parsedInfo.location
-            taskSet.parserNo = this.parserNo
+            taskSet.extractorNo = this.extractorNo
     
             ipcRenderer.send(CommunicateAPIName.AddTaskSet, [taskSet, [videoTask, audioTask]])
         }
     }
-
-    taskSetCallback(mainEventEmitter: EventEmitter, taskNo: number): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const taskSet: TaskSetModel | null = taskQueue.getTaskSet(taskNo)
-            if (!taskSet || !taskSet.children || taskSet.children.length !== 2) {
-                reject(new Error('can\'t merge'))
-                return
-            }
-            const videoTask = taskQueue.getTask(taskSet.children[0])
-            const audioTask = taskQueue.getTask(taskSet.children[1])
-            if (!videoTask || !audioTask) {
-                reject(new Error('can\'t merge'))
-                return
-            }
-            const videoTaskPath = path.join(videoTask.location, videoTask.name)
-            const audioTaskPath = path.join(audioTask.location, audioTask.name)
-            let mergePath = path.join(videoTask.location, 'merge_' + videoTask.name.replace('_video', ''))
-            if (!mergePath.endsWith('.mp4')) {
-                const splits: Array<string> = mergePath.split('.')
-                splits.splice(splits.length - 1, 1)
-                mergePath = splits.join('.') + '.mp4'
-            }
-
-            try {
-                fs.unlinkSync(mergePath)
-            } catch(e) {}
-            new Promise<void>((resolve, reject) => {
-                const mergeProcess: ChildProcess = exec(
-                    `ffmpeg -i \"${videoTaskPath}\" -i \"${audioTaskPath}\" -c:v copy -c:a aac \"${mergePath}\"`, (error: ExecException | null) => {
-                        if (error) { // invoked only when error occuried
-                            if (!fs.existsSync(videoTaskPath) || !fs.existsSync(audioTaskPath)) {
-                                reject('video or audio path don\'t exist')
-                                return
-                            }
-                            reject(error)
-                        }
-                    }
-                )
-                mergeProcess.on('close', (code: number) => {
-                    if (code === 0) {
-                        resolve()
-                    }
-                })
-            }).then(
-                () => {
-                    try {
-                        fs.unlinkSync(videoTaskPath)
-                        fs.unlinkSync(audioTaskPath)
-                        const newMergePath = mergePath.replace('merge_', '')
-                        fs.renameSync(mergePath, newMergePath)
-                        mainEventEmitter.emit(CommunicateAPIName.AddFile, newMergePath, videoTask.publishedTimestamp)
-                    } catch (error: any) {
-                        reject(error)
-                    }
-                    resolve()
-                }
-            ).catch((error: Error) => {
-                reject(error)
-            })
-        //    mergeProcess.on('close', (code: number) => {
-        //         if (code !== 0) { // process returns code 1
-
-        //         } else {
-
-        //         }
-        //     })
-        })
-    }
 }
 
-export default YoutubeParser
+export default YouTubeParser
+export { FormatInfo }

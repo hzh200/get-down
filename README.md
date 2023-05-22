@@ -11,7 +11,9 @@ A downloader for http and a parser for video websites.
 
 - [] 添加大量注释，画设计图。
 
-- [] Youtube 非寻常视频解析，比如音乐。
+- [x] YouTube 受保护内容，比如音乐。
+
+- [] 为 http 模块增加功能
 
 - [] 视频链接超时，和 YouTube 服务器有时会重定向服务器的时候，进行链接再解析。
 

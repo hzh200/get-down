@@ -1,10 +1,11 @@
 import * as http from 'node:http'
-import { handlePromise, convertDateTimeToUnixTime } from '../utils'
-import { DownloadType } from '../models'
-import { handleRedirectRequest } from '../http/request'
+import { convertDateTimeToUnixTime, matchOne } from '../../utils'
+import { DownloadType } from '../../models'
+import { handleRedirectRequest } from '../request'
+import { getPreflightHeaders } from '../options'
 import { ResponseStatusCode, Header, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 
     URL_ROUTER_SPLITER, URL_PROTOCOL_SPLITER, URL_PARAMETER_SPLITER, FILE_EXTENSION_DOT, 
-    ASSIGNMENT_SPLITER} from '../http/constants'
+    ASSIGNMENT_SPLITER} from '../constants'
 
 class PreflightInfo {
     name: string
@@ -19,17 +20,12 @@ class PreflightInfo {
 }
 
 const preflight = async (url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<PreflightInfo> => {
-    const [err, [res, redirectUrl]]: [Error | undefined, [http.IncomingMessage, string]] = 
-        await handlePromise<[http.IncomingMessage, string]>(handleRedirectRequest(url, additionHeaders))
-    if (err) {
-        throw err
-    }
-    const reponseHeaders: http.IncomingHttpHeaders = res.headers
-    const responseStatusCode: number = res.statusCode as number
-
-    if (responseStatusCode !== ResponseStatusCode.OK && responseStatusCode !== ResponseStatusCode.PartialContent) {
+    const [[_request, res], redirectUrl]: [[http.ClientRequest, http.IncomingMessage], string] = await handleRedirectRequest(url, getPreflightHeaders, additionHeaders)
+    const responseStatusCode: number | undefined = res.statusCode
+    if (!responseStatusCode || (responseStatusCode !== ResponseStatusCode.OK && responseStatusCode !== ResponseStatusCode.PartialContent)) {
         throw new Error(`Response status code ${responseStatusCode}`)
     }
+    const reponseHeaders: http.IncomingHttpHeaders = res.headers
 
     const preflightInfo = new PreflightInfo()
     preflightInfo.url = url

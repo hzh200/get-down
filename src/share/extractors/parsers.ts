@@ -1,13 +1,14 @@
 import * as React from 'react'
-import { Parser, ParsedInfo } from './parser'
-import DefaultParser from './default_parser'
-import BiliBiliParser from './bilibili_parser'
-import YoutubeParser from './youtube_parser'
+import ExtractorInfo from './interfaces/extractorInfo'
+import { Parser, ParsedInfo } from './interfaces/parser'
+import DefaultParser from './default/default_parser'
+import BiliBiliParser from './bilibili/bilibili_parser'
+import YouTubeParser from './youtube/youtube_parser'
 
 const parsers: Array<Parser> = [
     new DefaultParser(),
     new BiliBiliParser(),
-    new YoutubeParser()
+    new YouTubeParser()
 ]
 
 const parserModule = {
@@ -26,7 +27,7 @@ const parserModule = {
     },
     choose(selection: Parser): void {
         parsers.forEach((parser, index) => {
-            if (parser.parseTarget === selection.parseTarget) {
+            if (parser.extractTarget === selection.extractTarget) {
                 this.index = index
             }
         })
@@ -44,4 +45,4 @@ const parserModule = {
 }
 
 export default parserModule
-
+export { ExtractorInfo, Parser, ParsedInfo }

@@ -1,8 +1,9 @@
 import { utimes } from "utimes"
-import { Log } from "../../share/utils/log"
+import { Log } from "../log"
 
 const TIMESTAMP_LENGTH_FOR_UTIME = 13
 
+// can noly be used with main process.
 const changeFileTimestamp = async (path: string, publishedTimestamp: string): Promise<void> => {
     if (publishedTimestamp.length > TIMESTAMP_LENGTH_FOR_UTIME) {
         publishedTimestamp = publishedTimestamp.substring(0, TIMESTAMP_LENGTH_FOR_UTIME)

@@ -1,8 +1,7 @@
 import * as React from 'react'
 import './status_panel.css'
 import { ParserStatus } from './parser_status'
-import parserModule from '../../../share/parsers'
-import { ParsedInfo } from '../../../share/parsers/parser'
+import parserModule, { ParsedInfo } from '../../../share/extractors/parsers'
 
 function StatusPanel({ status, optionsInfo, handleInfoPanelChange, errorMessage, feedbackMessage, downloadUrl }: 
     { status: ParserStatus, optionsInfo: ParsedInfo, handleInfoPanelChange: React.ChangeEventHandler, 

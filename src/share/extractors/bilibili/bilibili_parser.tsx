@@ -1,16 +1,15 @@
 import * as React from 'react'
 import * as http from 'node:http'
 import * as path from 'node:path'
-import { Parser, ParsedInfo, DownloadOptionsBase } from './parser'
-import InfoRow from './InfoRow'
-import { Task, DownloadType, TaskSet } from '../../share/models'
-import { Setting, readSetting, handlePromise, convertDateTimeToUnixTime } from '../utils'
+import { Parser, ParsedInfo, DownloadOptionsBase } from '../interfaces/parser'
+import InfoRow from '../InfoRow'
+import { Task, DownloadType, TaskSet } from '../../models'
+import { Setting, readSetting, matchOne } from '../../utils'
 import { ipcRenderer } from 'electron'
-import { CommunicateAPIName } from '../global/communication'
-import { httpRequest, getHttpRequestTextContent } from '../http/request'
-import { generateRequestOption, getPreflightHeaders } from '../http/options'
-import { PreflightInfo, preflight } from './preflight'
-import { Header, FILE_EXTENSION_DOT } from '../http/constants'
+import { CommunicateAPIName } from '../../global/communication'
+import { requestPage, PreflightInfo, preflight } from '../../http/functions'
+import { Header, FILE_EXTENSION_DOT } from '../../http/constants'
+import Bilibili from './bilibili'
 
 const BV_RE = new RegExp('BV[a-zA-Z0-9]+')
 const Web_INTERFACE_API = 'https://api.bilibili.com/x/web-interface/view'
@@ -55,31 +54,11 @@ class Selection {
     selectedFormats: Array<string>
 }
 
-class BiliBiliParser implements Parser {
-    parserNo: number = 1
-    parseTarget: string = 'bilibili'
-
-    requestHeaders: http.OutgoingHttpHeaders = {
-        [Header.Referer]: 'https://www.bilibili.com'
-    }
-
+class BiliBiliParser extends Bilibili implements Parser {
     getListInfo = async (url: string): Promise<ListInfo> => {
-        const execResult: RegExpExecArray | null = BV_RE.exec(url)
-        if (!execResult) {
-            throw new Error("input is not a valid argument")
-        }
         const videolist = new ListInfo()
-        videolist.bvid = execResult.toString()
-        let requestOptions: http.RequestOptions = await generateRequestOption(`${Web_INTERFACE_API}?bvid=${videolist.bvid}`, getPreflightHeaders)
-        let [httpRequestErr, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (httpRequestErr) {
-            throw httpRequestErr
-        }
-        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
-        if (getContentErr) {
-            throw getContentErr
-        }
+        videolist.bvid = matchOne(BV_RE, url, 'no valid bv no found')[0]
+        const rawData: string = await requestPage(`${Web_INTERFACE_API}?bvid=${videolist.bvid}`)
         const parsedData = JSON.parse(rawData)
         if (parsedData.code !== 0) {
             throw new Error('parsedData[\'code\'] = 0')
@@ -100,16 +79,7 @@ class BiliBiliParser implements Parser {
     }
 
     getFormatInfos = async (aid: string, cid: string): Promise<Array<FormatInfo>> => {
-        const requestOptions = await generateRequestOption(`${PLAYER_API}?avid=${aid}&cid=%20${cid}`, getPreflightHeaders)
-        const [httpRequestErr, [request, response]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (httpRequestErr) {
-            throw httpRequestErr
-        }
-        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
-        if (getContentErr) {
-            throw getContentErr
-        }
+        const rawData: string = await requestPage(`${PLAYER_API}?avid=${aid}&cid=%20${cid}`)
         const parsedData = JSON.parse(rawData)
         const data = parsedData.data
         const supportFormats = data.support_formats
@@ -127,20 +97,10 @@ class BiliBiliParser implements Parser {
     }
 
     getVideoURLs = async (aid: string, cid: string, quality: string): Promise<Array<FormatInfoUrl>> => {
-        const requestOptions = await generateRequestOption(`${PLAYER_API}?avid=${aid}&cid=%20${cid}&qn=${quality}`, getPreflightHeaders)
-        const [httpRequestErr, [request, response]] = 
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions))
-        if (httpRequestErr) {
-            throw httpRequestErr
-        }
-        const [getContentErr, rawData]: [Error | undefined, string] = await handlePromise<string>(getHttpRequestTextContent(request, response))
-        if (getContentErr) {
-            throw getContentErr
-        }
+        const rawData: string = await requestPage(`${PLAYER_API}?avid=${aid}&cid=%20${cid}&qn=${quality}`)
         const parsedData = JSON.parse(rawData)
         const data = parsedData.data
         const durl = data.durl
-        
         const urls: Array<FormatInfoUrl> = []
         for (const url of durl) {
             urls.push(url.url)
@@ -151,7 +111,6 @@ class BiliBiliParser implements Parser {
     parse = async (url: string): Promise<ParsedInfo> => {
         const setting: Setting = readSetting()
         const videolist: ListInfo = await this.getListInfo(url)
-
         const parsedInfo = new BiliBiliParsedInfo()
         parsedInfo.url = url
         parsedInfo.listInfo = videolist
@@ -226,11 +185,8 @@ class BiliBiliParser implements Parser {
                     break
                 }
             }
-            const [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = 
-                await handlePromise<PreflightInfo>(preflight(targetFormat.urls[0], this.requestHeaders))
-            if (err) {
-                throw err
-            }
+            const preflightParsedInfo: PreflightInfo = await preflight(targetFormat.urls[0], this.requestHeaders)
+
             const task = new Task()
             task.name = parsedInfo.name + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             task.size = preflightParsedInfo.size
@@ -242,7 +198,7 @@ class BiliBiliParser implements Parser {
             task.charset = preflightParsedInfo.charset
             task.location = parsedInfo.location
             task.downloadType = preflightParsedInfo.downloadType
-            task.parserNo = this.parserNo
+            task.extractorNo = this.extractorNo
             ipcRenderer.send(CommunicateAPIName.AddTask, task)
         } else {
             const tasks: Array<Task> = []
@@ -252,11 +208,8 @@ class BiliBiliParser implements Parser {
                 }
                 for (const format of parsedInfo.listInfo.videos[i].formats) {
                     if (format.quality === parsedInfo.selection.selectedFormats[i]) {
-                        const [err, preflightParsedInfo]: [Error | undefined, PreflightInfo] = 
-                            await handlePromise<PreflightInfo>(preflight(format.urls[0], this.requestHeaders))
-                        if (err) {
-                            throw err
-                        }
+                        const preflightParsedInfo: PreflightInfo = await preflight(format.urls[0], this.requestHeaders)
+
                         const task = new Task()
                         task.name = parsedInfo.listInfo.videos[i].title + FILE_EXTENSION_DOT + preflightParsedInfo.subType
                         task.size = preflightParsedInfo.size
@@ -268,7 +221,7 @@ class BiliBiliParser implements Parser {
                         task.charset = preflightParsedInfo.charset
                         task.location = path.join(parsedInfo.location, parsedInfo.name)
                         task.downloadType = preflightParsedInfo.downloadType
-                        task.parserNo = this.parserNo
+                        task.extractorNo = this.extractorNo
                         tasks.push(task)
                         break
                     }
@@ -287,7 +240,7 @@ class BiliBiliParser implements Parser {
             taskSet.type = 'folder'
             taskSet.url = parsedInfo.url
             taskSet.location = parsedInfo.location
-            taskSet.parserNo = this.parserNo
+            taskSet.extractorNo = this.extractorNo
     
             ipcRenderer.send(CommunicateAPIName.AddTaskSet, [taskSet, tasks])
         }
