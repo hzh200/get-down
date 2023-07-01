@@ -20,5 +20,5 @@ const findMaxOverlap = (str1: string, str2: string): string => {
 }
 
 export { findMaxOverlap }
-export { getTranslatedFilename, getValidFilename } from './file_naming'
+export { getTUnescapedFilename, getWindowsValidFilename } from './file_naming'
 export { matchOne, matchAll } from './regex'

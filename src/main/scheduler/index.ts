@@ -27,7 +27,7 @@ import {
 import { Log, handlePromise, handleAsyncCallback } from '../../share/utils'
 import { CommunicateAPIName } from '../../share/global/communication'
 import callbackModule, { Callback } from '../../share/extractors/callbacks'
-import { getValidFilename } from '../../share/utils/string'
+import { getWindowsValidFilename } from '../../share/utils/string'
 
 const maxDownloadLimit: number = 3
 
@@ -123,7 +123,7 @@ class Scheduler {
             if (taskInfo.downloadType === DownloadType.Range) {
                 taskInfo.downloadRanges = [[0, taskInfo.size as number - 1]]
             }
-            taskInfo.name = getValidFilename(taskInfo.name)
+            taskInfo.name = getWindowsValidFilename(taskInfo.name)
             const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo))
             if (error) {
                 Log.errorLog(error)
@@ -135,7 +135,7 @@ class Scheduler {
             taskSetInfo.status = TaskStatus.Waiting
             taskSetInfo.progress = 0
             taskSetInfo.children = []
-            taskSetInfo.name = getValidFilename(taskSetInfo.name)
+            taskSetInfo.name = getWindowsValidFilename(taskSetInfo.name)
             const [taskSetError, taskSet]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(createTaskSetModel(taskSetInfo))
             if (taskSetError) {
                 Log.errorLog(taskSetError)
@@ -148,7 +148,7 @@ class Scheduler {
                 if (taskInfo.downloadType === DownloadType.Range) {
                     taskInfo.downloadRanges = [[0, taskInfo.size as number - 1]]
                 }
-                taskInfo.name = getValidFilename(taskInfo.name)
+                taskInfo.name = getWindowsValidFilename(taskInfo.name)
                 const [taskError, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo))
                 if (taskError) {
                     Log.errorLog(taskError)

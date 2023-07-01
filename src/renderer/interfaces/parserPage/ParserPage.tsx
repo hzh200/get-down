@@ -4,7 +4,7 @@ import StatusPanel, { ParserStatus } from '../../components/StatusPanel'
 import parserModule, { ParsedInfo } from '../../../share/extractors/parsers'
 import { Log, handlePromise } from '../../../share/utils'
 import { validateUrl } from '../../../share/http/util'
-import { getTranslatedFilename } from '../../../share/utils'
+import { getTUnescapedFilename } from '../../../share/utils'
 
 import './parser_page.css'
 
@@ -51,7 +51,7 @@ function ParserPage() {
             }
             return
         }
-        parsedInfo.name = getTranslatedFilename(parsedInfo.name)
+        parsedInfo.name = getTUnescapedFilename(parsedInfo.name)
         setOptionsInfo(parsedInfo)
         setStatus(ParserStatus.succeed)
         setErrorMessage('')

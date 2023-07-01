@@ -25,20 +25,20 @@
     ]
   },
   "scripts": {
-    "start": "electron .",
+    "start-electron": "electron .",
     "copy-files": "copyfiles -u 1 src/app.html dist/",
     "build": "tsc --build tsconfig.main.json",
     "clean": "tsc --build --clean tsconfig.main.json",
     "pack-dev": "webpack --mode development && npm run copy-files",
     "pack-prod": "webpack --mode production && npm run copy-files",
-    "dev-mode": "npm run build && npm run pack-dev && cross-env NODE_ENV=development npm run start",
-    "gui-mode": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start",
-    "service-mode": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start"
+    "dev": "npm run build && npm run pack-dev && cross-env NODE_ENV=development npm run start-electron",
+    "start": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start-electron"
   },
   "author": "hzh",
   "license": "ISC",
   "dependencies": {
     "get-proxy-settings": "^0.1.13",
+    "html-escaper": "^3.0.3",
     "pg-hstore": "^2.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -51,6 +51,7 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@electron/remote": "^2.0.9",
+    "@types/html-escaper": "^3.0.0",
     "@types/node": "^18.0.6",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
