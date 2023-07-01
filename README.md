@@ -13,7 +13,7 @@ A downloader for http and a parser for video websites.
 
 - [x] YouTube 受保护内容，比如音乐。
 
-- [] 为 http 模块增加功能
+- [x] 为 http 模块增加功能
 
 - [] 视频链接超时，和 YouTube 服务器有时会重定向服务器的时候，进行链接再解析。
 
@@ -21,3 +21,8 @@ A downloader for http and a parser for video websites.
 
 - [] M3U8 下载。
 
+- [] bug: 视频格式选取问题
+
+- [] 支持普通下载自定义 header
+
+- [] 修改 menu
