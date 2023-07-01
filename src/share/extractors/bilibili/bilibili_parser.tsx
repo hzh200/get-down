@@ -134,7 +134,7 @@ class BiliBiliParser extends Bilibili implements Parser {
                     <DownloadOptionsBase parsedInfo={parsedInfo} handleInfoChange={handleInfoChange} />
                     <InfoRow>
                         <label>Quality</label>
-                        <select className="format-selecter" value={parsedInfo.selection.selectedFormats[0]} name='selection.selectedFormats-0' onChange={handleInfoChange}>
+                        <select className="format-selecter" value={parsedInfo.selection.selectedFormats[0]} name='selection-selectedFormats-0' onChange={handleInfoChange}>
                             {parsedInfo.listInfo.videos[0].formats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                 <option value={format.quality} key={index}>{format.description}</option>
                             )}
@@ -158,14 +158,10 @@ class BiliBiliParser extends Bilibili implements Parser {
                         <div>
                             {parsedInfo.listInfo.videos.map((video: VideoInfo, index: number, _array: Array<VideoInfo>) => 
                                 <div key={index}>
-                                    <input className="video-select" type="checkbox" checked={parsedInfo.selection.selectedVideos[index]} name={`selection.selectedVideos-${index}`} onChange={handleInfoChange} />
+                                    <input className="video-select" type="checkbox" checked={parsedInfo.selection.selectedVideos[index]} name={`selection-selectedVideos-${index}`} onChange={handleInfoChange} />
                                     <label>{video.title}</label>
-                                    <select className="format-selecter" value={parsedInfo.selection.selectedFormats[index]} name={`selection.selectedFormats-${index}`} onChange={handleInfoChange}>
-                                        {
-                                            video.formats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
-                                                <option value={format.quality} key={index}>{format.description}</option>
-                                            )
-                                        }
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedFormats[index]} name={`selection-selectedFormats-${index}`} onChange={handleInfoChange}>
+                                        {video.formats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => <option value={format.quality} key={index}>{format.description}</option>)}
                                     </select>
                                 </div>
                             )}

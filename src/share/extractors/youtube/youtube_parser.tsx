@@ -31,6 +31,7 @@ class YouTubeParsedInfo extends ParsedInfo {
 }
 
 class FormatInfo {
+    itag: string
     url: string
     quality: string
     mimeType: string
@@ -84,8 +85,9 @@ class YouTubeParser extends YouTube implements Parser {
             if (!data.url && !data.signatureCipher)
                 continue
             const format = new FormatInfo()
+            format.itag = data.itag
             format.url = data.url ? data.url : decipherSignature(html5player, data.signatureCipher)
-            format.mimeType = data.mimeType   
+            format.mimeType = data.mimeType
 
             const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType)
             format.type = typeExecResult[1]
@@ -234,7 +236,7 @@ class YouTubeParser extends YouTube implements Parser {
         const urlComponents = new URL(decodeURIComponent(url))
         urlComponents.searchParams.set('bpctr', '9999999999')
         urlComponents.searchParams.set('has_verified', '1')
-        url = urlComponents.toString()     
+        url = urlComponents.toString()
         
         const rawData: string = await requestPage(url)
 
@@ -249,7 +251,7 @@ class YouTubeParser extends YouTube implements Parser {
         try {
             await this.parseFormatInfo(parsedInfo, rawData, html5player)
         } catch (e: any) {
-            console.log(rawData)
+            Log.infoLog(rawData)
             throw e
         }
         
@@ -258,8 +260,8 @@ class YouTubeParser extends YouTube implements Parser {
             parsedInfo.selection.selectedMultiplexedFormat = parsedInfo.multiplexedFormats[0]
         }
         if (parsedInfo.hasAdaptive) {
-            parsedInfo.selection.selectedVideoFormat = parsedInfo.videoFormats[0]
-            parsedInfo.selection.selectedAudioFormat = parsedInfo.audioFormats[0]
+            parsedInfo.selection.selectedVideoFormat = {...parsedInfo.videoFormats[0]}
+            parsedInfo.selection.selectedAudioFormat = {...parsedInfo.audioFormats[0]}
         }
         return parsedInfo
     }
@@ -274,7 +276,8 @@ class YouTubeParser extends YouTube implements Parser {
                         return (
                             <InfoRow>
                                 <label>Quality</label>
-                                <select className="format-selecter" value={parsedInfo.selection.selectedMultiplexedFormat?.quality} name='selectedMultiplexedQuality' onChange={handleInfoChange}>
+                                <select className="format-selecter" value={parsedInfo.selection.selectedMultiplexedFormat?.quality} 
+                                    name='selection-selectedMultiplexedQuality' onChange={handleInfoChange}>
                                     {parsedInfo.multiplexedFormats.map((format: FormatInfo, index: number, _array: Array<FormatInfo>) => 
                                         <option value={format.quality} key={index}>{format.quality}</option>
                                     )}
@@ -286,7 +289,8 @@ class YouTubeParser extends YouTube implements Parser {
                             <React.Fragment>
                                 <InfoRow>
                                     <label>Video Quality</label>
-                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.quality} name='selectedVideoFormat-quality' onChange={handleInfoChange}>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.quality} 
+                                        name='selection-selectedVideoFormat-quality' onChange={handleInfoChange}>
                                         {(() => {
                                             let qualities: Array<string> = []
                                             for (const format of parsedInfo.videoFormats) {
@@ -301,7 +305,8 @@ class YouTubeParser extends YouTube implements Parser {
                                         })()}
                                     </select>
                                     <label>Video Codecs</label>
-                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.codecs} name='selectedVideoFormat-codecs' onChange={handleInfoChange}>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedVideoFormat?.codecs} 
+                                        name='selection-selectedVideoFormat-codecs' onChange={handleInfoChange}>
                                         {(() => {
                                             let codecses: Array<string> = []
                                             for (const format of parsedInfo.videoFormats) {
@@ -319,7 +324,8 @@ class YouTubeParser extends YouTube implements Parser {
                                 </InfoRow>
                                 <InfoRow>
                                     <label>Audio Quality</label>
-                                    <select className="format-selecter" value={parsedInfo.selection.selectedAudioFormat?.quality} name='selectedAudioFormat-quality' onChange={handleInfoChange}>
+                                    <select className="format-selecter" value={parsedInfo.selection.selectedAudioFormat?.quality} 
+                                        name='selection-selectedAudioFormat-quality' onChange={handleInfoChange}>
                                         {(() => {
                                             let qualities: Array<string> = []
                                             for (const format of parsedInfo.audioFormats) {
@@ -330,8 +336,8 @@ class YouTubeParser extends YouTube implements Parser {
                                                 qualities.map((quality: string, index: number, _array: Array<string>) => 
                                                     <option value={quality} key={index}>{
                                                         (() => {
-                                                        const splits: string[]  = quality.split('_')
-                                                        return splits[splits.length - 1]
+                                                            const splits: string[]  = quality.split('_')
+                                                            return splits[splits.length - 1]
                                                         })()
                                                     }</option>
                                                 )
@@ -339,7 +345,8 @@ class YouTubeParser extends YouTube implements Parser {
                                         })()}
                                     </select>
                                     <label>Audio Codecs</label>
-                                    <select className="format-selecter" value={(parsedInfo.selection.selectedAudioFormat as FormatInfo).codecs} name='selectedAudioFormat-codecs' onChange={handleInfoChange}>
+                                    <select className="format-selecter" value={(parsedInfo.selection.selectedAudioFormat as FormatInfo).codecs} 
+                                        name='selection-selectedAudioFormat-codecs' onChange={handleInfoChange}>
                                         {(() => {
                                             let codecses: Array<string> = []
                                             for (const format of parsedInfo.audioFormats) {
@@ -373,7 +380,6 @@ class YouTubeParser extends YouTube implements Parser {
                 }
             }
             const preflightParsedInfo: PreflightInfo = await preflight(videoFormat.url, this.requestHeaders)
-
             const videoTask = new Task()
             videoTask.name = parsedInfo.name + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             videoTask.size = preflightParsedInfo.size
@@ -397,7 +403,6 @@ class YouTubeParser extends YouTube implements Parser {
                 }
             }
             let preflightParsedInfo: PreflightInfo = await preflight(videoFormat.url, this.requestHeaders)
-
             const videoTask = new Task()
             videoTask.name = parsedInfo.name + '_video' + FILE_EXTENSION_DOT + preflightParsedInfo.subType
             videoTask.size = preflightParsedInfo.size

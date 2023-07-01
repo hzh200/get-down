@@ -5,7 +5,7 @@ A downloader for http and a parser for video websites.
 
 - [x] 文件日期设置为视频的上传日期或者 LastModified。
 
-- [x] 添加开发者模式特有功能。
+- [] 添加开发者模式特有功能，比如输出一些请求的头。
 
 - [] 添加单元测试。
 
@@ -21,7 +21,7 @@ A downloader for http and a parser for video websites.
 
 - [] M3U8 下载。
 
-- [] bug: 视频格式选取问题
+- [x] bug: 视频格式选取问题
 
 - [] 支持普通下载自定义 header
 
