@@ -114,7 +114,7 @@ app.whenReady().then(
     () => {
         ({height: screenHeight, width: screenWidth} = screen.getPrimaryDisplay().size)
         scaleFactor = screen.getPrimaryDisplay().scaleFactor
-        createMainWindow() // Initial interface and renderer process before main process scheduler.
+        return createMainWindow() // Initial interface and renderer process before main process scheduler.
     }
 ).then(
     () => {
