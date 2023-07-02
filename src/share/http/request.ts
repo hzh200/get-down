@@ -89,7 +89,6 @@ const handleRedirectRequest = async (url: string, getHeaders: getHeaders, additi
 
     let requestOptions: http.RequestOptions = await generateRequestOption(url, getHeaders, additionHeaders)
     let [request, response]: [http.ClientRequest, http.IncomingMessage] = await httpRequest(requestOptions)
-
     let retryCount = 0
     while (checkRedirectStatus(response.statusCode) && retryCount++ < REDIRECT_LIMIT) {
         url = await fetchRedirect(request, response)

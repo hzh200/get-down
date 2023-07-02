@@ -62,10 +62,14 @@ const taskType: ModelAttributes = {
     },
     [ModelField.downloadRanges]: {
         type: DataTypes.JSON,
-        allowNull: true,
+        allowNull: true
     },
     [ModelField.parent]: {
         type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    [ModelField.additionalInfo]: {
+        type: DataTypes.STRING,
         allowNull: true
     }
 }
@@ -89,6 +93,7 @@ class TaskModel extends Model {
     declare downloadType: DownloadType
     declare downloadRanges: Array<Array<number>> | undefined
     declare parent: number | undefined
+    declare additionalInfo: string | undefined
 }
 
 export { taskType, TaskModel }

@@ -29,9 +29,9 @@ class DefaultParsedInfo extends ParsedInfo {
 }
 
 class DefaultParser extends Default implements Parser {
-    parse = async (url: string): Promise<ParsedInfo> => {
+    parse = async (url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<ParsedInfo> => {
         const setting: Setting = readSetting()
-        const preflightParsedInfo: PreflightInfo = await preflight(url)
+        const preflightParsedInfo: PreflightInfo = await preflight(url, additionHeaders)
         const parsedInfo = new DefaultParsedInfo()
         parsedInfo.name = preflightParsedInfo.name
         parsedInfo.size = preflightParsedInfo.size
@@ -59,7 +59,7 @@ class DefaultParser extends Default implements Parser {
         )
     }
 
-    addTask = async (parsedInfo: DefaultParsedInfo): Promise<void> => {
+    addTask = async (parsedInfo: DefaultParsedInfo, additionalInfo?: string): Promise<void> => {
         const task = new Task()
         task.name = parsedInfo.name
         task.size = parsedInfo.size
@@ -72,6 +72,7 @@ class DefaultParser extends Default implements Parser {
         task.location = parsedInfo.location
         task.downloadType = parsedInfo.downloadType
         task.extractorNo = this.extractorNo
+        task.additionalInfo = additionalInfo;
         ipcRenderer.send(CommunicateAPIName.AddTask, task)
     }
 }

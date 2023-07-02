@@ -22,6 +22,7 @@ class Task extends TaskItem {
     downloadType: DownloadType
     downloadRanges: Array<Array<number>> | undefined
     parent: number | undefined // parent TaskSet
+    additionalInfo: string | undefined
 }
 
 export { Task }

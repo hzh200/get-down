@@ -8,9 +8,9 @@
     /* border-radius: 2px; */
     user-select: none;
 }
-
-label::after, label::before {
-    content: ' ';
+label {
+    margin-left: 2px;
+    margin-right: 2px;
 }
 
 img { /* display is inline by default */

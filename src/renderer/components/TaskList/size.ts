@@ -18,7 +18,6 @@ const calculateTransferSpeedAuto = (taskItem: TaskItem): Promise<string> => {
         const start = [taskItem.progress, new Date().getTime()]
         setTimeout(() => {
             const end = [taskItem.progress, new Date().getTime()]
-            console.log(end[0], ' ', start[0])
             const speed = convertBytesToHumanReadable((end[0] - start[0]) * 1000 / (end[1] - start[1])) + '/s'
             resolve(speed)
         }, 1000)

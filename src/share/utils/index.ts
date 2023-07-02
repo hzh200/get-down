@@ -2,4 +2,4 @@ export { ProxyChooses, Setting, ProxyConfig, readSetting, writeSetting } from '.
 export { Log } from './log'
 export { handlePromise, handleAsyncCallback } from './errorHandler'
 export { convertDateTimeToUnixTime, convertDateTimeToDate } from './date'
-export { findMaxOverlap, getTUnescapedFilename, getWindowsValidFilename, matchOne, matchAll } from './string'
+export { findMaxOverlap, getUnescapedFilename, getWindowsValidFilename, matchOne, matchAll } from './string'

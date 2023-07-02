@@ -1,4 +1,5 @@
 import * as React from 'react'
+import * as http from 'node:http'
 import ExtractorInfo from './interfaces/extractorInfo'
 import { Parser, ParsedInfo } from './interfaces/parser'
 import DefaultParser from './default/default_parser'
@@ -32,15 +33,15 @@ const parserModule = {
             }
         })
     },
-    async parse(url: string): Promise<ParsedInfo> {
-        const parsedInfo: ParsedInfo = await this.choosenParser.parse(url)
+    async parse(url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<ParsedInfo> {
+        const parsedInfo: ParsedInfo = await this.choosenParser.parse(url, additionHeaders)
         return parsedInfo
     },
     getDownloadOptions(parsedInfo: ParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLInputElement>): React.ReactElement {
         return this.choosenParser.DownloadOptions({parsedInfo, handleInfoChange})
     },
-    async addTask(parsedInfo: ParsedInfo): Promise<void> {
-        await this.choosenParser.addTask(parsedInfo)
+    async addTask(parsedInfo: ParsedInfo, additionalInfo?: {[key: string]: any}): Promise<void> {
+        await this.choosenParser.addTask(parsedInfo, additionalInfo ? JSON.stringify(additionalInfo): undefined)
     }
 }
 

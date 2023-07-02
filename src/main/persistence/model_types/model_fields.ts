@@ -19,6 +19,7 @@ enum ModelField {
     downloadType = 'downloadType',
     downloadRanges = 'downloadRanges',
     parent = 'parent',
+    additionalInfo = 'additionalInfo',
     // TaskSet
     children = 'children',
     // Sequence

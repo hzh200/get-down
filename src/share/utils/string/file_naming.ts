@@ -246,7 +246,7 @@ const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<'
 //     ['&#8364;','\?']
 // ])
 
-// const getTUnescapedFilename = (filename: string): string => {
+// const getUnescapedFilename = (filename: string): string => {
 //     // HTML Encoding Escape Characters Replacement
 //     for (const [key, val] of HTML_Escape_Character_NAME) {
 //         filename = filename.replaceAll(key, val)
@@ -261,7 +261,7 @@ const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<'
 // }
 
 const getWindowsValidFilename = (filename: string): string => {
-    filename = getTUnescapedFilename(filename)
+    filename = getUnescapedFilename(filename)
     // Windows Invalid Charaters Replacement
     for (const val of WINDOWS_INVALID_NAMEING_CHARACTERS) {
         filename = filename.replaceAll(val, '')
@@ -272,8 +272,8 @@ const getWindowsValidFilename = (filename: string): string => {
     return filename
 } 
 
-const getTUnescapedFilename = (filename: string): string => {
+const getUnescapedFilename = (filename: string): string => {
     return unescape(filename);
 }
 
-export { getWindowsValidFilename, getTUnescapedFilename }
+export { getWindowsValidFilename, getUnescapedFilename }

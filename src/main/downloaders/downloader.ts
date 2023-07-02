@@ -43,9 +43,24 @@ class Downloader extends EventEmitter {
 
     // Generate download option based on parser headers.
     async generateDownloadOption(): Promise<http.RequestOptions> {
-        const callback: Callback = callbackModules.getCallback(this.task.extractorNo)
-        const requestHeaders: http.OutgoingHttpHeaders | undefined = callback.requestHeaders
-        return await generateRequestOption(this.task.downloadUrl, getDownloadHeaders, requestHeaders)
+        const callback: Callback = callbackModules.getCallback(this.task.extractorNo);
+        let requestHeaders: http.OutgoingHttpHeaders = {};
+        if (callback.requestHeaders) {
+            requestHeaders = {
+                ...requestHeaders,
+                ...callback.requestHeaders
+            }
+        }
+        if (this.task.additionalInfo) {
+            const additionalInfo = JSON.parse(this.task.additionalInfo);
+            if (additionalInfo['customHeaders']) {
+                requestHeaders = {
+                    ...requestHeaders,
+                    ...additionalInfo['customHeaders']
+                }
+            }
+        } 
+        return await generateRequestOption(this.task.downloadUrl, getDownloadHeaders, requestHeaders);
     }
 
     // Clear Download instance resource.

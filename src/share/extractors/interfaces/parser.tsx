@@ -4,10 +4,10 @@ import InfoRow from '../InfoRow'
 import ExtractorInfo from './extractorInfo'
 
 interface Parser extends ExtractorInfo {
-    parse(url: string): Promise<ParsedInfo>
+    parse(url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<ParsedInfo>
     DownloadOptions({ parsedInfo, handleInfoChange} : 
         { parsedInfo: ParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement>}): React.ReactElement
-    addTask(parsedInfo: ParsedInfo): void
+    addTask(parsedInfo: ParsedInfo, additionalInfo?: string): void
 }
 
 // common parsed info.
