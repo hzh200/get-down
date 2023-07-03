@@ -72,6 +72,7 @@ class Scheduler {
                     if (taskCallback) {
                         const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(taskNo))
                         if (error) {
+                            Log.errorLog(error);
                             await this.finishTask(taskNo, TaskStatus.Failed)
                             return
                         }
@@ -87,6 +88,7 @@ class Scheduler {
                             await updateTaskSetStatus(taskSet, TaskStatus.Processing)
                             const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(parentTaskSetNo))
                             if (error) {
+                                Log.errorLog(error);
                                 await updateTaskSetStatus(taskSet, TaskStatus.Failed)
                                 return
                             }

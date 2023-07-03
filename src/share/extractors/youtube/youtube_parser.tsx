@@ -102,6 +102,8 @@ class YouTubeParser extends YouTube implements Parser {
                 format.codecs = 'opus'
             } else if (typeExecResult[3].startsWith('mp4a')) {
                 format.codecs = 'mp4a'
+            } else { // ac-3 for example.
+                continue;
             }
             format.publishedTimestamp = data.lastModified
             if (format.type === 'video') {

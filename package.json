@@ -37,6 +37,7 @@
   "author": "hzh",
   "license": "ISC",
   "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "get-proxy-settings": "^0.1.13",
     "html-escaper": "^3.0.3",
     "pg-hstore": "^2.3.4",
@@ -51,6 +52,7 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@electron/remote": "^2.0.9",
+    "@types/fluent-ffmpeg": "^2.1.21",
     "@types/html-escaper": "^3.0.0",
     "@types/node": "^18.0.6",
     "@types/react": "^18.0.15",
