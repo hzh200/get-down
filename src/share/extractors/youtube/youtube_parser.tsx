@@ -236,9 +236,9 @@ class YouTubeParser extends YouTube implements Parser {
         const urlComponents = new URL(decodeURIComponent(url))
         urlComponents.searchParams.set('bpctr', '9999999999')
         urlComponents.searchParams.set('has_verified', '1')
-        url = urlComponents.toString()
+        const processedURL = urlComponents.toString()
         
-        const rawData: string = await requestPage(url)
+        const rawData: string = await requestPage(processedURL)
 
         const html5playerUrl = this.host + matchOne(HTML5PLAYER_RE, rawData, 'no html5 player found')[1]
         const html5player: string = await requestPage(html5playerUrl)

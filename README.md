@@ -23,6 +23,6 @@ A downloader for http and a parser for video websites.
 
 - [x] bug: 视频格式选取问题
 
-- [] 支持普通下载自定义 header
+- [x] 支持普通下载自定义 header
 
 - [] 修改 menu
