@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import Scheduler from './scheduler';
 import { initPersistence } from './persistence';
 import { Log } from '../share/utils';
-import { DIST_PATH } from '../share/global/paths';
+import { APP_PATH } from '../share/global/paths';
 import { isDev } from '../share/global/runtime_mode';
 
 initialize();
@@ -32,7 +32,7 @@ const createMainWindow = (): Promise<void> => {
             }
         });
         enable(mainWindow.webContents);
-        mainWindow.loadFile(path.resolve(DIST_PATH, 'app.html'));
+        mainWindow.loadFile(APP_PATH);
 
         mainWindow.on('ready-to-show', () => {
             mainWindow.show();
