@@ -1,7 +1,7 @@
-import { SETTING_PATH } from '../../global/paths'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
+import { SETTING_PATH } from '../../global/paths'
 
 enum ProxyChooses {
     NoProxy = 0,

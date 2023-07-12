@@ -1,5 +1,5 @@
 import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskType, TaskStatus, DownloadType } from '../../../share/models'
+import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models'
 import ModelField from './model_fields'
 
 const taskSetType: ModelAttributes = {

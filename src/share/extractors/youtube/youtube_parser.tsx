@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Parser, ParsedInfo, DownloadOptionsBase } from '../interfaces/parser'
 import InfoRow from '../InfoRow'
-import { Task, DownloadType, TaskSet } from '../../models'
+import { Task, DownloadType, TaskSet } from '../../global/models'
 import { Setting, readSetting, Log, matchOne, matchAll } from '../../utils'
 import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../../global/communication'

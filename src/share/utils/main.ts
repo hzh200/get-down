@@ -1,5 +1,5 @@
 import { utimes } from "utimes"
-import { Log } from "../log"
+import { Log } from "./filesystem/log"
 
 const TIMESTAMP_LENGTH_FOR_UTIME = 13
 

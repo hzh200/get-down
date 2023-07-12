@@ -1,4 +1,4 @@
-import { Task, TaskItem, TaskSet } from '../../../share/models'
+import { Task, TaskItem, TaskSet } from '../../../share/global/models'
 
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB']
 

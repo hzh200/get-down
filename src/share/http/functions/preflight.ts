@@ -1,6 +1,6 @@
 import * as http from 'node:http'
 import { convertDateTimeToUnixTime, matchOne } from '../../utils'
-import { DownloadType } from '../../models'
+import { DownloadType } from '../../global/models'
 import { handleRedirectRequest } from '../request'
 import { getPreflightHeaders } from '../options'
 import { ResponseStatusCode, Header, DIRECTIVE_SPLITER, MEDIA_TYPE_SPLITER, 

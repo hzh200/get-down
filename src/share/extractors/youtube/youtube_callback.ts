@@ -6,7 +6,7 @@ import taskQueue from '../../../main/queue';
 import { TaskModel, TaskSetModel } from '../../../main/persistence/model_types';
 import { Callback } from "../interfaces/callback";
 import { CommunicateAPIName } from '../../global/communication';
-import { changeFileTimestamp } from '../../utils/fileTime';
+import { changeFileTimestamp } from '../../utils/main';
 import YouTube from './youtube';
 
 class YouTubeCallback extends YouTube implements Callback {

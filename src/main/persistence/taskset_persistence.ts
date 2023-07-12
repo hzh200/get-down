@@ -1,5 +1,5 @@
 import { Transaction, Op } from 'sequelize'
-import { Task, TaskSet, TaskItem, TaskStatus, Sequence, TaskType } from '../../share/models'
+import { Task, TaskSet, TaskItem, TaskStatus, Sequence, TaskType } from '../../share/global/models'
 import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_types'
 import { handlePromise } from '../../share/utils' 
 import { sequelize } from './init'

@@ -1,5 +1,5 @@
 import taskQueue from '../queue'
-import { DownloadType } from '../../share/models'
+import { DownloadType } from '../../share/global/models'
 import { Downloader, DownloaderEvent } from './downloader'
 import { RangeDownloader } from './range_downloader'
 import { DirectDownloader } from './direct_downloader'

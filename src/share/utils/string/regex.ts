@@ -1,4 +1,4 @@
-import { Log } from '../log'
+import { Log } from '../filesystem/log'
 
 const matchOne = (re: RegExp, data: string, failureNotice?: string): RegExpExecArray => {
     const execResult: RegExpExecArray | null = re.exec(data)

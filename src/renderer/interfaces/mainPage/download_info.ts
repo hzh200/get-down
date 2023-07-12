@@ -1,4 +1,4 @@
-import { TaskType } from "../../../share/models"
+import { TaskType } from "../../../share/global/models"
 
 class DownloadInfo {
     taskNo: number

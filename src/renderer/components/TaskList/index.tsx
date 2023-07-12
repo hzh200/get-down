@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Task, TaskSet, TaskType } from '../../../share/models'
-import { TaskItem, TaskStatus } from '../../../share/models'
+import { Task, TaskSet, TaskType } from '../../../share/global/models'
+import { TaskItem, TaskStatus } from '../../../share/global/models'
 import { convertDateTimeToDate } from '../../../share/utils'
 import { getTaskIconPath, getTaskSetIconPath } from './icon'
 import { convertBytesToHumanReadable, calculateTransferSpeed } from './size'

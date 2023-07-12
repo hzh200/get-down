@@ -1,4 +1,4 @@
-import { Log } from '../log'
+import { Log } from './filesystem/log'
 
 const handlePromise = async <T>(promise: Promise<T>): Promise<[Error | undefined, T]> => {
     let res: [Error | undefined, T | undefined] // typescript tuple

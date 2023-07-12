@@ -1,5 +1,5 @@
 import { LOG_PATH } from '../../global/paths'
-import { isDev } from '../../../share/global/runtime_mode'
+import { isDev } from '../../global/runtime_mode'
 import * as fs from 'fs'
 
 // let fd: number

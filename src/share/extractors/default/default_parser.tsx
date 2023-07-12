@@ -4,7 +4,7 @@ import { Parser, ParsedInfo, DownloadOptionsBase } from '../interfaces/parser'
 import InfoRow from '../InfoRow'
 import { PreflightInfo, preflight } from '../../http/functions'
 
-import { Task, DownloadType } from '../../models'
+import { Task, DownloadType } from '../../global/models'
 import { Setting, readSetting } from '../../utils'
 import { ipcRenderer } from 'electron'
 import { CommunicateAPIName } from '../../global/communication'
