@@ -210,9 +210,9 @@ class Scheduler {
                     if (task.downloadType === DownloadType.Range && 
                         (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
                         await this.finishTask(task.taskNo, TaskStatus.Paused);
-                        await deleteTaskModel(task.taskNo);
-                        this.deleteTaskItemToRenderer(task, TaskType.Task);
                     }
+                    await deleteTaskModel(task.taskNo);
+                    this.deleteTaskItemToRenderer(task, TaskType.Task);
                 } else { // TaskSet
                     const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel;
                     for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
