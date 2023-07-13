@@ -1,15 +1,14 @@
-const path = require('path')
-const nodeExternals = require('webpack-node-externals')
-const webpack = require('webpack')
+const path = require('path');
+const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
     target: 'electron-renderer',
-    mode: 'none',
+    mode: 'development',
     entry: {
         app: './src/renderer/App.tsx',
     },
     output: {
-        path: path.resolve(__dirname, 'dist', 'renderer'),
+        path: path.resolve(__dirname, 'dev', 'renderer'),
         filename: '[name].bundle.js',
     },
     module: {
@@ -19,7 +18,7 @@ module.exports = {
                 use: {
                     loader: 'ts-loader',
                     options: {
-                        configFile: "tsconfig.renderer.json"
+                        configFile: "tsconfig.json"
                     },
                 },
                 exclude: /node_modules/
@@ -49,11 +48,5 @@ module.exports = {
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
     },
-    devtool: 'source-map',
-    // devtool: false,
-    // plugins: [new webpack.SourceMapDevToolPlugin({})],
-    // externals: [nodeExternals()]
-    // externals: ['pg', 'sqlite3', 'tedious', 'pg-hstore', {
-    //     'sequelize': require('sequelize'), 
-    // }],
-}
+    devtool: 'source-map'
+};

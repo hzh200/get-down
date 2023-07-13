@@ -3,7 +3,7 @@
     "module": "CommonJS",
     "target": "ESNext",
     "rootDir": "src/", // outDir structure depends on rootDir.
-    "outDir": "dist/",
+    "outDir": "dev/",
     "sourceMap": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

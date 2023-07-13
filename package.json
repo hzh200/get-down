@@ -2,47 +2,25 @@
   "name": "http-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/main/main.js",
-  "build": {
-    "appId": "io.github.hzh200.downloader",
-    "win": {
-      "target": "zip",
-      "icon": "resources/icon.png"
-    },
-    "extraResources": [
-      {
-        "from": "resources/icon.png",
-        "to": "./icon.png"
-      },
-      {
-        "from": "storage/ffmpeg.exe",
-        "to": "../ffmpeg.exe"
-      },
-      {
-        "from": "storage/LICENSE.ffmpeg.txt",
-        "to": "../LICENSE.ffmpeg.txt"
-      }
-    ]
-  },
+  "main": "app/main/main.js",
   "scripts": {
-    "start-electron": "electron .",
-    "copy-files": "copyfiles -u 1 src/renderer/app.html dist/",
-    "build": "tsc --build tsconfig.main.json",
-    "clean": "tsc --build --clean tsconfig.main.json",
-    "pack-dev": "webpack --mode development && npm run copy-files",
-    "pack-prod": "webpack --mode production && npm run copy-files",
-    "dev": "npm run build && npm run pack-dev && cross-env NODE_ENV=development npm run start-electron",
-    "start": "npm run build && npm run pack-prod && cross-env NODE_ENV=production npm run start-electron"
+    "copy-html-dev": "copyfiles -u 1 src/renderer/index.html dev/",
+    "copy-html-prod": "copyfiles -u 1 src/renderer/index.html app/",
+    "build-main-dev": "tsc --build tsconfig.dev.main.json",
+    "build-main-prod": "tsc --build tsconfig.prod.main.json",
+    "build-renderer-dev": "webpack --config webpack.config.js && npm run copy-html-dev",
+    "build-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-html-prod",
+    "dev": "npm run build-main-dev && npm run build-renderer-dev && cross-env NODE_ENV=development electron .",
+    "build": "npm run build-main-prod && npm run build-renderer-prod"
   },
   "author": "hzh",
   "license": "ISC",
   "dependencies": {
+    "@electron/remote": "^2.0.9",
     "fluent-ffmpeg": "^2.1.2",
     "get-proxy-settings": "^0.1.13",
     "html-escaper": "^3.0.3",
     "pg-hstore": "^2.3.4",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "sequelize": "^6.21.3",
     "sqlite3": "^5.1.4",
     "utimes": "^5.1.1"
@@ -51,24 +29,26 @@
     "@babel/preset-env": "^7.18.6",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
-    "@electron/remote": "^2.0.9",
     "@types/fluent-ffmpeg": "^2.1.21",
     "@types/html-escaper": "^3.0.0",
     "@types/node": "^18.0.6",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
+    "adm-zip": "^0.5.10",
     "babel-loader": "^8.2.5",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
     "electron": "^19.0.8",
-    "electron-builder": "^23.6.0",
     "file-loader": "^6.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "shelljs": "^0.8.5",
     "style-loader": "^3.3.1",
     "ts-loader": "^9.3.1",
     "typescript": "^4.7.4",
-    "webpack": "^5.73.0",
-    "webpack-cli": "^4.10.0",
+    "webpack": "^5.82.0",
+    "webpack-cli": "^5.1.0",
     "webpack-node-externals": "^3.0.0"
   }
 }

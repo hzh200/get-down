@@ -6,7 +6,7 @@ if (NODE_DEV === 'development') {
 } else if (NODE_DEV === 'production') {
     isDev = false
 } else {
-    isDev = true
+    isDev = false
 }
 
 export { isDev }

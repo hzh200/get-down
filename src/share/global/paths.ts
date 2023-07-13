@@ -1,21 +1,23 @@
-import * as path from 'node:path'
+import * as path from 'node:path';
+import { isDev } from './runtime_mode';
 
-let PROJECT_PATH = __dirname
-while (PROJECT_PATH.includes('dist')) {
-    PROJECT_PATH = path.resolve(PROJECT_PATH, '..')
+const BASE_NAME = isDev ? 'dev' : 'app';
+
+let PROJECT_PATH = __dirname;
+while (PROJECT_PATH.includes(BASE_NAME)) {
+    PROJECT_PATH = path.resolve(PROJECT_PATH, '..');
 }
 
-// const SRC_PATH = path.resolve(PROJECT_PATH, 'src')
-const DIST_PATH = path.resolve(PROJECT_PATH, 'dist')
-const APP_PATH = path.resolve(DIST_PATH, 'renderer', 'app.html')
-const DB_PATH = path.join(DIST_PATH, 'database.sqlite')
-const SETTING_PATH = path.join(DIST_PATH, 'setting.json')
-const LOG_PATH = path.join(DIST_PATH, 'downloader.log')
+const BASE_PATH = path.resolve(PROJECT_PATH, BASE_NAME);
+const APP_PATH = path.resolve(BASE_PATH, 'renderer', 'index.html');
+const DB_PATH = path.join(BASE_PATH, 'database.sqlite');
+const SETTING_PATH = path.join(BASE_PATH, 'setting.json');
+const LOG_PATH = path.join(BASE_PATH, 'downloader.log');
 
 export {
-    DIST_PATH,
+    BASE_PATH,
     APP_PATH,
     DB_PATH,
     SETTING_PATH,
     LOG_PATH
-}
+};

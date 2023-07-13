@@ -1,4 +1,6 @@
 node_modules
-bundle
-dist
+dev
+app
 .vscode
+http-downloader
+http-downloader.zip
