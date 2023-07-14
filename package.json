@@ -2,7 +2,7 @@
   "name": "http-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "app/main/main.js",
+  "main": "dev/main/main.js",
   "scripts": {
     "copy-html-dev": "copyfiles -u 1 src/renderer/index.html dev/",
     "copy-html-prod": "copyfiles -u 1 src/renderer/index.html app/",
