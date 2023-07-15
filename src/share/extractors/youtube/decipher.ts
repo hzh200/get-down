@@ -1,37 +1,59 @@
-import * as vm from 'node:vm'
-import * as querystring from 'node:querystring'
-import { matchOne } from '../../../utils'
+import * as vm from 'node:vm';
+import * as querystring from 'node:querystring';
+import { matchOne } from '../../utils';
+
+const ESCAPING_PAIRS = [
+    { start: '\'', end: '\''},
+    { start: '\"', end: '\"'},
+    { start: '\`', end: '\`'},
+    { start: '\/', end: '\/', startPrefix: /(^|[[{:;,/])\s?$/}, // '\/' doesn't always indicating regex, so it's a special case.
+];
 
 const extractFunctionBody = (rawData: string): string => {
-    const quotes = ['\'', '\"']
-    const escape = '\\'
-    const stack: Array<number> = []
-    const range: Array<number> = []
-    let quoteFlag = -1
+    const [targetStart, targetEnd] = '{}';
+    let count = 0;
+    let escapingPairIndex = -1;
+    let startIndex, endIndex;
+    let isEscaped = false; // Only used when 'escapingPairIndex' needs updating, needed to update at every iteration.
     for (let i = 0; i < rawData.length; i++) {
-        const byte = rawData[i]
-        if (quotes.includes(byte) && (i == 0 || rawData[i - 1] !== escape)) {
-            if (quoteFlag === quotes.indexOf(byte)) {
-                quoteFlag = -1
-            } else if (quoteFlag === -1) {
-                quoteFlag = quotes.indexOf(byte)
+        const byte = rawData[i];
+        // Unsetting 'escapingPairIndex', must be operated before setting 'escapingPairIndex'.
+        if (escapingPairIndex !== -1 && byte === ESCAPING_PAIRS[escapingPairIndex].end && !isEscaped) {
+            escapingPairIndex = -1;
+            continue;
+        }
+        // Setting 'escapingPairIndex'.
+        const pairResult = ESCAPING_PAIRS.filter((pair) => byte === pair.start && (!pair.startPrefix || rawData.substring(i - 10, i).match(pair.startPrefix)));
+        if (escapingPairIndex === -1 && pairResult.length !== 0 && !isEscaped) {
+            escapingPairIndex = ESCAPING_PAIRS.indexOf(pairResult[0]);
+            continue;
+        }
+
+        // Update 'isEscape'.
+        isEscaped = byte === '\\' && !isEscaped;
+
+        if (escapingPairIndex !== -1) {
+            continue;
+        }
+        if (byte === targetStart) {
+            if (count === 0) {
+                startIndex = i;
             }
-        } else if (quoteFlag === -1) {
-            if (byte == '{') {
-                stack.push(i)
-            } else if (byte == '}') {
-                if (stack.length === 1) {
-                    range.push(stack.pop() as number)
-                    range.push(i)
-                    break
-                } else {
-                    stack.pop()
-                }
+            count++;
+        } else if (byte === targetEnd) {
+            count--;
+            if (count === 0) {
+                endIndex = i;
+                break;
             }
         }
     }
-    return rawData.substring(range[0], range[1] + 1)
-}
+
+    if (!endIndex) {
+        throw new Error(`No function is extracted. ${startIndex}-${endIndex}`);
+    }
+    return rawData.substring(startIndex as number, endIndex + 1);
+};
 
 const extractDecipherFunctions = (html5player: string): Array<string> => {
     const functions: Array<string> = []
