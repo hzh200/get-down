@@ -9,6 +9,7 @@ import { requestPage, PreflightInfo, preflight } from '../../http/functions'
 import { Header, FILE_EXTENSION_DOT } from '../../http/constants'
 import YouTube from './youtube'
 import decipherSignature from './decipher'
+import { isDev } from '../../global/runtime_mode'
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\\/title>')
 const FORMATS_RE = new RegExp('\\"formats\\".+?\]', 'g')
@@ -253,7 +254,9 @@ class YouTubeParser extends YouTube implements Parser {
         try {
             await this.parseFormatInfo(parsedInfo, rawData, html5player)
         } catch (e: any) {
-            Log.infoLog(rawData)
+            if (isDev) {
+                Log.info(`rawData: ${rawData}`)
+            }
             throw e
         }
         

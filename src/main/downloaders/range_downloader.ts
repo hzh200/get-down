@@ -41,7 +41,7 @@ class RangeDownloader extends Downloader {
                     if (this.destroyed) {
                         return
                     }
-                    Log.errorLog(error)
+                    Log.error(error)
                 })
             }
         }, 500)
@@ -94,7 +94,7 @@ class RangeDownloader extends Downloader {
         const handleEnd = (): void => {
             if (this.destroyed) return
             if (range[0] !== range[1] + 1) {
-                Log.errorLog('range not fit:' + range + ' ' + response.statusCode + ' ' + JSON.stringify(response.headers))              
+                Log.error('range not fit:' + range + ' ' + response.statusCode + ' ' + JSON.stringify(response.headers))              
                 this.postPartialRange(range)
             }
             this.rangeMap.delete(uuid)
@@ -103,7 +103,7 @@ class RangeDownloader extends Downloader {
         const handleError = (error: Error): void => {
             // If download is to be destroyed, let finsih procedure handle the rest of the work. 
             if (this.destroyed) return
-            Log.errorLog(error)
+            Log.error(error)
             this.postPartialRange(range)
             this.rangeMap.delete(uuid)
             this.responseStreamMap.delete(uuid)

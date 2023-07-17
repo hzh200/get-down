@@ -11,7 +11,7 @@ const settingProxyHandler: ProxyHandler<any> = {
             }
             writeSetting(newSetting)
         } catch (error: any) {
-            Log.errorLog(error)
+            Log.error(error)
             return false
         }
         return true
@@ -40,7 +40,7 @@ setInterval(() => {
     try {
         globalSetting = setSettingProxyHandler(readSetting())
     } catch (error: any) {
-        Log.errorLog(error)
+        Log.error(error)
     }
 }, 1000)
 

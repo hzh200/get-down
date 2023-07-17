@@ -1,18 +1,19 @@
 import * as http from 'node:http'
 import { ProxySetting } from 'get-proxy-settings'
-import { ProxyChooses } from '../../utils'
+import { Log, ProxyChooses } from '../../utils'
 import { globalSetting } from '../../global/setting'
 import { Protocol, Header } from '../constants'
 import { getHeaders } from '../headers'
 import { fetchSystemProxySetting } from './proxy'
+import { isDev } from '../../global/runtime_mode'
 
-const setOptionProxy = (options: http.RequestOptions, host: string, port: number): void => {
+const setOptionProxyed = (options: http.RequestOptions, host: string, port: number): void => {
     options.protocol = Protocol.HTTPProtocol
     options.host = host
     options.port = port
 }
 
-const setOptionDirect = (options: http.RequestOptions, url: string, headers: http.OutgoingHttpHeaders): void => {
+const setOptionDirected = (options: http.RequestOptions, url: string, headers: http.OutgoingHttpHeaders): void => {
     if (url.startsWith(Protocol.HTTPProtocol)) {
         options.protocol = Protocol.HTTPProtocol
     } else { // https://
@@ -42,19 +43,22 @@ const generateRequestOption = async (url: string, getHeaders: getHeaders, additi
         }
     }
     if (globalSetting.proxy.proxyChoosen === ProxyChooses.SetManually && globalSetting.proxy.host && globalSetting.proxy.port) {
-        setOptionProxy(options, globalSetting.proxy.host, globalSetting.proxy.port)
+        setOptionProxyed(options, globalSetting.proxy.host, globalSetting.proxy.port)
     } else if (globalSetting.proxy.proxyChoosen === ProxyChooses.UseSystemProxy) {
         try {
             const proxySetting: ProxySetting = await fetchSystemProxySetting()
-            setOptionProxy(options, proxySetting.host, parseInt(proxySetting.port))
+            setOptionProxyed(options, proxySetting.host, parseInt(proxySetting.port))
         } catch (error: any) { // no system proxy exists.
-            setOptionDirect(options, url, headers)
+            setOptionDirected(options, url, headers)
         }
     } else { // ProxyChooses.NoProxy
-        setOptionDirect(options, url, headers)
+        setOptionDirected(options, url, headers)
     }
     options.path = url
     options.headers = headers
+    if (isDev) {
+        Log.info(`Generated options: ${options}`)
+    }
     return options
 }
 

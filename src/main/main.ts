@@ -83,9 +83,9 @@ const createDevToolsWindow = (): void => {
     });
 };
 
-process.on('uncaughtException', (error: Error, _origin: NodeJS.UncaughtExceptionOrigin) => {
-    Log.errorLog(error);
-});
+// process.on('uncaughtException', (error: Error, _origin: NodeJS.UncaughtExceptionOrigin) => {
+//     Log.error(error);
+// });
 
 const parserWindowLock = app.requestSingleInstanceLock(); // Call for single instance.
 if (!parserWindowLock) {
@@ -117,10 +117,10 @@ app.whenReady().then(
     () => {
         // initLog()
         scheduler = new Scheduler()
-        Log.infoLog('Application started.')
+        Log.info('Application started.')
     }
 ).catch((error: any) => {
-    Log.errorLog(error)
+    Log.fatal(error)
 });
 
 export { mainWindow };

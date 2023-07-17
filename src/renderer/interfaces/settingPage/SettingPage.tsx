@@ -41,7 +41,7 @@ function SettingPage() {
     //         writeSetting(newSetting as Setting)
     //         setSetting(newSetting)
     //     } catch (error: any) {
-    //         Log.errorLog(error)
+    //         Log.error(error)
     //     }
     // }
 
@@ -68,7 +68,7 @@ function SettingPage() {
         //     writeSetting(newSetting as Setting)
         //     setSetting(newSetting)
         // } catch (error: any) {
-        //     Log.errorLog(error)
+        //     Log.error(error)
         // }
     }
 

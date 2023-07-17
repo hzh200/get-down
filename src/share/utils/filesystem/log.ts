@@ -22,11 +22,11 @@ class Log {
         }
     }
 
-    static infoLog = (message: string) => {
+    static info = (message: string) => {
         Log.log('[Info] ' + message)
     }
 
-    static errorLog = (error: Error | string) => {
+    static error = (error: Error | string) => {
         if (!(error instanceof Error)) {
             Log.log('[Error] ' + error)
             return
@@ -41,7 +41,7 @@ class Log {
         Log.log(message)  
     }
 
-    static fatalLog = (error: Error) => {
+    static fatal = (error: Error) => {
         if (!(error instanceof Error)) {
             Log.log('[Fatal] ' + error)
             return

@@ -81,6 +81,7 @@ function ParserPage() {
 
     const parseUrl: React.MouseEventHandler<HTMLButtonElement> = async (): Promise<void> => {
         setStatus(ParserStatus.parsing);
+        Log.info(`Parsing url: ${url}`)
         if (!validateUrl(url)) {
             setStatus(ParserStatus.failed);
             setErrorMessage('Unsupported Protocol');
@@ -98,7 +99,7 @@ function ParserPage() {
             // setOptionsInfo(new DefaultParsedInfo());
             setErrorMessage(error.name + ':' + error.message);
             if (error.stack) {
-                Log.errorLog(error.stack);
+                Log.error(error.stack);
             }
         }
     };
@@ -113,7 +114,7 @@ function ParserPage() {
             } catch (error: any) {
                 setFeedbackMessage('');
                 setErrorMessage(error.name + ':' + error.message);
-                Log.errorLog(error.stack);
+                Log.error(error.stack);
             }
         }
     };

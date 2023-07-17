@@ -76,7 +76,7 @@ class Downloader extends EventEmitter {
     done = (): void => {
         this.clear()
         this.emit(DownloaderEvent.Done)
-        Log.infoLog(`Task ${this.task.name} downloads succeed.`)
+        Log.info(`Task ${this.task.name} downloads succeed.`)
     }
 
     // Task downloads failed.
@@ -84,7 +84,7 @@ class Downloader extends EventEmitter {
     fail = (): void => {
         this.clear()
         this.emit(DownloaderEvent.Fail)
-        Log.infoLog(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
+        Log.info(`Task ${this.task.name} downloads failed, taskNo ${this.taskNo}.`)
     }
 }
 

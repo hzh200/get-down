@@ -3,7 +3,7 @@ import { Log } from '../filesystem/log'
 const matchOne = (re: RegExp, data: string, failureNotice?: string): RegExpExecArray => {
     const execResult: RegExpExecArray | null = re.exec(data)
     if (!execResult) {
-        Log.errorLog(re + ' ' + data)
+        Log.error(re + ' ' + data)
         throw new Error(failureNotice ? failureNotice : 'no exec result')
     }
     return execResult
@@ -17,7 +17,7 @@ const matchAll = (re: RegExp, data: string, failureNotice?: string): Array<RegEx
     }
     
     if (execResults.length === 0) {
-        Log.errorLog(re + ' ' + data)
+        Log.error(re + ' ' + data)
         throw new Error(failureNotice ? failureNotice : 'no exec result')
     }
     return execResults

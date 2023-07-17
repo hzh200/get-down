@@ -18,7 +18,7 @@ const changeFileTimestamp = async (path: string, publishedTimestamp: string): Pr
             atime: undefined
         })
     } catch (e: any) {
-        Log.errorLog(e)
+        Log.error(e)
     }
 }
 

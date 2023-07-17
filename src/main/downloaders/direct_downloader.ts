@@ -31,7 +31,7 @@ class DirectDownloader extends Downloader {
             this.done()
         }
         const handleError = (error: Error): void => {
-            Log.errorLog(error)
+            Log.error(error)
             this.fail()
         }
         const handleResponseStream = (stream: stream.Readable): void => {

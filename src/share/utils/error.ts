@@ -15,7 +15,7 @@ const handleAsyncCallback = (func: (...args: Array<any>) => Promise<void>): (...
         try {
             await func(...args)
         } catch (error: any) {
-            Log.errorLog(error)
+            Log.error(error)
         }
     }
 }

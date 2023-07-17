@@ -47,7 +47,7 @@ class Scheduler {
                 }
             }
         }).catch((error: Error) => {
-            Log.fatalLog(error)
+            Log.fatal(error)
         });
 
         // Check out every once in a while if some waiting tasks can be started.
@@ -70,7 +70,7 @@ class Scheduler {
                     if (taskCallback) {
                         const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskCallback(taskNo));
                         if (error) {
-                            Log.errorLog(error);
+                            Log.error(error);
                             await this.finishTask(taskNo, TaskStatus.Failed);
                             return;
                         }
@@ -86,7 +86,7 @@ class Scheduler {
                             await updateTaskSetStatus(taskSet, TaskStatus.Processing);
                             const [error, _]: [Error | undefined, void] = await handlePromise<void>(taskSetCallback(parentTaskSetNo));
                             if (error) {
-                                Log.errorLog(error);
+                                Log.error(error);
                                 await updateTaskSetStatus(taskSet, TaskStatus.Failed);
                                 return;
                             }
@@ -107,7 +107,7 @@ class Scheduler {
                 }));
 
                 // downloader.download().catch((error: Error) => {
-                //     Log.errorLog(error);
+                //     Log.error(error);
                 // })
 
                 // [Error]Cannot read properties of undefined (reading 'filePath') TypeError: Cannot read properties of undefined (reading 'filePath');
@@ -126,7 +126,7 @@ class Scheduler {
             taskInfo.name = getWindowsValidFilename(taskInfo.name);
             const [error, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo));
             if (error) {
-                Log.errorLog(error);
+                Log.error(error);
             }
             taskQueue.addTask(task.taskNo, task);
             this.addTaskItemToRenderer(task, TaskType.Task);
@@ -138,7 +138,7 @@ class Scheduler {
             taskSetInfo.name = getWindowsValidFilename(taskSetInfo.name);
             const [taskSetError, taskSet]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(createTaskSetModel(taskSetInfo));
             if (taskSetError) {
-                Log.errorLog(taskSetError);
+                Log.error(taskSetError);
             }
             taskQueue.addTaskSet(taskSet.taskNo, taskSet);
             this.addTaskItemToRenderer(taskSet, TaskType.TaskSet);
@@ -151,7 +151,7 @@ class Scheduler {
                 taskInfo.name = getWindowsValidFilename(taskInfo.name);
                 const [taskError, task]: [Error | undefined, TaskModel] = await handlePromise<TaskModel>(createTaskModel(taskInfo));
                 if (taskError) {
-                    Log.errorLog(taskError);
+                    Log.error(taskError);
                 }
                 task.parent = taskSet.taskNo;
                 await updateTaskModelParent(task);
