@@ -13,16 +13,17 @@ const shell = require('shelljs');
 'https://github.com/electron/rcedit'
 
 // Constants.
-const buildPath = 'http-downloader';
-const appPath = 'app';
-const windowsZipFilePath = 'http-downloader.zip';
-const releaseFilePath = 'resources/electron-v19.0.0-beta.8-win32-x64.zip';
-const rceditPath = 'resources/rcedit-x64.exe';
-const faviconPath = 'resources/favicon.ico';
-const binaryName = 'http-downloader';
+const projectName = 'http-downloader';
+const buildBasePath = path.resolve('.');
+const buildPath = path.resolve(buildBasePath, 'build', `${projectName}`);
+const appPath = path.resolve(buildBasePath, 'build', 'app');
+const windowsZipFilePath = path.resolve(buildBasePath, 'build', `${projectName}.zip`);
+const releaseFilePath = path.resolve(buildBasePath, 'resources', 'electron-v19.0.0-beta.8-win32-x64.zip');
+const rceditPath = path.resolve(buildBasePath, 'resources', 'rcedit-x64.exe');
+const faviconPath = path.resolve(buildBasePath, 'resources', 'favicon.ico');
 
 console.log('=== Building source code. ===')
-execSync('npm run build', {encoding: 'utf8'});
+execSync('npm run generate-main-prod && npm run generate-renderer-prod', {encoding: 'utf8'});
 
 console.log('=== Writing package.json file to app. ===');
 const package = require('./package.json');
@@ -34,7 +35,7 @@ fs.writeFileSync(path.join(appPath, 'package.json'), JSON.stringify(targetPackag
 console.log('=== Installing app dependencies. ===');
 process.chdir(appPath);
 execSync('npm install', {encoding: 'utf8'});
-process.chdir('..');
+process.chdir(buildBasePath);
 
 console.log('=== Decompressing electron release file. ===');
 new AdmZip(releaseFilePath).extractAllTo(buildPath);
@@ -45,11 +46,12 @@ shell.mv(appPath, path.join(buildPath, 'resources'));
 
 console.log('=== Rebranding electron binary. ===');
 execSync(`"${rceditPath}" "${path.resolve(buildPath, 'electron.exe')}" --set-icon "${faviconPath}"`);
-shell.mv(path.resolve(buildPath, 'electron.exe'), path.resolve(buildPath, `${binaryName}.exe`));
+shell.mv(path.resolve(buildPath, 'electron.exe'), path.resolve(buildPath, `${projectName}.exe`));
 
 console.log('=== Compressing http-downloader release file. ===');
 const zip = new AdmZip();
 zip.addLocalFolder(buildPath);
 zip.writeZip(windowsZipFilePath);
+shell.rm('-rf', buildPath);
 
 console.log('=== Building done. ===');
