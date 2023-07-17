@@ -6,12 +6,12 @@
   "scripts": {
     "copy-html-dev": "copyfiles -u 1 src/renderer/index.html dev/",
     "copy-html-prod": "copyfiles -u 1 src/renderer/index.html build/app/",
-    "generate-main-dev": "tsc --build tsconfig.dev.main.json",
-    "generate-main-prod": "tsc --build tsconfig.prod.main.json",
-    "generate-renderer-dev": "webpack --config webpack.config.js && npm run copy-html-dev",
-    "generate-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-html-prod",
-    "dev": "npm run generate-main-dev && npm run generate-renderer-dev && npm install && cross-env NODE_ENV=development electron .",
-    "build": "node build.js"
+    "make-main-dev": "tsc --build tsconfig.dev.main.json",
+    "make-main-prod": "tsc --build tsconfig.prod.main.json",
+    "make-renderer-dev": "webpack --config webpack.config.js && npm run copy-html-dev",
+    "make-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-html-prod",
+    "dev": "npm run make-main-dev && npm run make-renderer-dev && npm install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
+    "build": "node scripts/build.js"
   },
   "author": "hzh",
   "license": "ISC",

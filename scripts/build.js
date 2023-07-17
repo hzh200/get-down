@@ -14,19 +14,19 @@ const shell = require('shelljs');
 
 // Constants.
 const projectName = 'http-downloader';
-const buildBasePath = path.resolve('.');
-const buildPath = path.resolve(buildBasePath, 'build', `${projectName}`);
-const appPath = path.resolve(buildBasePath, 'build', 'app');
-const windowsZipFilePath = path.resolve(buildBasePath, 'build', `${projectName}.zip`);
-const releaseFilePath = path.resolve(buildBasePath, 'resources', 'electron-v19.0.0-beta.8-win32-x64.zip');
-const rceditPath = path.resolve(buildBasePath, 'resources', 'rcedit-x64.exe');
-const faviconPath = path.resolve(buildBasePath, 'resources', 'favicon.ico');
+const buildBasePath = path.resolve('..');
+const buildPath = path.resolve('build', `${projectName}`);
+const appPath = path.resolve('build', 'app');
+const windowsZipFilePath = path.resolve('build', `${projectName}.zip`);
+const releaseFilePath = path.resolve('resources', 'electron-v19.0.0-beta.8-win32-x64.zip');
+const rceditPath = path.resolve('resources', 'rcedit-x64.exe');
+const faviconPath = path.resolve('resources', 'favicon.ico');
 
 console.log('=== Building source code. ===')
 execSync('npm run generate-main-prod && npm run generate-renderer-prod', {encoding: 'utf8'});
 
 console.log('=== Writing package.json file to app. ===');
-const package = require('./package.json');
+const package = require('../package.json');
 const targetPackage = {...package};
 targetPackage['main'] = 'main/main.js';
 delete targetPackage.devDependencies;
