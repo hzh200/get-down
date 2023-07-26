@@ -2,7 +2,7 @@ import ExtractorInfo from '../interfaces/extractorInfo'
 
 class Default implements ExtractorInfo {
     extractorNo: number = 0
-    extractTarget: string = 'Default'
+    extractTarget: string = 'http'
     host: string = ''
 }
 

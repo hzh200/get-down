@@ -1,27 +1,15 @@
 ## TODO  
 
-- [x] 文件日期设置为视频的上传日期或者 LastModified。
+- [x] Set file times for downloaded files in respect of 'LastModified' http header and video upload time.
 
-- [x] YouTube 受保护内容，比如音乐。
+- [x] Support add custom headers when using normal http downloading options.
 
-- [x] 为 http 模块增加功能
+- [ ] Add unit testing, more comments and design diagrams。
 
-- [x] bug: 视频格式选取问题
+- [ ] Add support for download speed limiting.
 
-- [x] 支持普通下载自定义 header
+- [ ] Support downloading for M3U8 files.
 
-- [x] 打包
+- [ ] Allow program to run in background.
 
-- [x] 添加开发者模式特有功能。
-
-- [ ] 添加单元测试。
-
-- [ ] 添加大量注释，画设计图。
-
-- [ ] 视频链接超时，和 YouTube 服务器有时会重定向服务器的时候，进行链接再解析。
-
-- [ ] 做限流和找到最大速度，从 RangeLength 和申请的数量入手。
-
-- [ ] M3U8 下载。
-
-- [ ] 程序后台运行，显示在系统托盘，修改 menu
+- [ ] 视频链接超时，以及 YouTube 服务器有时会在下载途中重定向，对这些任务进行链接再解析。
