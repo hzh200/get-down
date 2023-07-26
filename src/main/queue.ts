@@ -1,15 +1,11 @@
 import { Task, TaskItem, TaskStatus, TaskType } from '../share/global/models';
 import { TaskModel, TaskSetModel, ModelField } from './persistence/model_types';
 
-const instances: Array<TaskModel | TaskSetModel> = [];
+const instances: Array<TaskModel> = [];
 const taskMap: Map<number, TaskModel> = new Map();
 const taskSetMap: Map<number, TaskSetModel> = new Map();
 
 const taskQueue = {
-    // addTaskItem: (taskNo: number, task: TaskModel): void => {
-    //     instances.push(task)
-    //     instanceMap.set(taskNo, task)
-    // },
     addTask: (taskNo: number, task: TaskModel): void => {
         instances.push(task);
         taskMap.set(taskNo, task);
@@ -42,6 +38,19 @@ const taskQueue = {
             }
         }
         return taskItem;
+    },
+    hasTask: (taskNo: number): boolean => {
+        return taskMap.has(taskNo);
+    },
+    hasTaskSet: (taskNo: number): boolean => {
+        return taskSetMap.has(taskNo);
+    },
+    removeTask: (taskNo: number): void => {
+        instances.splice(instances.findIndex(instance => instance.taskNo === taskNo));
+        taskMap.delete(taskNo);
+    },
+    removeTaskSet: (taskNo: number): void => {
+        taskSetMap.delete(taskNo);
     },
     getWaitingTaskNo: (): number | null => {
         for (let i = 0; i < instances.length; i++) {

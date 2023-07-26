@@ -78,7 +78,7 @@ class Scheduler {
                     await this.finishTask(taskNo, TaskStatus.Done);
                     
                     if (parentTaskSetNo) {
-                        for (const childTaskNo of this.getSortedChildren(parentTaskSetNo) as Array<number>) {
+                        for (const childTaskNo of this.getSortedChildren(parentTaskSetNo)) {
                             if (this.taskProcesserMap.has(childTaskNo)) return;
                         }
                         if (taskSetCallback) {
@@ -167,18 +167,19 @@ class Scheduler {
                 if (taskType === TaskType.Task) {
                     const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel;
                     if (task.downloadType === DownloadType.Range && 
-                        (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
+                            (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
                         await this.finishTask(task.taskNo, TaskStatus.Paused);
                     }
                 } else { // TaskSet
-                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
+                    for (const childTaskNo of this.getReversedChildren(taskNo)) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo);
                         if (!child) continue;
                         if (child.downloadType === DownloadType.Range && 
-                            (child.get(`${ModelField.status}`) === TaskStatus.Downloading || child.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
+                                (child.get(`${ModelField.status}`) === TaskStatus.Downloading || child.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
                             await this.finishTask(child.taskNo, TaskStatus.Paused);
                         }
                     }
+                    await this.finishTaskSet(taskNo);
                 }
             }
         }));
@@ -206,27 +207,37 @@ class Scheduler {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos);
             for (const [taskNo, taskType] of selectedTaskNos) {
                 if (taskType === TaskType.Task) {
-                    const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel;
+                    const task: TaskModel | null = taskQueue.getTask(taskNo);
+                    if (!task) continue;
                     if (task.downloadType === DownloadType.Range && 
                         (task.get(`${ModelField.status}`) === TaskStatus.Downloading || task.get(`${ModelField.status}`) === TaskStatus.Waiting)) {
                         await this.finishTask(task.taskNo, TaskStatus.Paused);
                     }
                     await deleteTaskModel(task.taskNo);
+                    taskQueue.removeTask(task.taskNo);
                     this.deleteTaskItemToRenderer(task, TaskType.Task);
                 } else { // TaskSet
-                    const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel;
-                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
+                    const taskSet: TaskSetModel | null = taskQueue.getTaskSet(taskNo);
+                    if (!taskSet) continue;
+                    for (const childTaskNo of this.getReversedChildren(taskNo)) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo);
                         if (!child) continue;
                         await this.finishTask(child.taskNo, TaskStatus.Paused);
                     }
-                    await deleteTaskModels(this.getSortedChildren(taskSet.taskNo) as Array<number>);
-                    await deleteTaskSetModel(taskSet.taskNo);
-                    for (const childTaskNo of this.getReversedChildren(taskNo) as Array<number>) {
+                    await this.finishTaskSet(taskNo);
+
+                    const childrenTaskNo = this.getSortedChildren(taskSet.taskNo).filter((value) => taskQueue.hasTask(value));
+                    if (childrenTaskNo.length !== 0) {
+                        await deleteTaskModels(childrenTaskNo);
+                    }
+                    for (const childTaskNo of this.getReversedChildren(taskNo)) {
                         const child: TaskModel | null = taskQueue.getTask(childTaskNo);
                         if (!child) continue;
+                        taskQueue.removeTask(childTaskNo);
                         this.deleteTaskItemToRenderer(child, TaskType.Task);
                     }
+                    await deleteTaskSetModel(taskSet.taskNo);
+                    taskQueue.removeTaskSet(taskSet.taskNo);
                     this.deleteTaskItemToRenderer(taskSet, TaskType.TaskSet);
                 }
             }
@@ -353,9 +364,9 @@ class Scheduler {
         return (taskQueue.getTask(taskNo) as TaskModel).parent as number;
     };
     // Get children of a taskSet in ascending order of number value.
-    getSortedChildren = (taskNo: number): Array<number> | null => {
-        if (!taskQueue.getTaskSet(taskNo)) return null;
-        if (!(taskQueue.getTaskSet(taskNo) as TaskSetModel).children) return null;
+    getSortedChildren = (taskNo: number): Array<number> => {
+        if (!taskQueue.getTaskSet(taskNo)) return [];
+        if (!(taskQueue.getTaskSet(taskNo) as TaskSetModel).children) return [];
         const children: Array<number> = [...(taskQueue.getTaskSet(taskNo) as TaskSetModel).children];
         children.sort((a: number, b: number): number => {
             if (a > b) {
@@ -369,10 +380,8 @@ class Scheduler {
         return children;
     };
     // Get children of a taskSet in descending order of number value.
-    getReversedChildren = (taskNo: number): Array<number> | null => {
-        const children: Array<number> | null = this.getSortedChildren(taskNo);
-        if (!children) return null;
-        return children.reverse();
+    getReversedChildren = (taskNo: number): Array<number> => {
+        return this.getSortedChildren(taskNo).reverse();
     };
 
     //
