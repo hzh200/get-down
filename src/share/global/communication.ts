@@ -9,4 +9,4 @@ enum CommunicateAPIName {
     DeleteTaskItem = 'delete-task-item',
 }
 
-export { CommunicateAPIName }
+export { CommunicateAPIName };

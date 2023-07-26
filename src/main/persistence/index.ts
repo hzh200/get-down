@@ -1,5 +1,5 @@
-import { initPersistence } from './init'
-import { 
+import { initPersistence } from './init';
+import {
     createTaskModel,
     getAllTaskModels,
     updateTaskModel,
@@ -7,8 +7,8 @@ import {
     updateTaskModelParent,
     deleteTaskModel,
     deleteTaskModels
-} from './task_persistence'
-import { 
+} from './task_persistence';
+import {
     createTaskSetModel,
     getAllTaskSetModels,
     updateTaskSetModel,
@@ -16,40 +16,40 @@ import {
     updateTaskSetModelChildren,
     deleteTaskSetModel,
     deleteTaskSetModels
-} from './taskset_persistence'
-import { getAllSequenceModels } from './sequence_persistence'
+} from './taskset_persistence';
+import { getAllSequenceModels } from './sequence_persistence';
 
-import { TaskStatus, TaskType } from '../../share/global/models'
-import { TaskModel, TaskSetModel } from './model_types'
+import { TaskStatus, TaskType } from '../../share/global/models';
+import { TaskModel, TaskSetModel } from './model_types';
 
 const getSequencedRecords = async (): Promise<Array<TaskModel | TaskSetModel>> => {
-    const records: Array<TaskModel | TaskSetModel> = []
+    const records: Array<TaskModel | TaskSetModel> = [];
     await Promise.all([getAllTaskModels(), getAllTaskSetModels(), getAllSequenceModels()]).then(([tasks, taskSets, sequences]) => {
         for (const sequence of sequences) {
             if (sequence.taskType === TaskType.Task) {
-                const task: TaskModel = tasks.shift() as TaskModel
-                records.push(task)
+                const task: TaskModel = tasks.shift() as TaskModel;
+                records.push(task);
             } else { // TaskSet
-                const taskSet: TaskSetModel = taskSets.shift() as TaskSetModel
-                records.push(taskSet)
+                const taskSet: TaskSetModel = taskSets.shift() as TaskSetModel;
+                records.push(taskSet);
             }
         }
-    })
-    return records
-}
+    });
+    return records;
+};
 
 const updateTaskStatus = async (task: TaskModel, status: TaskStatus) => {
-    task.status = status
-    await updateTaskModelStatus(task)
-}
+    task.status = status;
+    await updateTaskModelStatus(task);
+};
 
 const updateTaskSetStatus = async (task: TaskSetModel, status: TaskStatus) => {
-    task.status = status
-    await updateTaskSetModelStatus(task)
-}
+    task.status = status;
+    await updateTaskSetModelStatus(task);
+};
 
-export { initPersistence }
-export { 
+export { initPersistence };
+export {
     createTaskModel,
     // getAllTaskModels,
     updateTaskModel,
@@ -57,8 +57,8 @@ export {
     updateTaskModelParent,
     deleteTaskModel,
     deleteTaskModels
-}
-export { 
+};
+export {
     createTaskSetModel,
     // getAllTaskSetModels,
     updateTaskSetModel,
@@ -66,10 +66,10 @@ export {
     updateTaskSetModelChildren,
     deleteTaskSetModel,
     deleteTaskSetModels
-}
+};
 // export { getAllSequenceModels }
-export { 
+export {
     getSequencedRecords,
     updateTaskStatus,
     updateTaskSetStatus
-}
+};

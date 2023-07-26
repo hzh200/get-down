@@ -1,4 +1,4 @@
-import { getHeaders, getRequestPageHeaders, getPreflightHeaders, getDownloadHeaders } from '../headers'
-import { generateRequestOption } from './option'
+import { getHeaders, getRequestPageHeaders, getPreflightHeaders, getDownloadHeaders } from '../headers';
+import { generateRequestOption } from './option';
 
-export { generateRequestOption, getHeaders, getRequestPageHeaders, getPreflightHeaders, getDownloadHeaders }
+export { generateRequestOption, getHeaders, getRequestPageHeaders, getPreflightHeaders, getDownloadHeaders };

@@ -1,76 +1,37 @@
-import * as React from 'react'
-import { ProxyChooses, Setting, readSetting, writeSetting } from '../../../share/utils'
-import { globalSetting } from '../../../share/global/setting'
-import './setting_page.css'
-import { Log } from '../../../share/utils'
+import * as React from 'react';
+import { ProxyChooses, Setting, readSetting, writeSetting } from '../../../share/utils';
+import { globalSetting } from '../../../share/global/setting';
+import './setting_page.css';
 
 function SettingPage() {
-    const [ setting, setSetting ] = React.useState<Setting>({...globalSetting})
-    // readyToShow state is necessery because useEffect is asyncronized, 
-    // returned Component depends on setting and setting needs time to be initialized by useEffect
-    // const [ readyToShow, setReadyToShow ] = React.useState<boolean>(false)
-
-    // the only place to change software setting
-    // React.useEffect(() => {
-    //     setInterval(() => {
-    //         setSetting(globalSetting)
-    //     }, 1000)
-    // }, [])
-
-    // const handleChange: React.ChangeEventHandler<HTMLInputElement> = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    //     const target: HTMLInputElement = (event.target as HTMLInputElement)
-    //     let name: string = target.name
-    //     let value: any = target.value
-    //     if (name.includes('-')) {
-    //         const [subName1, subName2] = name.split('-')
-    //         name = subName1
-    //         value = {
-    //             ...setting[subName1],
-    //             ...{
-    //                 [subName2]: value
-    //             }
-    //         }
-    //     }
-    //     const newSetting = {
-    //         ...setting,
-    //         ...{
-    //             [name]: value
-    //         }
-    //     }
-    //     try {
-    //         writeSetting(newSetting as Setting)
-    //         setSetting(newSetting)
-    //     } catch (error: any) {
-    //         Log.error(error)
-    //     }
-    // }
+    const [setting, setSetting] = React.useState<Setting>({ ...globalSetting });
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const target: HTMLInputElement = (event.target as HTMLInputElement)
-        let name: string = target.name
-        let value: any = target.value
+        const target: HTMLInputElement = (event.target as HTMLInputElement);
+        let name: string = target.name;
+        let value: any = target.value;
         if (name === 'location') {
-            globalSetting.location = value
+            globalSetting.location = value;
         } else if (name.startsWith('proxy')) {
             if (name.endsWith('proxyChoosen')) {
-                value = parseInt(value)
-                globalSetting.proxy.proxyChoosen = value
+                value = parseInt(value);
+                globalSetting.proxy.proxyChoosen = value;
             } else if (name.endsWith('host')) {
-                globalSetting.proxy.host = value
+                globalSetting.proxy.host = value;
             } else if (name.endsWith('port')) {
-                globalSetting.proxy.port = value
+                globalSetting.proxy.port = value;
             }
         } else if (name === 'trafficLimit') {
-            globalSetting.trafficLimit = value
+            globalSetting.trafficLimit = value;
         }
-        setSetting({...globalSetting})
+        setSetting({ ...globalSetting });
         // try {
         //     writeSetting(newSetting as Setting)
         //     setSetting(newSetting)
         // } catch (error: any) {
         //     Log.error(error)
         // }
-    }
+    };
 
     return (
         <React.Fragment>
@@ -90,15 +51,15 @@ function SettingPage() {
                         Just like 'class', 'for' is a keyword in javascript so in JSX you can't use it directly. 
                         You must use htmlFor which is translated into for attribute once it is rendered to the DOM.
                     */}
-                    <input type="radio" id='NoProxy' name="proxy-proxyChoosen" value={ProxyChooses.NoProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.NoProxy} />
+                    <input type="radio" id='NoProxy' name="proxy-proxyChoosen" value={ProxyChooses.NoProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen === ProxyChooses.NoProxy} />
                     <label htmlFor='NoProxy'>No proxy.</label>
                 </SettingItemRow>
                 <SettingItemRow>
-                    <input type="radio" id='UseSystemProxy' name="proxy-proxyChoosen" value={ProxyChooses.UseSystemProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.UseSystemProxy} />
+                    <input type="radio" id='UseSystemProxy' name="proxy-proxyChoosen" value={ProxyChooses.UseSystemProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen === ProxyChooses.UseSystemProxy} />
                     <label htmlFor='UseSystemProxy'>Use system proxy.</label>
                 </SettingItemRow>
                 <SettingItemRow>
-                    <input type="radio" id='SetManually' name="proxy-proxyChoosen" value={ProxyChooses.SetManually} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.SetManually} />
+                    <input type="radio" id='SetManually' name="proxy-proxyChoosen" value={ProxyChooses.SetManually} onChange={handleChange} checked={setting.proxy.proxyChoosen === ProxyChooses.SetManually} />
                     <label htmlFor='SetManually'>Set Manually.</label>
                 </SettingItemRow>
                 <SettingItemRow>
@@ -116,24 +77,24 @@ function SettingPage() {
             </SettingItem>
         </React.Fragment>
         // </div>
-    ) 
+    );
 }
 
 function SettingItem({ children, title }: { children: React.ReactElement | Array<React.ReactElement>, title: string }) {
     return (
         <div className='setting-item'>
-            <div className='setting-item-title'><strong>{ title }</strong></div>
-            { children }
+            <div className='setting-item-title'><strong>{title}</strong></div>
+            {children}
         </div>
-    )
+    );
 }
 
 function SettingItemRow({ children }: { children: React.ReactElement | Array<React.ReactElement> }) {
     return (
         <div className='setting-item-row'>
-            { children }
+            {children}
         </div>
-    )
+    );
 }
 
-export default SettingPage
+export default SettingPage;

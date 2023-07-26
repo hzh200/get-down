@@ -1,16 +1,16 @@
-export {default as file} from './files/file.svg'
-export {default as archive} from './files/file-archive.svg'
-export {default as audio} from './files/file-audio.svg'
-export {default as code} from './files/file-code.svg'
-export {default as contract} from './files/file-contract.svg'
-export {default as csv} from './files/file-csv.svg'
-export {default as excel} from './files/file-excel.svg'
-export {default as image} from './files/file-image.svg'
-export {default as pdf} from './files/file-pdf.svg'
-export {default as powerpoint} from './files/file-powerpoint.svg'
-export {default as signature} from './files/file-signature.svg'
-export {default as video} from './files/file-video.svg'
-export {default as word} from './files/file-word.svg'
-export {default as zipper} from './files/file-zipper.svg'
-export {default as folder} from './folders/folder.svg'
-export {default as openFolder} from './folders/folder-open.svg'
+export { default as file } from './files/file.svg';
+export { default as archive } from './files/file-archive.svg';
+export { default as audio } from './files/file-audio.svg';
+export { default as code } from './files/file-code.svg';
+export { default as contract } from './files/file-contract.svg';
+export { default as csv } from './files/file-csv.svg';
+export { default as excel } from './files/file-excel.svg';
+export { default as image } from './files/file-image.svg';
+export { default as pdf } from './files/file-pdf.svg';
+export { default as powerpoint } from './files/file-powerpoint.svg';
+export { default as signature } from './files/file-signature.svg';
+export { default as video } from './files/file-video.svg';
+export { default as word } from './files/file-word.svg';
+export { default as zipper } from './files/file-zipper.svg';
+export { default as folder } from './folders/folder.svg';
+export { default as openFolder } from './folders/folder-open.svg';

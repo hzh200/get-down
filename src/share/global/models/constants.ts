@@ -17,4 +17,4 @@ enum DownloadType {
     Range
 }
 
-export { TaskType, TaskStatus, DownloadType }
+export { TaskType, TaskStatus, DownloadType };

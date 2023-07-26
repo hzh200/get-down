@@ -226,7 +226,7 @@ class Scheduler {
                     }
                     await this.finishTaskSet(taskNo);
 
-                    const childrenTaskNo = this.getSortedChildren(taskSet.taskNo).filter((value) => taskQueue.hasTask(value));
+                    const childrenTaskNo = this.getSortedChildren(taskSet.taskNo).filter(value => taskQueue.hasTask(value));
                     if (childrenTaskNo.length !== 0) {
                         await deleteTaskModels(childrenTaskNo);
                     }
@@ -306,7 +306,7 @@ class Scheduler {
     // Calculate a taskSet status by suming up it's children's progress.
     calculateTaskSetProgress = (taskSet: TaskSetModel): void => {
         taskSet.progress = 0;
-        taskSet.children.forEach((childTaskNo: number, _index: number, _array: Array<number>) => {
+        taskSet.children.forEach(childTaskNo => {
             const child: TaskModel | null = taskQueue.getTask(childTaskNo);
             if (child) {
                 taskSet.progress += child.progress;
@@ -317,7 +317,7 @@ class Scheduler {
     // Calculate a taskSet status by considering it's children's status all together.
     calculateTaskSetStatus = (taskSet: TaskSetModel): void => {
         const statusMap: Map<TaskStatus, boolean> = new Map();
-        taskSet.children.forEach((childTaskNo: number, _index: number, _array: Array<number>) => {
+        taskSet.children.forEach(childTaskNo => {
             const child: TaskModel | null = taskQueue.getTask(childTaskNo);
             if (child) {
                 statusMap.set(child.status, true);

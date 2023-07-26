@@ -5,4 +5,4 @@ enum ParserStatus {
     failed
 }
 
-export { ParserStatus }
+export { ParserStatus };

@@ -1,6 +1,6 @@
-import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models'
-import ModelField from './model_fields'
+import { Model, DataTypes, ModelAttributes } from 'sequelize';
+import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models';
+import ModelField from './model_fields';
 
 const sequenceType: ModelAttributes = {
     [ModelField.sequenceNo]: {
@@ -16,14 +16,14 @@ const sequenceType: ModelAttributes = {
         type: DataTypes.STRING,
         allowNull: false
     },
-}
+};
 
 class SequenceModel extends Model {
-    declare sequenceNo: number
-    declare taskNo: number
-    declare taskType: TaskType
-    declare createdAt: string
-    declare updatedAt: string
+    declare sequenceNo: number;
+    declare taskNo: number;
+    declare taskType: TaskType;
+    declare createdAt: string;
+    declare updatedAt: string;
 }
 
-export { sequenceType, SequenceModel }
+export { sequenceType, SequenceModel };

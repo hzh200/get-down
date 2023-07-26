@@ -1,6 +1,6 @@
-import {escape, unescape} from 'html-escaper';
+import { escape, unescape } from 'html-escaper';
 
-const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<', '>', '\|']
+const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<', '>', '\|'];
 
 // const HTML_Escape_Character_NAME = new Map([
 //     ['&quot;','\"'],
@@ -261,19 +261,17 @@ const WINDOWS_INVALID_NAMEING_CHARACTERS = ['\\', '/', ':', '*', '\?', '\"', '<'
 // }
 
 const getWindowsValidFilename = (filename: string): string => {
-    filename = getUnescapedFilename(filename)
+    filename = getUnescapedFilename(filename);
     // Windows Invalid Charaters Replacement
     for (const val of WINDOWS_INVALID_NAMEING_CHARACTERS) {
-        filename = filename.replaceAll(val, '')
+        filename = filename.replaceAll(val, '');
     }
     while (filename.includes('  ')) {
-        filename = filename.replaceAll('  ', ' ')
+        filename = filename.replaceAll('  ', ' ');
     }
-    return filename
-} 
+    return filename;
+};
 
-const getUnescapedFilename = (filename: string): string => {
-    return unescape(filename);
-}
+const getUnescapedFilename = (filename: string): string => unescape(filename);
 
-export { getWindowsValidFilename, getUnescapedFilename }
+export { getWindowsValidFilename, getUnescapedFilename };

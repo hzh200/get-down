@@ -16,6 +16,10 @@
     width: auto;
 }
 
+.url-bar > .url-bar-name-selecter > option {
+    text-align: center;
+}
+
 .url-bar > .url-bar-text-input {
     width: 200px;
     font-size: 14px;

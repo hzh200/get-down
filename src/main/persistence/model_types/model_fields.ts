@@ -27,4 +27,4 @@ enum ModelField {
     taskType = 'taskType'
 }
 
-export default ModelField
+export default ModelField;

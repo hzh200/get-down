@@ -1,175 +1,168 @@
-import { ipcRenderer, IpcRendererEvent, clipboard, shell } from 'electron'
-import { Menu, MenuItem } from '@electron/remote'
-import * as React from 'react'
-import OperationBar from '../../components/OperationBar'
-import TaskList from '../../components/TaskList'
-import ParserPage from '../parserPage/ParserPage'
-import SettingPage from '../settingPage/SettingPage'
-import Popup from '../../components/Popup'
-import * as path from 'node:path'
-import { Task, TaskSet, TaskItem, TaskStatus, TaskType } from '../../../share/global/models'
-import { CommunicateAPIName } from '../../../share/global/communication'
-import DownloadInfo from './download_info'
-import './global.css'
+import { ipcRenderer, IpcRendererEvent, clipboard, shell } from 'electron';
+import { Menu, MenuItem } from '@electron/remote';
+import * as React from 'react';
+import OperationBar from '../../components/OperationBar';
+import TaskList from '../../components/TaskList';
+import ParserPage from '../parserPage/ParserPage';
+import SettingPage from '../settingPage/SettingPage';
+import Popup from '../../components/Popup';
+import * as path from 'node:path';
+import { Task, TaskSet, TaskItem, TaskStatus, TaskType } from '../../../share/global/models';
+import { CommunicateAPIName } from '../../../share/global/communication';
+import DownloadInfo from './download_info';
+import './global.css';
 
 function MainPage() {
-    const [taskItems, setTaskItems] = React.useState<Array<TaskItem>>([])
-    const [selectedRows, setSelectedRows] = React.useState<Array<[number, TaskType]>>([])
-    const [showParserWindow, setShowParserWindow] = React.useState<boolean>(false)
-    const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false)
+    const [taskItems, setTaskItems] = React.useState<Array<TaskItem>>([]);
+    const [selectedRows, setSelectedRows] = React.useState<Array<[number, TaskType]>>([]);
+    const [showParserWindow, setShowParserWindow] = React.useState<boolean>(false);
+    const [showSettingWindow, setShowSettingWindow] = React.useState<boolean>(false);
     React.useEffect(() => {
         // Update taskItems for showing up.
         ipcRenderer.on(CommunicateAPIName.NewTaskItem, (_event: IpcRendererEvent, newTaskItem: TaskItem) => {
-            setTaskItems((taskItems: Array<TaskItem>) => taskItems.concat(newTaskItem))
-        })
+            setTaskItems((taskItems: Array<TaskItem>) => taskItems.concat(newTaskItem));
+        });
         ipcRenderer.on(CommunicateAPIName.UpdateTaskItem, (_event: IpcRendererEvent, updateTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => {
-                let newTaskItems: Array<TaskItem> = [ ...taskItems ]
+                let newTaskItems: Array<TaskItem> = [...taskItems];
                 for (let i = 0; i < newTaskItems.length; i++) {
                     if (newTaskItems[i].taskNo === updateTaskItem.taskNo && newTaskItems[i].taskType === updateTaskItem.taskType) {
-                        newTaskItems[i] = updateTaskItem
-                        break
+                        newTaskItems[i] = updateTaskItem;
+                        break;
                     }
                 }
-                return newTaskItems
-            })
-        })
+                return newTaskItems;
+            });
+        });
         ipcRenderer.on(CommunicateAPIName.DeleteTaskItem, (_event: IpcRendererEvent, deletedTaskItem: TaskItem) => {
             setTaskItems((taskItems: Array<TaskItem>) => {
-                let newTaskItems: Array<TaskItem> = [ ...taskItems ]
-                let deletedTaskItemIndex: number = -1
+                let newTaskItems: Array<TaskItem> = [...taskItems];
+                let deletedTaskItemIndex: number = -1;
                 for (let i = 0; i < newTaskItems.length; i++) {
                     if (newTaskItems[i].taskNo === deletedTaskItem.taskNo && newTaskItems[i].taskType === deletedTaskItem.taskType) {
-                        deletedTaskItemIndex = i
-                        break
+                        deletedTaskItemIndex = i;
+                        break;
                     }
                 }
-                newTaskItems.splice(deletedTaskItemIndex, 1)
-                return newTaskItems
-            })
+                newTaskItems.splice(deletedTaskItemIndex, 1);
+                return newTaskItems;
+            });
 
-        })
+        });
         return () => {
-            ipcRenderer.removeAllListeners(CommunicateAPIName.NewTaskItem)
-            ipcRenderer.removeAllListeners(CommunicateAPIName.UpdateTaskItem)
-            ipcRenderer.removeAllListeners(CommunicateAPIName.DeleteTaskItem)
-        }
-    }, [])
+            ipcRenderer.removeAllListeners(CommunicateAPIName.NewTaskItem);
+            ipcRenderer.removeAllListeners(CommunicateAPIName.UpdateTaskItem);
+            ipcRenderer.removeAllListeners(CommunicateAPIName.DeleteTaskItem);
+        };
+    }, []);
 
     // Popup visibility control.
     // There is no need to add checking if another popup is already shown, 
     // when a popup is shown, a user can't click on main page buttons anymore, 
     // and there is no show-popup function exists on popups.
     const openParser: React.MouseEventHandler<HTMLDivElement> = (): void => {
-        setShowParserWindow(true)
-    }
+        setShowParserWindow(true);
+    };
     const openSetting: React.MouseEventHandler<HTMLDivElement> = (): void => {
-        setShowSettingWindow(true)
-    }
+        setShowSettingWindow(true);
+    };
     // Workflow control.
     const play: Function = (): void => {
-        ipcRenderer.send(CommunicateAPIName.ResumeTasks, selectedRows)
-    }
+        ipcRenderer.send(CommunicateAPIName.ResumeTasks, selectedRows);
+    };
     const pause: Function = (): void => {
-        ipcRenderer.send(CommunicateAPIName.PauseTasks, selectedRows)
-    }
+        ipcRenderer.send(CommunicateAPIName.PauseTasks, selectedRows);
+    };
     const trash: Function = (): void => {
-        ipcRenderer.send(CommunicateAPIName.DeleteTasks, selectedRows)
-    }
+        ipcRenderer.send(CommunicateAPIName.DeleteTasks, selectedRows);
+    };
     const onContextMenu: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number, taskType: TaskType): void => {
-        const taskItem: TaskItem = taskItems.filter((taskItem: TaskItem, _index: number, _array: Array<TaskItem>) => {
-            return taskItem.taskNo === taskNo && taskItem.taskType === taskType
-        })[0]
+        const taskItem: TaskItem = taskItems.filter(taskItem => {
+            return taskItem.taskNo === taskNo && taskItem.taskType === taskType;
+        })[0];
         // Cannot use 'task instanceof Task', class type information is already lost during inter-process communication
-        selectRow(event, taskNo, taskType)
-        let menu = new Menu()
-        menu.append(new MenuItem({ 
-            label: 'pause', 
+        selectRow(event, taskNo, taskType);
+        let menu = new Menu();
+        menu.append(new MenuItem({
+            label: 'pause',
             click: () => pause()
-        }))
-        menu.append(new MenuItem({ 
-            label: 'resume', 
+        }));
+        menu.append(new MenuItem({
+            label: 'resume',
             click: () => play()
-        }))
-        menu.append(new MenuItem({ 
-            label: 'delete', 
+        }));
+        menu.append(new MenuItem({
+            label: 'delete',
             click: () => trash()
-        }))
-        menu.append(new MenuItem({ type: 'separator' }))
-        menu.append(new MenuItem({ 
-            label: 'copy url', 
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
+        menu.append(new MenuItem({
+            label: 'copy url',
             click: () => clipboard.writeText(taskItem.url, 'clipboard')
-        }))
+        }));
         if (taskItem.taskType === TaskType.Task) {
-            menu.append(new MenuItem({ 
-                label: 'copy download url', 
+            menu.append(new MenuItem({
+                label: 'copy download url',
                 click: () => clipboard.writeText((taskItem as Task).downloadUrl, 'clipboard')
-            }))
+            }));
         }
-        menu.append(new MenuItem({ 
-            label: 'copy filename', 
+        menu.append(new MenuItem({
+            label: 'copy filename',
             click: () => clipboard.writeText(taskItem.name, 'clipboard')
-        }))
-        menu.append(new MenuItem({ type: 'separator' }))
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
         if (taskItem.taskType === TaskType.Task) {
-            menu.append(new MenuItem({ 
-                label: 'open file', 
+            menu.append(new MenuItem({
+                label: 'open file',
                 click: () => shell.openPath(path.join((taskItem as Task).location, taskItem.name))
-            }))
-            menu.append(new MenuItem({ 
-                label: 'open file folder', 
+            }));
+            menu.append(new MenuItem({
+                label: 'open file folder',
                 // click: () => shell.openPath(task.getDownloadDir())
                 click: () => shell.showItemInFolder(path.join((taskItem as Task).location, taskItem.name))
-            }))
-            menu.append(new MenuItem({ type: 'separator' }))
-        } 
-        menu.append(new MenuItem({ 
-            label: 'nothing', 
+            }));
+            menu.append(new MenuItem({ type: 'separator' }));
+        }
+        menu.append(new MenuItem({
+            label: 'nothing',
             type: 'checkbox',
             checked: true,
             click: () => clipboard.writeText(taskItem.name, 'clipboard')
-        }))
-        menu.popup()
-    }
+        }));
+        menu.popup();
+    };
 
     const selectRow: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number, taskType: TaskType): void => {
-        event.preventDefault()
+        event.preventDefault();
         // const target: HTMLTableRowElement = event.target as HTMLTableRowElement
         // const taskNo: number = parseInt(target.parentElement?.children[0]?.innerHTML as string)
-        let newSelectedRows: Array<[number, TaskType]> = [...selectedRows]
+        let newSelectedRows: Array<[number, TaskType]> = [...selectedRows];
         if ((window as any).event.ctrlKey) {
-            let isContained: boolean = false
+            let isContained: boolean = false;
             for (const [selectedTaskNo, selectedTaskType] of newSelectedRows) {
                 if (selectedTaskNo === taskNo && selectedTaskType === taskType) {
-                    isContained = true
+                    isContained = true;
                 }
             }
 
             if (isContained) {
-                newSelectedRows = newSelectedRows.filter(([selectedTaskNo, selectedTaskType]: [number, TaskType], _index: number, _array: Array<[number, TaskType]>) => {
-                    return selectedTaskNo !== taskNo || selectedTaskType !== taskType
-                })
+                newSelectedRows = newSelectedRows.filter(([selectedTaskNo, selectedTaskType]: [number, TaskType]) => {
+                    return selectedTaskNo !== taskNo || selectedTaskType !== taskType;
+                });
             } else {
-                newSelectedRows.push([taskNo, taskType])
+                newSelectedRows.push([taskNo, taskType]);
             }
         } else {
-            newSelectedRows = [[taskNo, taskType]]
+            newSelectedRows = [[taskNo, taskType]];
         }
-        setSelectedRows((_selectedRows: Array<[number, TaskType]>) => newSelectedRows)
-    }
+        setSelectedRows((_selectedRows: Array<[number, TaskType]>) => newSelectedRows);
+    };
     const selectAllRows: React.KeyboardEventHandler<HTMLTableSectionElement> = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
-        event.preventDefault()
+        event.preventDefault();
         if ((event.key === 'A' || event.key === 'a') && (window as any).event.ctrlKey) {
-            setSelectedRows((_selectedRows: Array<[number, TaskType]>) => {
-                const newSelectedRows: Array<[number, TaskType]> = taskItems.map(
-                    (taskItem: TaskItem, _index: number, _array) => {
-                        return [taskItem.taskNo, taskItem.taskType]
-                    }
-                )
-                return newSelectedRows
-            })
+            setSelectedRows((_selectedRows: Array<[number, TaskType]>) => taskItems.map(taskItem => [taskItem.taskNo, taskItem.taskType]));
         }
-    }
+    };
 
     return (
         <div className="main-container">
@@ -182,7 +175,7 @@ function MainPage() {
                 <SettingPage />
             </Popup>
         </div>
-    )
+    );
 }
 
-export default MainPage
+export default MainPage;

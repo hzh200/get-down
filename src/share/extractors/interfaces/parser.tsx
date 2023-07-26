@@ -1,23 +1,23 @@
-import * as http from 'node:http'
-import * as React from 'react'
-import InfoRow from '../InfoRow'
-import ExtractorInfo from './extractorInfo'
+import * as http from 'node:http';
+import * as React from 'react';
+import InfoRow from '../InfoRow';
+import ExtractorInfo from './extractorInfo';
 
 interface Parser extends ExtractorInfo {
-    parse(url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<ParsedInfo>
-    DownloadOptions({ parsedInfo, handleInfoChange} : 
-        { parsedInfo: ParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement>}): React.ReactElement
-    addTask(parsedInfo: ParsedInfo, additionalInfo?: string): void
+    parse(url: string, additionHeaders?: http.OutgoingHttpHeaders): Promise<ParsedInfo>;
+    DownloadOptions({ parsedInfo, handleInfoChange }:
+        { parsedInfo: ParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement;
+    addTask(parsedInfo: ParsedInfo, additionalInfo?: string): void;
 }
 
 // common parsed info.
 class ParsedInfo {
-    name: string
-    location: string
+    name: string;
+    location: string;
 }
 
 // for combination of advanced components.
-const DownloadOptionsBase = ({ parsedInfo, handleInfoChange }: 
+const DownloadOptionsBase = ({ parsedInfo, handleInfoChange }:
     { parsedInfo: ParsedInfo, handleInfoChange: React.ChangeEventHandler<HTMLElement> }): React.ReactElement => {
     return (
         <React.Fragment>
@@ -34,7 +34,7 @@ const DownloadOptionsBase = ({ parsedInfo, handleInfoChange }:
                 <input className="use-proxy" type="checkbox" checked={parsedInfo.useProxy} name='useProxy' onChange={handleInfoChange} />
             </InfoRow> */}
         </React.Fragment>
-    )
-}
+    );
+};
 
-export { Parser, ParsedInfo, DownloadOptionsBase }
+export { Parser, ParsedInfo, DownloadOptionsBase };

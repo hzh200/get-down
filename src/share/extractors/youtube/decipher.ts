@@ -23,9 +23,9 @@ const extractFunctionBody = (rawData: string): string => {
             continue;
         }
         // Setting 'escapingPairIndex'.
-        const pairResult = ESCAPING_PAIRS.filter((pair) => byte === pair.start && (!pair.startPrefix || rawData.substring(i - 10, i).match(pair.startPrefix)));
-        if (escapingPairIndex === -1 && pairResult.length !== 0 && !isEscaped) {
-            escapingPairIndex = ESCAPING_PAIRS.indexOf(pairResult[0]);
+        const pairResult = ESCAPING_PAIRS.find((pair) => byte === pair.start && (!pair.startPrefix || rawData.substring(i - 10, i).match(pair.startPrefix)));
+        if (escapingPairIndex === -1 && pairResult && !isEscaped) {
+            escapingPairIndex = ESCAPING_PAIRS.indexOf(pairResult);
             continue;
         }
 

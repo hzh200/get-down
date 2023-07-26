@@ -1,6 +1,6 @@
-import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models'
-import ModelField from './model_fields'
+import { Model, DataTypes, ModelAttributes } from 'sequelize';
+import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models';
+import ModelField from './model_fields';
 
 const taskSetType: ModelAttributes = {
     [ModelField.taskNo]: {
@@ -40,21 +40,21 @@ const taskSetType: ModelAttributes = {
         type: DataTypes.JSON,
         allowNull: false
     }
-}
+};
 
 class TaskSetModel extends Model {
-    declare taskNo: number
-    declare name: string
-    declare size: number | undefined
-    declare type: string
-    declare url: string
-    declare status: TaskStatus
-    declare progress: number
-    declare location: string
-    declare extractorNo: number
-    declare createdAt: string
-    declare updatedAt: string
-    declare children: Array<number>
+    declare taskNo: number;
+    declare name: string;
+    declare size: number | undefined;
+    declare type: string;
+    declare url: string;
+    declare status: TaskStatus;
+    declare progress: number;
+    declare location: string;
+    declare extractorNo: number;
+    declare createdAt: string;
+    declare updatedAt: string;
+    declare children: Array<number>;
 }
 
-export { taskSetType, TaskSetModel }
+export { taskSetType, TaskSetModel };

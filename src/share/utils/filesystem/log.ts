@@ -1,6 +1,6 @@
-import { LOG_PATH } from '../../global/paths'
-import { isDev } from '../../global/runtime_mode'
-import * as fs from 'fs'
+import { LOG_PATH } from '../../global/paths';
+import { isDev } from '../../global/runtime_mode';
+import * as fs from 'fs';
 
 // let fd: number
 // const initLog = () => {
@@ -13,45 +13,45 @@ import * as fs from 'fs'
 
 class Log {
     private static log = (message: string) => {
-        const localeDateTime: string = new Date().toLocaleString()
-        const logMessage: string = localeDateTime + ' ' + message + '\n'
+        const localeDateTime: string = new Date().toLocaleString();
+        const logMessage: string = localeDateTime + ' ' + message + '\n';
         if (isDev) {
-            process.stdout.write(logMessage)
+            process.stdout.write(logMessage);
         } else {
-            fs.appendFileSync(LOG_PATH, logMessage)
+            fs.appendFileSync(LOG_PATH, logMessage);
         }
-    }
+    };
 
     static info = (message: string) => {
-        Log.log('[Info] ' + message)
-    }
+        Log.log('[Info] ' + message);
+    };
 
     static error = (error: Error | string) => {
         if (!(error instanceof Error)) {
-            Log.log('[Error] ' + error)
-            return
+            Log.log('[Error] ' + error);
+            return;
         }
-        let message = '[Error]'
+        let message = '[Error]';
         if (error.message) {
-            message += error.message
-        }  
+            message += error.message;
+        }
         if (error.stack) {
-            message += ' ' + error.stack
-        }  
-        Log.log(message)  
-    }
+            message += ' ' + error.stack;
+        }
+        Log.log(message);
+    };
 
     static fatal = (error: Error) => {
         if (!(error instanceof Error)) {
-            Log.log('[Fatal] ' + error)
-            return
+            Log.log('[Fatal] ' + error);
+            return;
         }
         if (error.stack) {
-            Log.log('[Fatal] ' + error.stack)
+            Log.log('[Fatal] ' + error.stack);
         } else if (error.message) {
-            Log.log('[Fatal] ' + error.message)
-        }  
-    }
+            Log.log('[Fatal] ' + error.message);
+        }
+    };
 }
 
-export { Log }
+export { Log };

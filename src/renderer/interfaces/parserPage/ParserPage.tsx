@@ -1,19 +1,19 @@
-import * as React from 'react'
-import UrlBar from '../../components/UrlBar'
-import StatusPanel, { ParserStatus } from '../../components/StatusPanel'
-import parserModule, { ParsedInfo } from '../../../share/extractors/parsers'
-import { Log, handlePromise } from '../../../share/utils'
-import { validateUrl } from '../../../share/http/util'
-import { getUnescapedFilename } from '../../../share/utils'
+import * as React from 'react';
+import UrlBar from '../../components/UrlBar';
+import StatusPanel, { ParserStatus } from '../../components/StatusPanel';
+import parserModule, { ParsedInfo } from '../../../share/extractors/parsers';
+import { Log, handlePromise } from '../../../share/utils';
+import { validateUrl } from '../../../share/http/util';
+import { getUnescapedFilename } from '../../../share/utils';
 
-import './parser_page.css'
+import './parser_page.css';
 
 function ParserPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([]);
     // Every time ParserPage is closed and reopened, states are reset, choosenParserName should be initialized from choosenParser of parserModule.
-    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.extractTarget) ;
+    const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.extractTarget);
     const [url, setUrl] = React.useState<string>('');
-    const [additionalInfo, setAdditionalInfo] = React.useState<{[key: string]: any}>({customHeaders: undefined});
+    const [additionalInfo, setAdditionalInfo] = React.useState<{ [key: string]: any }>({ customHeaders: undefined });
     const [status, setStatus] = React.useState<ParserStatus>(ParserStatus.static);
     const [optionsInfo, setOptionsInfo] = React.useState<ParsedInfo>(new ParsedInfo());
     const [errorMessage, setErrorMessage] = React.useState<string>('');
@@ -43,7 +43,7 @@ function ParserPage() {
             return;
         }
         additionalInfo[name] = value === '' || JSON.stringify(value) === '[]' || JSON.stringify(value) === '{}' ? undefined : value;
-        setAdditionalInfo({...additionalInfo});
+        setAdditionalInfo({ ...additionalInfo });
     };
     const handleInfoPanelChange: React.ChangeEventHandler<HTMLInputElement> = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const elementTarget: HTMLInputElement = event.target as HTMLInputElement;
@@ -74,14 +74,14 @@ function ParserPage() {
                     parentTarget[names[nameIndex]] = targetValue;
                 }
             }
-        }
+        };
         setProperty(0);
-        setOptionsInfo(optionsInfo => ({...optionsInfo}));
+        setOptionsInfo(optionsInfo => ({ ...optionsInfo }));
     };
 
     const parseUrl: React.MouseEventHandler<HTMLButtonElement> = async (): Promise<void> => {
         setStatus(ParserStatus.parsing);
-        Log.info(`Parsing url: ${url}`)
+        Log.info(`Parsing url: ${url}`);
         if (!validateUrl(url)) {
             setStatus(ParserStatus.failed);
             setErrorMessage('Unsupported Protocol');
@@ -118,7 +118,7 @@ function ParserPage() {
             }
         }
     };
-    
+
     return (
         <div className='parser-page'>
             <UrlBar parserNames={parserNames} choosenParserName={choosenParserName} handleParserChange={handleParserChange}

@@ -1,6 +1,6 @@
-import { Model, DataTypes, ModelAttributes } from 'sequelize'
-import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models'
-import ModelField from './model_fields'
+import { Model, DataTypes, ModelAttributes } from 'sequelize';
+import { TaskType, TaskStatus, DownloadType } from '../../../share/global/models';
+import ModelField from './model_fields';
 
 const taskType: ModelAttributes = {
     [ModelField.taskNo]: {
@@ -72,28 +72,28 @@ const taskType: ModelAttributes = {
         type: DataTypes.STRING,
         allowNull: true
     }
-}
+};
 
 class TaskModel extends Model {
-    declare taskNo: number
-    declare name: string
-    declare size: number | undefined
-    declare type: string
-    declare url: string
-    declare status: TaskStatus
-    declare progress: number
-    declare location: string
-    declare extractorNo: number
-    declare createdAt: string
-    declare updatedAt: string
-    declare downloadUrl: string
-    declare publishedTimestamp: string
-    declare subType: string
-    declare charset: string | undefined
-    declare downloadType: DownloadType
-    declare downloadRanges: Array<Array<number>> | undefined
-    declare parent: number | undefined
-    declare additionalInfo: string | undefined
+    declare taskNo: number;
+    declare name: string;
+    declare size: number | undefined;
+    declare type: string;
+    declare url: string;
+    declare status: TaskStatus;
+    declare progress: number;
+    declare location: string;
+    declare extractorNo: number;
+    declare createdAt: string;
+    declare updatedAt: string;
+    declare downloadUrl: string;
+    declare publishedTimestamp: string;
+    declare subType: string;
+    declare charset: string | undefined;
+    declare downloadType: DownloadType;
+    declare downloadRanges: Array<Array<number>> | undefined;
+    declare parent: number | undefined;
+    declare additionalInfo: string | undefined;
 }
 
-export { taskType, TaskModel }
+export { taskType, TaskModel };

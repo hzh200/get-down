@@ -1,4 +1,4 @@
-import * as Icon from './svgs'
+import * as Icon from './svgs';
 
 const TYPE_CLASSIFICATION = new Map([
     ['mp4', 'video'],
@@ -31,7 +31,7 @@ const TYPE_CLASSIFICATION = new Map([
     ['sh', 'code'],
     ['html', 'code'],
     ['css', 'code']
-])
+]);
 
 const ICON_TYPE = new Map([
     ['video', Icon.video],
@@ -44,22 +44,22 @@ const ICON_TYPE = new Map([
     ['powerpoint', Icon.powerpoint],
     ['csv', Icon.csv],
     ['code', Icon.code]
-])
+]);
 
 const getTaskIconPath = (type: string): string => {
     if (TYPE_CLASSIFICATION.has(type)) {
-        return ICON_TYPE.get(TYPE_CLASSIFICATION.get(type) as string)
+        return ICON_TYPE.get(TYPE_CLASSIFICATION.get(type) as string);
     } else {
-        return Icon.file
+        return Icon.file;
     }
-}
+};
 
 const getTaskSetIconPath = (isOpen: boolean): string => {
     if (isOpen) {
-        return Icon.openFolder
+        return Icon.openFolder;
     } else {
-        return Icon.folder
+        return Icon.folder;
     }
-}
+};
 
-export { getTaskIconPath, getTaskSetIconPath }
+export { getTaskIconPath, getTaskSetIconPath };
