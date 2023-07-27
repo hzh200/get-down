@@ -14,7 +14,7 @@ Some functionalities need ffmpeg be in running Environment.
 
 Here is the [todo list](./docs/todo.md).
 
-#### Supported download types
+#### Supported downloading types
 
 - Resources which can be reached by HTTP request.
 
@@ -22,5 +22,6 @@ Here is the [todo list](./docs/todo.md).
 
 - YouTube single videos.
 
+#### Disclaimer
 
-
+The software is only written and distributed for learning purpose, the author doesn't take responsibility for users' abuse of the software.
