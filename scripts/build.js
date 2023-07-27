@@ -23,7 +23,7 @@ const rceditPath = path.resolve('resources', 'rcedit-x64.exe');
 const faviconPath = path.resolve('resources', 'favicon.ico');
 
 console.log('=== Building source code. ===')
-execSync('npm run generate-main-prod && npm run generate-renderer-prod', {encoding: 'utf8'});
+execSync('npm run make-main-prod && npm run make-renderer-prod', {encoding: 'utf8'});
 
 console.log('=== Writing package.json file to app. ===');
 const package = require('../package.json');

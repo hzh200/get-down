@@ -10,7 +10,7 @@
     "make-main-prod": "tsc --build tsconfig.prod.main.json",
     "make-renderer-dev": "webpack --config webpack.config.js && npm run copy-html-dev",
     "make-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-html-prod",
-    "dev": "npm run make-main-dev && npm run make-renderer-dev && npm install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
+    "dev": "npm install && npm run make-main-dev && npm run make-renderer-dev && npm install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
     "build": "node scripts/build.js"
   },
   "author": "hzh",
