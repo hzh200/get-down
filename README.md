@@ -1,6 +1,6 @@
-## get-down
+## Get-Down
 
-get-down is a http protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI.
+Get-Down is a http protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI using Electron.
 
 ![GUI](./resources/GUI.png)
 
@@ -14,13 +14,13 @@ Some functionalities need ffmpeg be in running Environment.
 
 Here is the [todo list](./docs/todo.md).
 
-#### Implemented Parser Modules
+#### Supported download types
 
-- http
+- Resources which can be reached by HTTP request.
 
-- bilibili
+- bilibili single videos and video list.
 
-- YouTube
+- YouTube single videos.
 
 
 
