@@ -36,7 +36,7 @@ class Scheduler {
     taskProcesserMap: Map<number, [Downloader, NodeJS.Timer]> = new Map();
     taskSetProcesserMap: Map<number, NodeJS.Timer> = new Map();
     constructor () {
-        // Read from the database for all existing tasks and taskSets, send them to the newly created task list in renderer process interface.
+        // Read from the database for all existing tasks and taskSets, send them to the newly created task list interface in renderer process.
         getSequencedRecords().then((records: Array<TaskModel | TaskSetModel>) => {
             for (const record of records) {
                 if (record instanceof TaskModel) {
@@ -51,7 +51,7 @@ class Scheduler {
             Log.fatal(error)
         });
 
-        // Check out every once in a while if some waiting tasks can be started.
+        // Check every once in a while if some waiting tasks can be started.
         this.schedulerTimer = setInterval(handleAsyncCallback(this.allocDownloader), 100);
 
         ipcMain.on(CommunicateAPIName.AddTask, handleAsyncCallback(async (_event: IpcMainEvent, taskInfo: Task) => {
@@ -80,7 +80,7 @@ class Scheduler {
 
         ipcMain.on(CommunicateAPIName.PauseTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>) => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos);
-            for (const [taskNo, taskType] of selectedTaskNos) {
+            for (const [taskNo, taskType] of selectedTaskNos.reverse()) {
                 if (taskType === TaskType.Task) {
                     await this.pauseTask(taskNo);
                 } else { // TaskSet
@@ -123,6 +123,7 @@ class Scheduler {
         }));
     }
 
+    // Main loop for allocating downloaders for waiting tasks.
     allocDownloader = async (): Promise<void> => {
         if (this.taskProcesserMap.size < maxDownloadLimit) {
             const taskNo: number | null = taskQueue.getWaitingTaskNo();
@@ -238,29 +239,6 @@ class Scheduler {
         await this.endTaskSet(taskNo);
         await deleteTaskSetModel(taskSet.taskNo);
         return [taskSet, tasks];
-
-        // const taskSet: TaskSetModel | null = taskQueue.getTaskSet(taskNo);
-        // if (!taskSet) continue;
-        // for (const childTaskNo of this.getReversedChildrenNos(taskNo)) {
-        //     const child: TaskModel | null = taskQueue.getTask(childTaskNo);
-        //     if (!child) continue;
-        //     await this.endTask(child.taskNo, TaskStatus.Paused);
-        // }
-        // await this.endTaskSet(taskNo);
-
-        // const childrenTaskNo = this.getChildrenNos(taskSet.taskNo).filter(value => taskQueue.hasTask(value));
-        // if (childrenTaskNo.length !== 0) {
-        //     await deleteTaskModels(childrenTaskNo);
-        // }
-        // for (const childTaskNo of this.getReversedChildrenNos(taskNo)) {
-        //     const child: TaskModel | null = taskQueue.getTask(childTaskNo);
-        //     if (!child) continue;
-        //     taskQueue.removeTask(childTaskNo);
-        //     this.deleteTaskItemToRenderer(child, TaskType.Task);
-        // }
-        // await deleteTaskSetModel(taskSet.taskNo);
-        // taskQueue.removeTaskSet(taskSet.taskNo);
-        // this.deleteTaskItemToRenderer(taskSet, TaskType.TaskSet);
     };
 
     pauseTask = async (taskNo: number): Promise<void> => {
@@ -321,7 +299,7 @@ class Scheduler {
             await updateTaskSetModel(taskSet);
             this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet);
 
-            // Self clearing when no child task is active.
+            // Self clear when no child task is active.
             if (taskSet.status !== TaskStatus.Downloading) {
                 clearInterval(this.taskSetProcesserMap.get(taskNo));
                 this.taskSetProcesserMap.delete(taskNo);
@@ -330,7 +308,7 @@ class Scheduler {
         this.taskSetProcesserMap.set(taskNo, taskSetTimer);
     };
 
-    // Finish an activiting task, whether it's done or failed.
+    // End an activating task, whether it's done or failed.
     endTask = async (taskNo: number, status: TaskStatus): Promise<void> => {
         const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel;
         if (this.taskProcesserMap.has(taskNo)) {
@@ -346,7 +324,7 @@ class Scheduler {
         this.updateTaskItemToRenderer(task, TaskType.Task);
     };
 
-    // Finish an activiting taskSet.
+    // End an activating taskSet.
     endTaskSet = async (taskNo: number): Promise<void> => {
         if (this.taskSetProcesserMap.has(taskNo)) {
             clearInterval(this.taskSetProcesserMap.get(taskNo) as NodeJS.Timer);
@@ -359,7 +337,7 @@ class Scheduler {
         this.updateTaskItemToRenderer(taskSet, TaskType.TaskSet);
     };
 
-    // Calculate a taskSet status by suming up it's children's progress.
+    // Set a taskSet status by suming up it's children's progress.
     calculateTaskSetProgress = (taskSet: TaskSetModel): void => {
         taskSet.progress = 0;
         taskSet.children.forEach(childTaskNo => {
@@ -370,7 +348,7 @@ class Scheduler {
         });
     };
 
-    // Calculate a taskSet status by considering it's children's status all together.
+    // Set a taskSet status by considering it's children's status all together.
     calculateTaskSetStatus = (taskSet: TaskSetModel): void => {
         const statusFlag: Map<TaskStatus, boolean> = new Map();
         taskSet.children.forEach(childTaskNo => {
@@ -387,12 +365,12 @@ class Scheduler {
             taskSet.status = TaskStatus.Paused;
         } else if (statusFlag.get(TaskStatus.Failed)) {
             taskSet.status = TaskStatus.Failed;
-        } else { // Done
+        } else {
             taskSet.status = TaskStatus.Done;
         }
     };
 
-    // Get tasks which don't have parent and task_sets taskNos.
+    // Get tasks without a parent and taskSets taskNos.
     getDistinctTaskNos = (taskNos: Array<[number, TaskType]>): Array<[number, TaskType]> => {
         const res: Array<[number, TaskType]> = [];
         for (const [taskNo, taskType] of taskNos) {
@@ -441,6 +419,7 @@ class Scheduler {
     // Get children of a taskSet in descending order of number value.
     getReversedChildrenNos = (taskNo: number): Array<number> => this.getChildrenNos(taskNo).reverse();
 
+    // Pause all activating tasks and clear all timers.
     shutdown = async () => {
         clearInterval(this.schedulerTimer);
         this.schedulerTimer = undefined;
@@ -453,15 +432,10 @@ class Scheduler {
             }
         } 
         for (const taskSet of taskSets) {
-            if (this.taskSetProcesserMap.has(taskSet.taskNo)) {
-                await this.endTaskSet(taskSet.taskNo);
-            }
+            await this.endTaskSet(taskSet.taskNo);
         }
     };
 
-    //
-    // Send the newest taskItem info to the renderer process.
-    //
     addTaskItemToRenderer = (taskItem: TaskModel | TaskSetModel, taskType: TaskType): void => mainWindow.webContents.send(CommunicateAPIName.NewTaskItem, {...taskItem.get(), taskType: taskType});
     updateTaskItemToRenderer = (taskItem: TaskModel | TaskSetModel, taskType: TaskType): void => mainWindow.webContents.send(CommunicateAPIName.UpdateTaskItem, {...taskItem.get(), taskType: taskType});
     deleteTaskItemToRenderer = (taskItem: TaskModel | TaskSetModel, taskType: TaskType): void => mainWindow.webContents.send(CommunicateAPIName.DeleteTaskItem, {...taskItem.get(), taskType: taskType});

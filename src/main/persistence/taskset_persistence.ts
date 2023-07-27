@@ -54,7 +54,7 @@ const updateTaskSetModelStatus = async (taskSet: TaskSetModel): Promise<void> =>
 
 const updateTaskSetModelChildren = async (taskSet: TaskSetModel): Promise<void> => {
     taskSet.changed(ModelField.children, true);
-    await updateTaskSetModelPart(taskSet, taskSet.children, ModelField.parent);
+    await updateTaskSetModelPart(taskSet, taskSet.children, ModelField.children);
 };
 
 const deleteTaskSetModel = async (taskNo: number): Promise<void> => {
