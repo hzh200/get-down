@@ -48,7 +48,7 @@ class RangeDownloader extends Downloader {
     }
 
     /* 
-        Task range manuvour functions
+    *   Task range manuvour functions
     */
     isRangeLeft = (): boolean => {
         const ranges: Array<Array<number>> = this.task.downloadRanges as Array<Array<number>>;
@@ -86,8 +86,7 @@ class RangeDownloader extends Downloader {
         const range: Array<number> = this.rangeMap.get(uuid) as Array<number>;
         const requestOptions: http.RequestOptions = await this.generateDownloadOption();
         (requestOptions.headers as http.OutgoingHttpHeaders)[Header.Range] = `bytes=${range[0]}-${range[1]}`;
-        const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] =
-            await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions));
+        const [error, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions));
 
         const handleEnd = (): void => {
             if (this.destroyed) return;
@@ -127,16 +126,13 @@ class RangeDownloader extends Downloader {
                 this.task.progress += written;
                 range[0] += written;
             });
-            stream.on(StreamEvent.Error, (error: Error) => {
-                handleError(error);
-            });
-            stream.on(StreamEvent.End, () => {
-                handleEnd();
-            });
+            stream.on(StreamEvent.Error, (error: Error) => handleError(error));
+            stream.on(StreamEvent.End, () => handleEnd());
         };
 
         if (error) { // 'connect ETIMEDOUT' error while being finishing or after being destroyed.
             handleError(error);
+            return;
         }
         if (response.statusCode !== ResponseStatusCode.PartialContent) { // 302, 403
             this.reparse();
@@ -153,12 +149,8 @@ class RangeDownloader extends Downloader {
         } else {
             handleResponseStream(response, range);
         }
-        request.on(StreamEvent.Error, (error: Error) => {
-            handleError(error);
-        });
-        response.setTimeout(1000, () => {
-            handleTimeout(response);
-        });
+        request.on(StreamEvent.Error, (error: Error) => handleError(error));
+        response.setTimeout(1000, () => handleTimeout(response));
     };
 
     // Entrance for Scheduler to pause and delete the downloader, for Range Downloader only.
@@ -173,9 +165,7 @@ class RangeDownloader extends Downloader {
         this.clear();
     };
 
-    reparse = (): void => {
-        this.emit(DownloaderEvent.Reparse);
-    };
+    reparse = () => this.emit(DownloaderEvent.Reparse);
 
     // Override from Downloader.
     clear(): void {

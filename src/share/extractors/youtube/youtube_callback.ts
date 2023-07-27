@@ -51,40 +51,6 @@ class YouTubeCallback extends YouTube implements Callback {
         const newMergePath = mergePath.replace('merge_', '');
         fs.renameSync(mergePath, newMergePath);
         changeFileTimestamp(newMergePath, videoTask.publishedTimestamp);
-        
-        // new Promise<void>((resolve, reject) => {
-        //     const mergeProcess: ChildProcess = exec(
-        //         `ffmpeg -i \"${videoTaskPath}\" -i \"${audioTaskPath}\" -c:v copy -c:a aac \"${mergePath}\"`, (error: ExecException | null) => {
-        //             if (error) { // invoked only when error occuried
-        //                 if (!fs.existsSync(videoTaskPath) || !fs.existsSync(audioTaskPath)) {
-        //                     reject('video or audio path don\'t exist');
-        //                     return;
-        //                 }
-        //                 reject(error);
-        //             }
-        //         }
-        //     )
-        //     mergeProcess.on('close', (code: number) => {
-        //         if (code === 0) {
-        //             resolve();
-        //         }
-        //     })
-        // }).then(
-        //     () => {
-        //         try {
-        //             fs.unlinkSync(videoTaskPath);
-        //             fs.unlinkSync(audioTaskPath);
-        //             const newMergePath = mergePath.replace('merge_', '');
-        //             fs.renameSync(mergePath, newMergePath);
-        //             changeFileTimestamp(newMergePath, videoTask.publishedTimestamp);
-        //         } catch (error: any) {
-        //             reject(error);
-        //         }
-        //         resolve();
-        //     }
-        // ).catch((error: Error) => {
-        //     reject(error);
-        // });
     }
 }
 

@@ -2,7 +2,7 @@ import * as React from 'react';
 import UrlBar from '../../components/UrlBar';
 import StatusPanel, { ParserStatus } from '../../components/StatusPanel';
 import parserModule, { ParsedInfo } from '../../../share/extractors/parsers';
-import { Log, handlePromise } from '../../../share/utils';
+import { Log } from '../../../share/utils';
 import { validateUrl } from '../../../share/http/util';
 import { getUnescapedFilename } from '../../../share/utils';
 

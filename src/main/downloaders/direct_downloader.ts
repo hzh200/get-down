@@ -27,9 +27,7 @@ class DirectDownloader extends Downloader {
 
     // Main downlaod procedure.
     downloadDirect = async () => {
-        const handleEnd = (): void => {
-            this.done();
-        };
+        const handleEnd = (): void => this.done();
         const handleError = (error: Error): void => {
             Log.error(error);
             this.fail();
@@ -42,18 +40,15 @@ class DirectDownloader extends Downloader {
                 }
                 this.task.progress += written;
             });
-            stream.on(StreamEvent.Error, (error: Error) => {
-                handleError(error);
-            });
-            stream.on(StreamEvent.End, () => {
-                handleEnd();
-            });
+            stream.on(StreamEvent.Error, (error: Error) => handleError(error));
+            stream.on(StreamEvent.End, () => handleEnd());
         };
 
         const requestOptions: http.RequestOptions = await this.generateDownloadOption();
-        const [error, [request, response]]: [Error | undefined, [http.ClientRequest, http.IncomingMessage]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions));
+        const [error, [request, response]] = await handlePromise<[http.ClientRequest, http.IncomingMessage]>(httpRequest(requestOptions));
         if (error) {
             handleError(error);
+            return;
         }
         const encoding: string = response.headers[Header.ContentEncoding] as string;
         if (encoding) {
@@ -67,9 +62,7 @@ class DirectDownloader extends Downloader {
         } else {
             handleResponseStream(response);
         }
-        request.on(StreamEvent.Error, (error: Error) => {
-            handleError(error);
-        });
+        request.on(StreamEvent.Error, (error: Error) => handleError(error));
     };
 
     // Inherit from Downloader.

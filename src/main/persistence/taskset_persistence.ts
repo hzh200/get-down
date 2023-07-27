@@ -7,9 +7,7 @@ import { createSequenceModel, deleteSequenceModel, getSequenceModel, deleteSeque
 
 const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> => {
     const trans: Transaction = await sequelize.transaction();
-    const [taskSetError, taskSet]: [Error | undefined, TaskSetModel] = await handlePromise<TaskSetModel>(TaskSetModel.create({
-        ...taskSetInfo
-    }, { transaction: trans }));
+    const [taskSetError, taskSet] = await handlePromise<TaskSetModel>(TaskSetModel.create({ ...taskSetInfo }, { transaction: trans }));
     if (taskSetError) {
         await trans.rollback();
         throw taskSetError;
@@ -17,8 +15,7 @@ const createTaskSetModel = async (taskSetInfo: TaskSet): Promise<TaskSetModel> =
     const sequenceInfo = new Sequence();
     sequenceInfo.taskNo = taskSet.taskNo;
     sequenceInfo.taskType = TaskType.TaskSet;
-    const [sequenceError, _]: [Error | undefined, SequenceModel] = await handlePromise<SequenceModel>(
-        createSequenceModel(sequenceInfo, trans));
+    const [sequenceError, _] = await handlePromise<SequenceModel>(createSequenceModel(sequenceInfo, trans));
     if (sequenceError) {
         await trans.rollback();
         throw sequenceError;

@@ -1,7 +1,6 @@
 import { Transaction, Op } from 'sequelize';
 import { Sequence, TaskType } from '../../share/global/models';
 import { taskType, taskSetType, sequenceType, TaskModel, TaskSetModel, SequenceModel, ModelField } from './model_types';
-import { handlePromise } from '../../share/utils';
 
 const createSequenceModel = async (sequence: Sequence, trans: Transaction): Promise<SequenceModel> => {
     return await SequenceModel.create({
@@ -10,11 +9,7 @@ const createSequenceModel = async (sequence: Sequence, trans: Transaction): Prom
 };
 
 const getSequenceModel = async (taskNo: number, taskType: TaskType, trans: Transaction): Promise<SequenceModel> => {
-    const [error, sequence]: [Error | undefined, SequenceModel | null] =
-        await handlePromise<SequenceModel | null>(SequenceModel.findOne({ where: { taskNo: taskNo, taskType: taskType }, transaction: trans }));
-    if (error) {
-        throw error;
-    }
+    const sequence = await SequenceModel.findOne({ where: { taskNo: taskNo, taskType: taskType }, transaction: trans });
     if (!sequence) {
         throw new Error('No sequence instance is found.');
     }

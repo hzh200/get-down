@@ -55,21 +55,13 @@ class Scheduler {
         this.schedulerTimer = setInterval(handleAsyncCallback(this.allocDownloader), 100);
 
         ipcMain.on(CommunicateAPIName.AddTask, handleAsyncCallback(async (_event: IpcMainEvent, taskInfo: Task) => {
-            const [error, task] = await handlePromise<TaskModel>(this.createTask(_event, taskInfo));
-            if (error) {
-                Log.error(error);
-                return;
-            }
+            const task = await this.createTask(_event, taskInfo);
             taskQueue.addTask(task.taskNo, task);
             this.addTaskItemToRenderer(task, TaskType.Task);
         }));
 
         ipcMain.on(CommunicateAPIName.AddTaskSet, handleAsyncCallback(async (_event: IpcMainEvent, [taskSetInfo, taskInfos]: [TaskSet, Array<Task>]) => {
-            const [error, [taskSet, tasks]] = await handlePromise<[TaskSetModel, Array<TaskModel>]>(this.createTaskSet(_event, [taskSetInfo, taskInfos]));
-            if (error) {
-                Log.error(error);
-                return;
-            }
+            const [taskSet, tasks] = await this.createTaskSet(_event, [taskSetInfo, taskInfos]);
             taskQueue.addTaskSet(taskSet.taskNo, taskSet);
             this.addTaskItemToRenderer(taskSet, TaskType.TaskSet);
             for (const task of tasks) {
@@ -83,7 +75,7 @@ class Scheduler {
             for (const [taskNo, taskType] of selectedTaskNos.reverse()) {
                 if (taskType === TaskType.Task) {
                     await this.pauseTask(taskNo);
-                } else { // TaskSet
+                } else {
                     await this.pauseTaskSet(taskNo);
                 }
             }
@@ -108,7 +100,7 @@ class Scheduler {
                     if (!task) continue;
                     taskQueue.removeTask(taskNo);
                     this.deleteTaskItemToRenderer(task, TaskType.Task);
-                } else { // TaskSet
+                } else {
                     const result = await this.deleteTaskSet(taskNo);
                     if (!result) continue;
                     const [taskSet, tasks] = result;
