@@ -39,6 +39,9 @@ const taskQueue = {
         }
         return taskItem;
     },
+    getTaskItems: (): [Array<TaskModel>, Array<TaskSetModel>] => {
+        return [Array.from(taskMap.values()), Array.from(taskSetMap.values())];
+    },
     hasTask: (taskNo: number): boolean => {
         return taskMap.has(taskNo);
     },
@@ -54,8 +57,8 @@ const taskQueue = {
     },
     getWaitingTaskNo: (): number | null => {
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get(`${ModelField.status}`) as TaskStatus === TaskStatus.Waiting) {
-                return instances[i].get(`${ModelField.taskNo}`) as number;
+            if (instances[i] instanceof TaskModel && instances[i].get(ModelField.status) as TaskStatus === TaskStatus.Waiting) {
+                return instances[i].get(ModelField.taskNo) as number;
             }
         }
         return null;
@@ -63,8 +66,8 @@ const taskQueue = {
     getWaitingTaskNos: (num: number): Array<number> | null => {
         const waitingItemArray: Array<number> = [];
         for (let i = 0; i < instances.length; i++) {
-            if (instances[i] instanceof TaskModel && instances[i].get(`${ModelField.status}`) as TaskStatus === TaskStatus.Waiting) {
-                waitingItemArray.push(instances[i].get(`${ModelField.taskNo}`) as number);
+            if (instances[i] instanceof TaskModel && instances[i].get(ModelField.status) as TaskStatus === TaskStatus.Waiting) {
+                waitingItemArray.push(instances[i].get(ModelField.taskNo) as number);
                 num = num - 1;
                 if (num === 0) break;
             }

@@ -37,9 +37,9 @@ const getAllTaskModels = async (): Promise<Array<TaskModel>> => {
 };
 
 const updateTaskModel = async (task: TaskModel): Promise<void> => {
-    task.changed(`${ModelField.status}`, true);
-    task.changed(`${ModelField.progress}`, true);
-    task.changed(`${ModelField.downloadRanges}`, true);
+    task.changed(ModelField.status, true);
+    task.changed(ModelField.progress, true);
+    task.changed(ModelField.downloadRanges, true);
     await task.save();
 };
 
@@ -49,12 +49,12 @@ const updateTaskModelPart = async (task: TaskModel, taskPart: any, partName: Mod
 };
 
 const updateTaskModelStatus = async (task: TaskModel): Promise<void> => {
-    task.changed(`${ModelField.status}`, true);
+    task.changed(ModelField.status, true);
     await updateTaskModelPart(task, task.status, ModelField.status);
 };
 
 const updateTaskModelParent = async (task: TaskModel): Promise<void> => {
-    task.changed(`${ModelField.parent}`, true);
+    task.changed(ModelField.parent, true);
     await updateTaskModelPart(task, task.parent, ModelField.parent);
 };
 

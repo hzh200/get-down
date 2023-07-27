@@ -57,7 +57,7 @@ const generateRequestOption = async (url: string, getHeaders: getHeaders, additi
     options.path = url;
     options.headers = headers;
     if (isDev) {
-        Log.info(`Generated options: ${options}`);
+        Log.info(`Generated options: ${JSON.stringify(options)}`);
     }
     return options;
 };

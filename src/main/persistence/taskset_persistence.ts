@@ -37,8 +37,8 @@ const getAllTaskSetModels = async (): Promise<Array<TaskSetModel>> => {
 };
 
 const updateTaskSetModel = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.status}`, true);
-    taskSet.changed(`${ModelField.progress}`, true);
+    taskSet.changed(ModelField.status, true);
+    taskSet.changed(ModelField.progress, true);
     await taskSet.save();
 };
 
@@ -48,12 +48,12 @@ const updateTaskSetModelPart = async (taskSet: TaskSetModel, taskPart: any, part
 };
 
 const updateTaskSetModelStatus = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.status}`, true);
+    taskSet.changed(ModelField.status, true);
     await updateTaskSetModelPart(taskSet, taskSet.status, ModelField.status);
 };
 
 const updateTaskSetModelChildren = async (taskSet: TaskSetModel): Promise<void> => {
-    taskSet.changed(`${ModelField.children}`, true);
+    taskSet.changed(ModelField.children, true);
     await updateTaskSetModelPart(taskSet, taskSet.children, ModelField.parent);
 };
 

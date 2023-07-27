@@ -76,10 +76,13 @@ const createDevToolsWindow = (): void => {
     resetDevTools();
     devtoolsWindow.addListener('closed', setPosition);
     mainWindow.addListener('move', resetDevTools);
-    mainWindow.addListener('close', (_event: Event) => {
+    mainWindow.once('close', async (event: Event) => {
         if (!devtoolsWindow.isDestroyed()) {
             devtoolsWindow.close();
         }
+        event.preventDefault();
+        await scheduler.shutdown();
+        mainWindow.close();
     });
 };
 
