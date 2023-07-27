@@ -41,6 +41,11 @@ const createMainWindow = (): Promise<void> => {
             }
             resolve();
         });
+        mainWindow.once('close', async (event) => {
+            event.preventDefault();
+            await scheduler.shutdown();
+            mainWindow.close();
+        });
     });
 };
 
@@ -76,13 +81,10 @@ const createDevToolsWindow = (): void => {
     resetDevTools();
     devtoolsWindow.addListener('closed', setPosition);
     mainWindow.addListener('move', resetDevTools);
-    mainWindow.once('close', async (event: Event) => {
+    mainWindow.addListener('close', (_event: Event) => {
         if (!devtoolsWindow.isDestroyed()) {
             devtoolsWindow.close();
         }
-        event.preventDefault();
-        await scheduler.shutdown();
-        mainWindow.close();
     });
 };
 
