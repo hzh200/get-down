@@ -1,5 +1,5 @@
 {
-  "name": "http-downloader",
+  "name": "get-down",
   "version": "1.0.0",
   "description": "A downloader for http and parser for video streaming websites.",
   "main": "dev/main/main.js",

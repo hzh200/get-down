@@ -1,6 +1,6 @@
-## http-downloader
+## get-down
 
-http-downloader is a http protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI.
+get-down is a http protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI.
 
 ![GUI](./resources/GUI.png)
 
