@@ -18,7 +18,7 @@ const setOptionDirected = (options: http.RequestOptions, url: string, headers: h
         options.protocol = Protocol.HTTPProtocol;
     } else { // https://
         options.protocol = Protocol.HTTPSProtocol;
-    } // parser_page filtered other possibilities.
+    } // extractor_page filtered other possibilities.
 
     options.host = headers[Header.Host] as string;
     options.port = undefined;

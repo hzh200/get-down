@@ -3,13 +3,12 @@ import { Menu, MenuItem } from '@electron/remote';
 import * as React from 'react';
 import OperationBar from '../../components/OperationBar';
 import TaskList from '../../components/TaskList';
-import ParserPage from '../parserPage/ParserPage';
+import ExtractorPage from '../extractorPage/ExtractorPage';
 import SettingPage from '../settingPage/SettingPage';
 import Popup from '../../components/Popup';
 import * as path from 'node:path';
 import { Task, TaskSet, TaskItem, TaskStatus, TaskType } from '../../../share/global/models';
 import { CommunicateAPIName } from '../../../share/global/communication';
-import DownloadInfo from './download_info';
 import './global.css';
 
 function MainPage() {
@@ -169,7 +168,7 @@ function MainPage() {
             <OperationBar play={play} pause={pause} trash={trash} openParser={openParser} openSetting={openSetting} />
             <TaskList taskItems={taskItems} selectedRows={selectedRows} onContextMenu={onContextMenu} selectAllRows={selectAllRows} selectRow={selectRow} />
             <Popup showPopup={showParserWindow} setShowPopup={setShowParserWindow}>
-                <ParserPage />
+                <ExtractorPage />
             </Popup>
             <Popup showPopup={showSettingWindow} setShowPopup={setShowSettingWindow}>
                 <SettingPage />

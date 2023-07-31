@@ -6,11 +6,11 @@ import { Log } from '../../../share/utils';
 import { validateUrl } from '../../../share/http/util';
 import { getUnescapedFilename } from '../../../share/utils';
 
-import './parser_page.css';
+import './extractor_page.css';
 
-function ParserPage() {
+function ExtractorPage() {
     const [parserNames, setParserNames] = React.useState<Array<string>>([]);
-    // Every time ParserPage is closed and reopened, states are reset, choosenParserName should be initialized from choosenParser of parserModule.
+    // Every time ExtractorPage is closed and reopened, states are reset, choosenParserName should be initialized from choosenParser of parserModule.
     const [choosenParserName, setChoosenParserName] = React.useState<string>(parserModule.choosenParser.extractTarget);
     const [url, setUrl] = React.useState<string>('');
     const [additionalInfo, setAdditionalInfo] = React.useState<{ [key: string]: any }>({ customHeaders: undefined });
@@ -129,5 +129,5 @@ function ParserPage() {
     );
 }
 
-export default ParserPage;
+export default ExtractorPage;
 export { ParserStatus };
