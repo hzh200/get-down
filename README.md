@@ -22,6 +22,12 @@ Here is the [todo list](./docs/todo.md).
 
 - YouTube single videos.
 
+#### Structure
+
+![components structure](./docs/components_structure.png)
+
+![database models](./docs/database_models.png)
+
 #### Disclaimer
 
 The software is only written and distributed for learning purpose, the author doesn't take responsibility for users' abuse of the software.
