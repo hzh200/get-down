@@ -7,13 +7,13 @@ const parseHost = (url: string): string => {
 };
 
 const requestPageHeaders: http.OutgoingHttpHeaders = {
-    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // get-down/1.0.0 Electron/19.0.8',
+    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // http-downloader/1.0.0 Electron/19.0.8',
     [Header.Connection]: 'keep-alive',
     [Header.AcceptLanguage]: 'zh-CN,zh;q=0.9,en;q=0.8',
 };
 
 const preflightHeaders: http.OutgoingHttpHeaders = {
-    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // get-down/1.0.0 Electron/19.0.8',
+    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // http-downloader/1.0.0 Electron/19.0.8',
     // [Header.Accept]: '*/*',
     // [Header.AcceptEncoding]: "gzip, deflate, br, compress, identity",
     // [Header.AcceptLanguage]: 'zh-CN,zh;q=0.9,en;q=0.8',
@@ -25,7 +25,7 @@ const preflightHeaders: http.OutgoingHttpHeaders = {
 };
 
 const downloadHeaders: http.OutgoingHttpHeaders = {
-    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // get-down/1.0.0 Electron/19.0.8',
+    [Header.UserAgent]: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.148 Safari/537.36', // http-downloader/1.0.0 Electron/19.0.8',
     [Header.Accept]: '*/*',
     [Header.AcceptEncoding]: 'gzip, identity, *',
     [Header.AcceptLanguage]: 'zh-CN,zh;q=0.9,en;q=0.8',

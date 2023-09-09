@@ -13,7 +13,7 @@ const shell = require('shelljs');
 'https://github.com/electron/rcedit'
 
 // Constants.
-const projectName = 'get-down';
+const projectName = 'http-downloader';
 const buildBasePath = path.resolve('..');
 const buildPath = path.resolve('build', `${projectName}`);
 const appPath = path.resolve('build', 'app');
@@ -48,7 +48,7 @@ console.log('=== Rebranding electron binary. ===');
 execSync(`"${rceditPath}" "${path.resolve(buildPath, 'electron.exe')}" --set-icon "${faviconPath}"`);
 shell.mv(path.resolve(buildPath, 'electron.exe'), path.resolve(buildPath, `${projectName}.exe`));
 
-console.log('=== Compressing get-down release file. ===');
+console.log('=== Compressing http-downloader release file. ===');
 const zip = new AdmZip();
 zip.addLocalFolder(buildPath);
 zip.writeZip(windowsZipFilePath);

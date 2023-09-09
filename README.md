@@ -1,6 +1,6 @@
-## Get-Down
+## http-downloader
 
-Get-Down is a HTTP protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI using Electron.
+http-downloader is a HTTP protocol based downloader and a video parser for video streaming websites, and it provides a succint GUI using Electron.
 
 ![GUI](./resources/GUI.png)
 
