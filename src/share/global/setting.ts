@@ -42,6 +42,6 @@ setInterval(() => {
     } catch (error: any) {
         Log.error(error);
     }
-}, 1000);
+}, 100);
 
 export { globalSetting };

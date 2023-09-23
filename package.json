@@ -4,13 +4,13 @@
   "description": "A downloader for http and parser for video streaming websites.",
   "main": "dev/main/main.js",
   "scripts": {
-    "copy-html-dev": "copyfiles -u 1 src/renderer/index.html dev/",
-    "copy-html-prod": "copyfiles -u 1 src/renderer/index.html build/app/",
+    "copy-files-dev": "copyfiles -u 1 src/renderer/index.html dev/ && copyfiles resources/favicon.ico dev/",
+    "copy-files-prod": "copyfiles -u 1 src/renderer/index.html build/app/ && copyfiles resources/favicon.ico build/app/",
     "make-main-dev": "tsc --build tsconfig.dev.main.json",
     "make-main-prod": "tsc --build tsconfig.prod.main.json",
-    "make-renderer-dev": "webpack --config webpack.config.js && yarn run copy-html-dev",
-    "make-renderer-prod": "webpack --config webpack.prod.config.js && yarn run copy-html-prod",
-    "dev": "yarn install && yarn run make-main-dev && yarn run make-renderer-dev && yarn install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
+    "make-renderer-dev": "webpack --config webpack.config.js && yarn run copy-files-dev",
+    "make-renderer-prod": "webpack --config webpack.prod.config.js && yarn run copy-files-prod",
+    "dev": "yarn install && yarn run make-main-dev && yarn run make-renderer-dev && yarn install && cross-env NODE_ENV=development electron --enable-logging --inspect --start-mode=normal .",
     "build": "yarn install && node scripts/build.js"
   },
   "author": "hzh",

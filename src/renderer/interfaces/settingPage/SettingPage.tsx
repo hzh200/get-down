@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ProxyChooses, Setting, readSetting, writeSetting } from '../../../share/utils';
+import { ProxyChooses, Setting } from '../../../share/utils';
 import { globalSetting } from '../../../share/global/setting';
 import './setting_page.css';
 
@@ -9,39 +9,50 @@ function SettingPage() {
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const target: HTMLInputElement = (event.target as HTMLInputElement);
         let name: string = target.name;
-        let value: any = target.value;
+        let secondaryName: string = '';
+        if (target.name.includes('-')) {
+            [name, secondaryName] = target.name.split('-');
+        }
+        const value: any = target.type === 'checkbox' ? target.checked : target.value;
         if (name === 'location') {
             globalSetting.location = value;
-        } else if (name.startsWith('proxy')) {
-            if (name.endsWith('proxyChoosen')) {
-                value = parseInt(value);
-                globalSetting.proxy.proxyChoosen = value;
-            } else if (name.endsWith('host')) {
+        } else if (name === 'trafficLimit') {
+            if (secondaryName === 'limitationEnablement') {
+                globalSetting.trafficLimit.limitationEnablement = value;
+            } else if (secondaryName === 'limitedSpeed') {
+                globalSetting.trafficLimit.limitedSpeed = parseInt(value);
+            }
+        } else if (name === 'proxy') {
+            if (secondaryName === 'proxyChoosen') {
+                globalSetting.proxy.proxyChoosen = parseInt(value);
+            } else if (secondaryName === 'host') {
                 globalSetting.proxy.host = value;
-            } else if (name.endsWith('port')) {
+            } else if (secondaryName === 'port') {
                 globalSetting.proxy.port = value;
             }
-        } else if (name === 'trafficLimit') {
-            globalSetting.trafficLimit = value;
+        } else if (name === 'launchOnStartup') {
+            globalSetting.launchOnStartup = value;
+        } else if (name === 'closeToTray') {
+            globalSetting.closeToTray = value;
         }
         setSetting({ ...globalSetting });
-        // try {
-        //     writeSetting(newSetting as Setting)
-        //     setSetting(newSetting)
-        // } catch (error: any) {
-        //     Log.error(error)
-        // }
     };
 
     return (
         <React.Fragment>
-            <SettingItem title='location'>
+            <SettingItem title='Task'>
                 <SettingItemRow>
                     <p>location: </p>
                     <input type='text' size={30} value={setting['location']} name='location' onChange={handleChange} />
                 </SettingItemRow>
+                <SettingItemRow>
+                    <p>Traffic Limit: </p>
+                    <input type='checkbox' checked={setting.trafficLimit.limitationEnablement} name='trafficLimit-limitationEnablement' onChange={handleChange} />
+                    <input type='text' size={8} value={setting.trafficLimit.limitationEnablement ? setting.trafficLimit.limitedSpeed : ''} name='trafficLimit-limitedSpeed' onChange={handleChange} disabled={!setting.trafficLimit.limitationEnablement} />
+                    <label>Mb/s</label>
+                </SettingItemRow>
             </SettingItem>
-            <SettingItem title='proxy'>
+            <SettingItem title='Connection'>
                 <SettingItemRow>
                     {/* <label>
                         <input type="radio" name="proxy-proxyChoosen" value={ProxyChooses.NoProxy} onChange={handleChange} checked={setting.proxy.proxyChoosen===ProxyChooses.NoProxy} />
@@ -64,19 +75,22 @@ function SettingPage() {
                 </SettingItemRow>
                 <SettingItemRow>
                     <p> Host: </p>
-                    <input type='text' size={20} value={setting.proxy.host ? setting.proxy.host : ''} name='proxy-host' onChange={handleChange} />
+                    <input type='text' size={20} value={setting.proxy.host ? setting.proxy.host : ''} name='proxy-host' onChange={handleChange} disabled={setting.proxy.proxyChoosen !== ProxyChooses.SetManually} />
                     <p> Port: </p>
-                    <input type='text' size={10} value={setting.proxy.port ? setting.proxy.port : ''} name='proxy-port' onChange={handleChange} />
+                    <input type='text' size={10} value={setting.proxy.port ? setting.proxy.port : ''} name='proxy-port' onChange={handleChange} disabled={setting.proxy.proxyChoosen !== ProxyChooses.SetManually} />
                 </SettingItemRow>
             </SettingItem>
-            <SettingItem title='Traffic Limit'>
+            <SettingItem title='System'>
                 <SettingItemRow>
-                    <p>Download Speed: </p>
-                    <input type='text' size={8} value={setting.trafficLimit ? setting.trafficLimit : ''} name='trafficLimit' onChange={handleChange} />
+                    <p>Launch on Startup: </p>
+                    <input type='checkbox' checked={setting.launchOnStartup} name='launchOnStartup' onChange={handleChange} />
+                </SettingItemRow>
+                <SettingItemRow>
+                    <p>Close to Tray: </p>
+                    <input type='checkbox' checked={setting.closeToTray} name='closeToTray' onChange={handleChange} />
                 </SettingItemRow>
             </SettingItem>
         </React.Fragment>
-        // </div>
     );
 }
 

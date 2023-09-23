@@ -66,68 +66,35 @@ function MainPage() {
         setShowSettingWindow(true);
     };
     // Workflow control.
-    const play: Function = (): void => {
+    const play = (): void => {
         ipcRenderer.send(CommunicateAPIName.ResumeTasks, selectedRows);
     };
-    const pause: Function = (): void => {
+    const pause = (): void => {
         ipcRenderer.send(CommunicateAPIName.PauseTasks, selectedRows);
     };
-    const trash: Function = (): void => {
+    const trash = (): void => {
         ipcRenderer.send(CommunicateAPIName.DeleteTasks, selectedRows);
     };
     const onContextMenu: Function = (event: React.MouseEvent<HTMLTableRowElement>, taskNo: number, taskType: TaskType): void => {
-        const taskItem: TaskItem = taskItems.filter(taskItem => {
-            return taskItem.taskNo === taskNo && taskItem.taskType === taskType;
-        })[0];
+        const taskItem: TaskItem = taskItems.filter(taskItem => taskItem.taskNo === taskNo && taskItem.taskType === taskType)[0];
         // Cannot use 'task instanceof Task', class type information is already lost during inter-process communication
         selectRow(event, taskNo, taskType);
-        let menu = new Menu();
-        menu.append(new MenuItem({
-            label: 'pause',
-            click: () => pause()
-        }));
-        menu.append(new MenuItem({
-            label: 'resume',
-            click: () => play()
-        }));
-        menu.append(new MenuItem({
-            label: 'delete',
-            click: () => trash()
-        }));
+        const menu = Menu.buildFromTemplate([
+            { label: 'pause', click: pause },
+            { label: 'resume', click: play },
+            { label: 'delete', click: trash }
+        ]);
         menu.append(new MenuItem({ type: 'separator' }));
-        menu.append(new MenuItem({
-            label: 'copy url',
-            click: () => clipboard.writeText(taskItem.url, 'clipboard')
-        }));
+        menu.append(new MenuItem({ label: 'copy url', click: () => clipboard.writeText(taskItem.url, 'clipboard') }));
         if (taskItem.taskType === TaskType.Task) {
-            menu.append(new MenuItem({
-                label: 'copy download url',
-                click: () => clipboard.writeText((taskItem as Task).downloadUrl, 'clipboard')
-            }));
+            menu.append(new MenuItem({ label: 'copy download url', click: () => clipboard.writeText((taskItem as Task).downloadUrl, 'clipboard') }));
         }
-        menu.append(new MenuItem({
-            label: 'copy filename',
-            click: () => clipboard.writeText(taskItem.name, 'clipboard')
-        }));
+        menu.append(new MenuItem({ label: 'copy filename', click: () => clipboard.writeText(taskItem.name, 'clipboard') }));
         menu.append(new MenuItem({ type: 'separator' }));
         if (taskItem.taskType === TaskType.Task) {
-            menu.append(new MenuItem({
-                label: 'open file',
-                click: () => shell.openPath(path.join((taskItem as Task).location, taskItem.name))
-            }));
-            menu.append(new MenuItem({
-                label: 'open file folder',
-                // click: () => shell.openPath(task.getDownloadDir())
-                click: () => shell.showItemInFolder(path.join((taskItem as Task).location, taskItem.name))
-            }));
-            menu.append(new MenuItem({ type: 'separator' }));
+            menu.append(new MenuItem({ label: 'open file', click: () => shell.openPath(path.join((taskItem as Task).location, taskItem.name)) }));
         }
-        menu.append(new MenuItem({
-            label: 'nothing',
-            type: 'checkbox',
-            checked: true,
-            click: () => clipboard.writeText(taskItem.name, 'clipboard')
-        }));
+        menu.append(new MenuItem({ label: 'open folder', click: () => shell.showItemInFolder(path.join((taskItem as Task).location, taskItem.name)) }));
         menu.popup();
     };
 
@@ -143,7 +110,6 @@ function MainPage() {
                     isContained = true;
                 }
             }
-
             if (isContained) {
                 newSelectedRows = newSelectedRows.filter(([selectedTaskNo, selectedTaskType]: [number, TaskType]) => {
                     return selectedTaskNo !== taskNo || selectedTaskType !== taskType;

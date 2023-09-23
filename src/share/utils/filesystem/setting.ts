@@ -3,11 +3,16 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { SETTING_PATH } from '../../global/paths';
 
+type trafficLimitConfig = {
+    limitationEnablement: boolean;
+    limitedSpeed: number;
+};
+
 enum ProxyChooses {
     NoProxy = 0,
     UseSystemProxy = 1,
     SetManually = 2
-}
+};
 
 type ProxyConfig = {
     proxyChoosen: ProxyChooses;
@@ -17,33 +22,32 @@ type ProxyConfig = {
 };
 
 type Setting = {
-    proxy: ProxyConfig;
     location: string;
-    trafficLimit: number | null;
+    trafficLimit: trafficLimitConfig
+    proxy: ProxyConfig;
+    launchOnStartup: boolean,
+    closeToTray: boolean;
 };
 
 const getDefaultSetting = (): Setting => {
+    const trafficLimit: trafficLimitConfig = {
+        limitationEnablement: false,
+        limitedSpeed: 0
+    };
     const proxy: ProxyConfig = {
         proxyChoosen: ProxyChooses.UseSystemProxy,
         protocol: 'http',
         host: null,
-        port: null,
+        port: null
     };
-
     let downloadPath: string = path.join(process.env.HOME || process.env.USERPROFILE || os.homedir() as string, 'Downloads');
-
-    // if (process.env.NODE_ENV === 'development') {
-    //     downloadPath = './downloads'
-    // } else { // process.env.NODE_ENV === 'production'
-    //     downloadPath = path.join(process.env.HOME || process.env.USERPROFILE || os.homedir() as string, 'Downloads')
-    // }
-
-    let setting: Setting = {
-        proxy: proxy,
+    return {
         location: downloadPath,
-        trafficLimit: null
+        trafficLimit: trafficLimit,
+        proxy: proxy,
+        launchOnStartup: true,
+        closeToTray: true
     };
-    return setting;
 };
 
 // Write new setting to the setting file.
