@@ -8,10 +8,10 @@
     "copy-html-prod": "copyfiles -u 1 src/renderer/index.html build/app/",
     "make-main-dev": "tsc --build tsconfig.dev.main.json",
     "make-main-prod": "tsc --build tsconfig.prod.main.json",
-    "make-renderer-dev": "webpack --config webpack.config.js && npm run copy-html-dev",
-    "make-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-html-prod",
-    "dev": "npm install && npm run make-main-dev && npm run make-renderer-dev && npm install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
-    "build": "node scripts/build.js"
+    "make-renderer-dev": "webpack --config webpack.config.js && yarn run copy-html-dev",
+    "make-renderer-prod": "webpack --config webpack.prod.config.js && yarn run copy-html-prod",
+    "dev": "yarn install && yarn run make-main-dev && yarn run make-renderer-dev && yarn install && cross-env NODE_ENV=development electron --enable-logging --inspect .",
+    "build": "yarn install && node scripts/build.js"
   },
   "author": "hzh",
   "license": "ISC",
@@ -48,7 +48,7 @@
     "ts-loader": "^9.3.1",
     "typescript": "^4.7.4",
     "webpack": "^5.82.0",
-    "webpack-cli": "^5.1.0",
+    "webpack-cli": "^5.1.4",
     "webpack-node-externals": "^3.0.0"
   }
 }

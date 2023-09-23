@@ -23,7 +23,7 @@ const rceditPath = path.resolve('resources', 'rcedit-x64.exe');
 const faviconPath = path.resolve('resources', 'favicon.ico');
 
 console.log('=== Building source code. ===')
-execSync('npm run make-main-prod && npm run make-renderer-prod', {encoding: 'utf8'});
+execSync('yarn run make-main-prod && yarn run make-renderer-prod', {encoding: 'utf8'});
 
 console.log('=== Writing package.json file to app. ===');
 const package = require('../package.json');
@@ -34,7 +34,7 @@ fs.writeFileSync(path.join(appPath, 'package.json'), JSON.stringify(targetPackag
 
 console.log('=== Installing app dependencies. ===');
 process.chdir(appPath);
-execSync('npm install', {encoding: 'utf8'});
+execSync('yarn install', {encoding: 'utf8'});
 process.chdir(buildBasePath);
 
 console.log('=== Decompressing electron release file. ===');
