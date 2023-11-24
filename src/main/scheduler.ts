@@ -72,7 +72,7 @@ class Scheduler {
 
         ipcMain.on(CommunicateAPIName.PauseTasks, handleAsyncCallback(async (_event: IpcMainEvent, selectedTaskNos: Array<[number, TaskType]>) => {
             selectedTaskNos = this.getDistinctTaskNos(selectedTaskNos);
-            for (const [taskNo, taskType] of selectedTaskNos.reverse()) {
+            for (const [taskNo, taskType] of [...selectedTaskNos].reverse()) {
                 if (taskType === TaskType.Task) {
                     await this.pauseTask(taskNo);
                 } else {
@@ -409,7 +409,7 @@ class Scheduler {
     };
 
     // Get children of a taskSet in descending order of number value.
-    getReversedChildrenNos = (taskNo: number): Array<number> => this.getChildrenNos(taskNo).reverse();
+    getReversedChildrenNos = (taskNo: number): Array<number> => [...this.getChildrenNos(taskNo)].reverse();
 
     // Pause all activating tasks and clear all timers.
     shutdown = async () => {
