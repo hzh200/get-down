@@ -119,11 +119,36 @@ const getDecipheredUrl = (signatureCipher: string, decipherFunctionJSScript: vm.
     return urlComponents.toString()
 }
 
-const decipherSignature = (html5player: string, signatureCipher: string) => {
+const decipherSignature = (html5player: string, signatureCipher: string): string => {
     const functions: Array<string> = extractDecipherFunctions(html5player)
     const decipherFunctionJSScript = new vm.Script(functions[0])
     const nTransformJSScript = functions.length > 1 ? new vm.Script(functions[1]) : undefined
     return getDecipheredUrl(signatureCipher, decipherFunctionJSScript, nTransformJSScript)
 }
 
-export default decipherSignature
+//
+// (b=String.fromCharCode(110),c=a.get(b))&&(c=qDa[0](c),a.set(b,c),qDa.length||oma(""))}};
+//
+// var qDa=[oma];g.k=g.bM.prototype;g.k.CN=function(a){this.segments.push(a)};
+//
+
+const decipherN = (html5player: string, url: string): string => {
+    const functionParameterName = matchOne(new RegExp(String.raw`\(([a-z])=String\.fromCharCode\(110\),([a-z])=[a-z]\.get\(\1\)\)&&\(\2=(.*)\[([0-9]*)\]\(\2\)`), html5player)[3]
+    const functionName = matchOne(new RegExp(String.raw`var\s*${functionParameterName}=\[(.*)\];`), html5player)[1]
+    const functionHeader: string = `${functionName}=function(a)`
+    const headerIdx = html5player.indexOf(functionHeader)
+    if (headerIdx < 0) {
+        throw new Error('decipher function not found')
+    }
+    const functionBody = extractFunctionBody(html5player.substring(headerIdx + functionHeader.length))
+    const decipherFunction = `var ${functionHeader}${functionBody};${functionName}(n);`
+    const urlComponents = new URL(decodeURIComponent(url))
+    const newN = new vm.Script(decipherFunction).runInNewContext({ n: urlComponents.searchParams.get('n') })
+    urlComponents.searchParams.set('n', newN)
+    return urlComponents.toString()
+}
+
+export {
+    decipherSignature,
+    decipherN
+}

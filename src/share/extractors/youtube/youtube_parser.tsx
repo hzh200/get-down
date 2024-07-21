@@ -8,7 +8,7 @@ import { CommunicateAPIName } from '../../global/communication';
 import { requestPage, PreflightInfo, preflight } from '../../http/functions';
 import { Header, FILE_EXTENSION_DOT } from '../../http/constants';
 import YouTube from './youtube';
-import decipherSignature from './decipher';
+import { decipherSignature, decipherN } from './decipher';
 import { isDev } from '../../global/runtime_mode';
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\\/title>');
@@ -64,7 +64,7 @@ class YouTubeParser extends YouTube implements Parser {
             if (!data.url && !data.signatureCipher)
                 continue;
             const format = new FormatInfo();
-            format.url = data.url ? data.url : decipherSignature(html5player, data.signatureCipher);
+            format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
             format.mimeType = data.mimeType;
 
             const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType);
@@ -87,7 +87,7 @@ class YouTubeParser extends YouTube implements Parser {
                 continue;
             const format = new FormatInfo();
             format.itag = data.itag;
-            format.url = data.url ? data.url : decipherSignature(html5player, data.signatureCipher);
+            format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
             format.mimeType = data.mimeType;
 
             const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType);

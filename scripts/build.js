@@ -34,7 +34,7 @@ fs.writeFileSync(path.join(appPath, 'package.json'), JSON.stringify(targetPackag
 
 console.log('=== Installing app dependencies. ===');
 process.chdir(appPath);
-execSync('yarn install', {encoding: 'utf8'});
+execSync('npm install', {encoding: 'utf8'});
 process.chdir(buildBasePath);
 
 console.log('=== Decompressing electron release file. ===');
