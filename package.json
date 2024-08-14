@@ -11,7 +11,7 @@
     "make-renderer-dev": "webpack --config webpack.config.js && npm run copy-files-dev",
     "make-renderer-prod": "webpack --config webpack.prod.config.js && npm run copy-files-prod",
     "dev": "npm install && npm run make-main-dev && npm run make-renderer-dev && cross-env NODE_ENV=development electron --enable-logging --inspect --start-mode=normal .",
-    "build": "npm run install && node scripts/build.js"
+    "build": "npm install && node scripts/build.js"
   },
   "author": "hzh",
   "license": "ISC",
