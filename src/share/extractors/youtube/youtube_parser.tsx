@@ -10,6 +10,7 @@ import { Header, FILE_EXTENSION_DOT } from '../../http/constants';
 import YouTube from './youtube';
 import { decipherSignature, decipherN } from './decipher';
 import { isDev } from '../../global/runtime_mode';
+import * as fs from 'node:fs';
 
 const TITLE_RE = new RegExp('<title>(.*) - YouTube<\\/title>');
 const FORMATS_RE = new RegExp('\\"formats\\".+?\]', 'g');
@@ -64,7 +65,19 @@ class YouTubeParser extends YouTube implements Parser {
             if (!data.url && !data.signatureCipher)
                 continue;
             const format = new FormatInfo();
-            format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
+            if (!data.url && !data.signatureCipher)
+                continue; 
+            
+            // format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
+            if (data.url) {
+                try {
+                    format.url = decipherN(html5player, data.url);
+                } catch (error: any) {
+                    format.url = data.url;
+                }
+            } else {
+                format.url = decipherSignature(html5player, data.signatureCipher);
+            }
             format.mimeType = data.mimeType;
 
             const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType);
@@ -83,11 +96,23 @@ class YouTubeParser extends YouTube implements Parser {
         const adaptiveFormatData = JSON.parse('{' + adaptiveFormatsExecResult[0] + '}');
         parsedInfo.hasAdaptive = false;
         for (const data of adaptiveFormatData.adaptiveFormats) {
-            if (!data.url && !data.signatureCipher)
-                continue;
             const format = new FormatInfo();
             format.itag = data.itag;
-            format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
+
+            if (!data.url && !data.signatureCipher)
+                continue; 
+            
+            // format.url = data.url ? decipherN(html5player, data.url) : decipherSignature(html5player, data.signatureCipher);
+            if (data.url) {
+                try {
+                    format.url = decipherN(html5player, data.url);
+                } catch (error: any) {
+                    format.url = data.url;
+                }
+            } else {
+                format.url = decipherSignature(html5player, data.signatureCipher);
+            }
+
             format.mimeType = data.mimeType;
 
             const typeExecResult: RegExpExecArray = matchOne(MIMETYPE_RE, data.mimeType);
@@ -255,7 +280,9 @@ class YouTubeParser extends YouTube implements Parser {
             await this.parseFormatInfo(parsedInfo, rawData, html5player);
         } catch (e: any) {
             if (isDev) {
-                Log.info(`rawData: ${rawData}`);
+                fs.writeFileSync('net.txt', rawData);
+                fs.writeFileSync('player.txt', html5player);
+                // Log.info(`rawData: ${rawData}`);
             }
             throw e;
         }

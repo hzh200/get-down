@@ -32,9 +32,9 @@ import { getWindowsValidFilename } from '../share/utils';
 const maxDownloadLimit: number = 3;
 
 class Scheduler {
-    schedulerTimer: NodeJS.Timer | undefined;
-    taskProcesserMap: Map<number, [Downloader, NodeJS.Timer]> = new Map();
-    taskSetProcesserMap: Map<number, NodeJS.Timer> = new Map();
+    schedulerTimer: NodeJS.Timeout  | undefined;
+    taskProcesserMap: Map<number, [Downloader, NodeJS.Timeout]> = new Map();
+    taskSetProcesserMap: Map<number, NodeJS.Timeout> = new Map();
     constructor () {
         // Read from the database for all existing tasks and taskSets, send them to the newly created task list interface in renderer process.
         getSequencedRecords().then((records: Array<TaskModel | TaskSetModel>) => {
@@ -269,7 +269,7 @@ class Scheduler {
     startTask = async (taskNo: number): Promise<Downloader> => {
         const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel;
         const downloader: Downloader = getDownloader(taskNo);
-        const taskTimer: NodeJS.Timer = setInterval(handleAsyncCallback(async () => {
+        const taskTimer: NodeJS.Timeout = setInterval(handleAsyncCallback(async () => {
             await updateTaskModel(task);
             this.updateTaskItemToRenderer(task, TaskType.Task);
         }), 200);
@@ -282,7 +282,7 @@ class Scheduler {
     // Start downloading a waiting taskSet and alloc processer resource binding with it's taskNo.
     startTaskSet = (taskNo: number): void => {
         if (this.taskSetProcesserMap.has(taskNo)) return;
-        const taskSetTimer: NodeJS.Timer = setInterval(handleAsyncCallback(async () => {
+        const taskSetTimer: NodeJS.Timeout = setInterval(handleAsyncCallback(async () => {
             const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo as number) as TaskSetModel;
             if (taskSet.status !== TaskStatus.Processing) {
                 this.calculateTaskSetStatus(taskSet);
@@ -304,7 +304,7 @@ class Scheduler {
     endTask = async (taskNo: number, status: TaskStatus): Promise<void> => {
         const task: TaskModel = taskQueue.getTask(taskNo) as TaskModel;
         if (this.taskProcesserMap.has(taskNo)) {
-            const [downloader, downloadTimer]: [Downloader, NodeJS.Timer] = this.taskProcesserMap.get(taskNo) as [Downloader, NodeJS.Timer];
+            const [downloader, downloadTimer]: [Downloader, NodeJS.Timeout] = this.taskProcesserMap.get(taskNo) as [Downloader, NodeJS.Timeout];
             if (task.downloadType === DownloadType.Range && status === TaskStatus.Paused) {
                 (downloader as RangeDownloader).destroy();
             }
@@ -319,7 +319,7 @@ class Scheduler {
     // End an activating taskSet.
     endTaskSet = async (taskNo: number): Promise<void> => {
         if (this.taskSetProcesserMap.has(taskNo)) {
-            clearInterval(this.taskSetProcesserMap.get(taskNo) as NodeJS.Timer);
+            clearInterval(this.taskSetProcesserMap.get(taskNo) as NodeJS.Timeout);
             this.taskSetProcesserMap.delete(taskNo);
         }
         const taskSet: TaskSetModel = taskQueue.getTaskSet(taskNo) as TaskSetModel;

@@ -6,7 +6,7 @@ const ESCAPING_PAIRS = [
     { start: '\'', end: '\''},
     { start: '\"', end: '\"'},
     { start: '\`', end: '\`'},
-    { start: '\/', end: '\/', startPrefix: /(^|[[{:;,/])\s?$/}, // '\/' doesn't always indicating regex, so it's a special case.
+    { start: '\/', end: '\/', startPrefix: /(^|[\[{:;,/])\s?$/}, // '\/' doesn't always indicating regex, so it's a special case.
 ];
 
 const extractFunctionBody = (rawData: string): string => {
@@ -131,21 +131,52 @@ const decipherSignature = (html5player: string, signatureCipher: string): string
 //
 // var qDa=[oma];g.k=g.bM.prototype;g.k.CN=function(a){this.segments.push(a)};
 //
+// empty
+//
+// empty
+//
+// (b="nn"[+a.D],CL(a),c=a.j[b]||null)&&(c=KDa[0](c),a.set(b,c),KDa.length||Oma(""))
+
+// new: (b=String.fromCharCode(110),c=a.get(b))&&(c=nfunc[idx](c)
+// or:  (b="nn"[+a.D],c=a.get(b))&&(c=nfunc[idx](c)
+// or:  (PL(a),b=a.j.n||null)&&(b=nfunc[idx](b)
+// or:  (b="nn"[+a.D],vL(a),c=a.j[b]||null)&&(c=narray[idx](c),a.set(b,c),narray.length||nfunc("")
+// old: (b=a.get("n"))&&(b=nfunc[idx](b)(?P<c>[a-z])\s*=\s*[a-z]\s*
+// older: (b=a.get("n"))&&(b=nfunc(b)
 
 const decipherN = (html5player: string, url: string): string => {
-    const functionParameterName = matchOne(new RegExp(String.raw`\(([a-z])=String\.fromCharCode\(110\),([a-z])=[a-z]\.get\(\1\)\)&&\(\2=(.*)\[([0-9]*)\]\(\2\)`), html5player)[3]
-    const functionName = matchOne(new RegExp(String.raw`var\s*${functionParameterName}=\[(.*)\];`), html5player)[1]
-    const functionHeader: string = `${functionName}=function(a)`
-    const headerIdx = html5player.indexOf(functionHeader)
-    if (headerIdx < 0) {
-        throw new Error('decipher function not found')
+    try {
+        const nRegexStr1 = String.raw`\(([a-zA-Z])=String\.fromCharCode\(110\)|([a-zA-Z])=\"nn\"\[\+[a-zA-Z]\.[a-zA-Z]\],([a-zA-Z])=[a-zA-Z]\.get\(\1\)\)&&\(\2=([a-zA-Z]*)\[([0-9]*)\]\(\2\)`
+        const nRegexStr2 = String.raw`\(PL\(([a-zA-Z])\)\),([a-zA-Z])=\1\.[a-zA-Z]\.[a-zA-Z]\|\|null\)&&\(\2=[a-zA-Z]*\[([0-9]*)\]\(\2\)`
+        const nRegexStr3 = String.raw`\(([a-zA-Z])=\"nn\"\[\+([a-zA-Z])\.[a-zA-Z]\],[a-zA-Z]*\(\2\),([a-zA-Z])=\2\.[a-zA-Z]\[\1\]\|\|null\)&&\(\3=[a-zA-Z]*\[[0-9]*\]\(\3\),\2\.set\(\1,\3\),[a-zA-Z]*\.length\|\|([a-zA-Z]*)\(\"\"\)`
+        let functionName;
+        try {
+            functionName = matchOne(new RegExp(nRegexStr1), html5player)[3]
+        } catch (error: any) {}
+        try {
+            functionName = matchOne(new RegExp(nRegexStr2), html5player)[3]
+        } catch (error: any) {}
+        try {
+            functionName = matchOne(new RegExp(nRegexStr3), html5player)[4]
+        } catch (error: any) {}
+        if (!functionName) {
+            throw new Error("no n function was found")
+        }
+        // const functionName = matchOne(new RegExp(String.raw`var\s*${functionParameterName}=\[(.*)\];`), html5player)[1]
+        const functionHeader: string = `${functionName}=function(a)`
+        const headerIdx = html5player.indexOf(functionHeader)
+        if (headerIdx < 0) {
+            throw new Error('decipher function not found')
+        }
+        const functionBody = extractFunctionBody(html5player.substring(headerIdx + functionHeader.length))
+        const decipherFunction = `var ${functionHeader}${functionBody};${functionName}(n);`
+        const urlComponents = new URL(decodeURIComponent(url))
+        const newN = new vm.Script(decipherFunction).runInNewContext({ n: urlComponents.searchParams.get('n') })
+        urlComponents.searchParams.set('n', newN)
+        return urlComponents.toString()
+    } catch (error: any) {
+        throw error
     }
-    const functionBody = extractFunctionBody(html5player.substring(headerIdx + functionHeader.length))
-    const decipherFunction = `var ${functionHeader}${functionBody};${functionName}(n);`
-    const urlComponents = new URL(decodeURIComponent(url))
-    const newN = new vm.Script(decipherFunction).runInNewContext({ n: urlComponents.searchParams.get('n') })
-    urlComponents.searchParams.set('n', newN)
-    return urlComponents.toString()
 }
 
 export {

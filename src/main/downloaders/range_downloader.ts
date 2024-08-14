@@ -19,7 +19,7 @@ class RangeDownloader extends Downloader {
     declare filePath: string;
     rangeMap: Map<string, Array<number>> = new Map<string, Array<number>>();
     responseStreamMap: Map<string, stream.Readable> = new Map<string, stream.Readable>();
-    downloadTimer: NodeJS.Timer;
+    downloadTimer: NodeJS.Timeout;
     destroyed: boolean = false;
 
     constructor(taskNo: number) {

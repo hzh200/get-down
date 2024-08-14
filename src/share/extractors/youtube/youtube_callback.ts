@@ -42,7 +42,7 @@ class YouTubeCallback extends YouTube implements Callback {
                     reject(err);
                 }         
             });
-            command.on('end', resolve);
+            command.on('end', () => resolve());
             command.run();
         });
 
